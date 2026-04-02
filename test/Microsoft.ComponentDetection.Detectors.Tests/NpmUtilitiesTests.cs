@@ -234,4 +234,22 @@ public class NpmUtilitiesTests
             NpmComponentUtilities.GetModuleName(path).Should().Be(expectedModuleName);
         }
     }
+
+    [TestMethod]
+    [DataRow("npm:@zkochan/js-yaml@0.0.9", true, "@zkochan/js-yaml", "0.0.9")]
+    [DataRow("npm:@pnpm/ramda@0.28.1", true, "@pnpm/ramda", "0.28.1")]
+    [DataRow("npm:lodash@4.17.21", true, "lodash", "4.17.21")]
+    [DataRow("1.2.3", false, "", "")]
+    [DataRow("^1.0.0", false, "", "")]
+    [DataRow(null, false, "", "")]
+    [DataRow("npm:", false, "", "")]
+    [DataRow("npm:@scope", false, "", "")]
+    [DataRow("npm:name", false, "", "")]
+    public void TryParseNpmAlias_ReturnsAsExpected(string input, bool expectedResult, string expectedName, string expectedVersion)
+    {
+        var result = NpmComponentUtilities.TryParseNpmAlias(input, out var packageName, out var version);
+        result.Should().Be(expectedResult);
+        packageName.Should().Be(expectedName);
+        version.Should().Be(expectedVersion);
+    }
 }

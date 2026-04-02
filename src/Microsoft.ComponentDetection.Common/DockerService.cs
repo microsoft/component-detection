@@ -189,21 +189,89 @@ internal class DockerService : IDockerService
 
     public async Task<(string Stdout, string Stderr)> CreateAndRunContainerAsync(string image, IList<string> command, IList<string> additionalBinds, CancellationToken cancellationToken = default)
     {
+        var commandJson = JsonSerializer.Serialize(command);
+
+        // Summary record captures overall operation including stdout/stderr
         using var record = new DockerServiceTelemetryRecord
         {
             Image = image,
-            Command = JsonSerializer.Serialize(command),
+            Command = commandJson,
         };
+
         await this.TryPullImageAsync(image, cancellationToken);
         var container = await CreateContainerAsync(image, command, additionalBinds, cancellationToken);
         record.Container = JsonSerializer.Serialize(container);
-        var stream = await AttachContainerAsync(container.ID, cancellationToken);
-        await StartContainerAsync(container.ID, cancellationToken);
-        var (stdout, stderr) = await stream.ReadOutputToEndAsync(cancellationToken);
-        record.Stdout = stdout;
-        record.Stderr = stderr;
-        await RemoveContainerAsync(container.ID, cancellationToken);
-        return (stdout, stderr);
+
+        try
+        {
+            var stream = await AttachContainerAsync(container.ID, cancellationToken);
+            await StartContainerAsync(container.ID, cancellationToken);
+
+            var (stdout, stderr) = await ReadContainerOutputAsync(stream, container.ID, image, cancellationToken);
+
+            record.Stdout = stdout;
+            record.Stderr = stderr;
+
+            return (stdout, stderr);
+        }
+        finally
+        {
+            // Best-effort container cleanup; RemoveContainerAsync already handles not-found.
+            await RemoveContainerAsync(container.ID, CancellationToken.None);
+        }
+    }
+
+    /// <summary>
+    /// Reads container output with proper cancellation support.
+    /// ReadOutputToEndAsync doesn't properly honor cancellation when blocked on socket read,
+    /// so we race it against a cancellation-aware delay and dispose the stream if cancelled.
+    /// </summary>
+    private static async Task<(string Stdout, string Stderr)> ReadContainerOutputAsync(
+        MultiplexedStream stream,
+        string containerId,
+        string image,
+        CancellationToken cancellationToken)
+    {
+        using var record = new DockerServiceStepTelemetryRecord
+        {
+            Step = "ReadOutput",
+            ContainerId = containerId,
+            Image = image,
+        };
+
+        try
+        {
+            var readTask = stream.ReadOutputToEndAsync(CancellationToken.None);
+            var delayTask = Task.Delay(Timeout.Infinite, cancellationToken);
+
+            var completedTask = await Task.WhenAny(readTask, delayTask);
+
+            if (completedTask == delayTask)
+            {
+                record.WasCancelled = true;
+
+                // Dispose the stream to unblock any pending read operation
+                stream.Dispose();
+
+                // Observe the readTask to prevent unobserved task exceptions.
+                // Running any continuation automatically marks the exception as observed.
+                _ = readTask.ContinueWith(
+                    static _ => { },
+                    CancellationToken.None,
+                    TaskContinuationOptions.OnlyOnFaulted,
+                    TaskScheduler.Default);
+
+                // Caller is responsible for container cleanup via finally block
+                cancellationToken.ThrowIfCancellationRequested();
+            }
+
+            return await readTask;
+        }
+        catch (Exception ex)
+        {
+            record.ExceptionMessage = ex.Message;
+            throw;
+        }
     }
 
     private static async Task<CreateContainerResponse> CreateContainerAsync(
@@ -212,63 +280,131 @@ internal class DockerService : IDockerService
         IList<string> additionalBinds,
         CancellationToken cancellationToken = default)
     {
-        var binds = new List<string>
+        using var record = new DockerServiceStepTelemetryRecord
         {
-            $"{Path.GetTempPath()}:/tmp",
-            "/var/run/docker.sock:/var/run/docker.sock",
-        };
-
-        if (additionalBinds != null)
-        {
-            binds.AddRange(additionalBinds);
-        }
-
-        var parameters = new CreateContainerParameters
-        {
+            Step = "CreateContainer",
             Image = image,
-            Cmd = command,
-            NetworkDisabled = true,
-            HostConfig = new HostConfig
-            {
-                CapDrop =
-                [
-                    "all",
-                ],
-                SecurityOpt =
-                [
-                    "no-new-privileges",
-                ],
-                Binds = binds,
-            },
+            Command = JsonSerializer.Serialize(command),
         };
-        return await Client.Containers.CreateContainerAsync(parameters, cancellationToken);
+
+        try
+        {
+            var binds = new List<string>
+            {
+                $"{Path.GetTempPath()}:/tmp",
+                "/var/run/docker.sock:/var/run/docker.sock",
+            };
+
+            if (additionalBinds != null)
+            {
+                binds.AddRange(additionalBinds);
+            }
+
+            var parameters = new CreateContainerParameters
+            {
+                Image = image,
+                Cmd = command,
+                NetworkDisabled = true,
+                HostConfig = new HostConfig
+                {
+                    CapDrop =
+                    [
+                        "all",
+                    ],
+                    SecurityOpt =
+                    [
+                        "no-new-privileges",
+                    ],
+                    Binds =
+                    [
+                        $"{Path.GetTempPath()}:/tmp",
+                        "/var/run/docker.sock:/var/run/docker.sock",
+                    ],
+                },
+            };
+
+            var response = await Client.Containers.CreateContainerAsync(parameters, cancellationToken);
+            record.ContainerId = response.ID;
+            return response;
+        }
+        catch (Exception ex)
+        {
+            record.ExceptionMessage = ex.Message;
+            throw;
+        }
     }
 
     private static async Task<MultiplexedStream> AttachContainerAsync(string containerId, CancellationToken cancellationToken = default)
     {
-        var parameters = new ContainerAttachParameters
+        using var record = new DockerServiceStepTelemetryRecord
         {
-            Stdout = true,
-            Stderr = true,
-            Stream = true,
+            Step = "AttachContainer",
+            ContainerId = containerId,
         };
-        return await Client.Containers.AttachContainerAsync(containerId, false, parameters, cancellationToken);
+
+        try
+        {
+            var parameters = new ContainerAttachParameters
+            {
+                Stdout = true,
+                Stderr = true,
+                Stream = true,
+            };
+            return await Client.Containers.AttachContainerAsync(containerId, false, parameters, cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            record.ExceptionMessage = ex.Message;
+            throw;
+        }
     }
 
     private static async Task StartContainerAsync(string containerId, CancellationToken cancellationToken = default)
     {
-        var parameters = new ContainerStartParameters();
-        await Client.Containers.StartContainerAsync(containerId, parameters, cancellationToken);
+        using var record = new DockerServiceStepTelemetryRecord
+        {
+            Step = "StartContainer",
+            ContainerId = containerId,
+        };
+
+        try
+        {
+            var parameters = new ContainerStartParameters();
+            await Client.Containers.StartContainerAsync(containerId, parameters, cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            record.ExceptionMessage = ex.Message;
+            throw;
+        }
     }
 
     private static async Task RemoveContainerAsync(string containerId, CancellationToken cancellationToken = default)
     {
-        var parameters = new ContainerRemoveParameters
+        using var record = new DockerServiceStepTelemetryRecord
         {
-            Force = true,
-            RemoveVolumes = true,
+            Step = "RemoveContainer",
+            ContainerId = containerId,
         };
-        await Client.Containers.RemoveContainerAsync(containerId, parameters, cancellationToken);
+
+        try
+        {
+            var parameters = new ContainerRemoveParameters
+            {
+                Force = true,
+                RemoveVolumes = true,
+            };
+            await Client.Containers.RemoveContainerAsync(containerId, parameters, cancellationToken);
+        }
+        catch (DockerContainerNotFoundException)
+        {
+            // Container already removed - this is expected during cleanup
+        }
+        catch (Exception ex)
+        {
+            record.ExceptionMessage = ex.Message;
+            throw;
+        }
     }
 
     private static int GetContainerId()
