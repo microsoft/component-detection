@@ -186,7 +186,12 @@ public class ComponentDetectionIntegrationTests
             var oldMatches = Regex.Matches(this.oldLogFileContents, regexPattern);
             var newMatches = Regex.Matches(this.newLogFileContents, regexPattern);
 
-            newMatches.Should().HaveCountGreaterThanOrEqualTo(oldMatches.Count - IntentionallyRemovedDetectors.Count, "A detector was lost, make sure this was intentional.");
+            var removedDetectorsPresentInOldLog = oldMatches.Cast<Match>()
+                .Where(m => m.Groups[2].Success && IntentionallyRemovedDetectors.Contains(m.Groups[2].Value))
+                .Select(m => m.Groups[2].Value)
+                .Distinct()
+                .Count();
+            newMatches.Should().HaveCountGreaterThanOrEqualTo(oldMatches.Count - removedDetectorsPresentInOldLog, "A detector was lost, make sure this was intentional.");
 
             var detectorTimes = new Dictionary<string, float>();
             var detectorCounts = new Dictionary<string, int>();
