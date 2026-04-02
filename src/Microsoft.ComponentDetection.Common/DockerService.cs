@@ -315,11 +315,7 @@ internal class DockerService : IDockerService
                     [
                         "no-new-privileges",
                     ],
-                    Binds =
-                    [
-                        $"{Path.GetTempPath()}:/tmp",
-                        "/var/run/docker.sock:/var/run/docker.sock",
-                    ],
+                    Binds = binds,
                 },
             };
 
