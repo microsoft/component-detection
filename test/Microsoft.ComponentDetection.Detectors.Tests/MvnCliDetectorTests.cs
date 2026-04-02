@@ -1446,6 +1446,57 @@ public class MvnCliDetectorTests : BaseDetectorTest<MvnCliComponentDetector>
     }
 
     [TestMethod]
+    public async Task WhenCleanupCreatedFilesIsTrue_DeletesDepsFileAfterProcessing_Async()
+    {
+        // Arrange
+        const string componentString = "org.apache.commons:commons-lang3:jar:3.12.0";
+        this.SetupMvnCliSuccess(componentString);
+
+        var deletedFiles = new System.Collections.Generic.List<string>();
+        this.fileUtilityServiceMock
+            .Setup(x => x.Delete(It.IsAny<string>()))
+            .Callback<string>(path => deletedFiles.Add(path));
+
+        // Act: default ScanRequest has cleanupCreatedFiles=true
+        var (detectorResult, _) = await this.DetectorTestUtility.ExecuteDetectorAsync();
+
+        // Assert
+        detectorResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+        deletedFiles.Should().ContainSingle(
+            f => f.Contains(BcdeMvnFileName),
+            "the deps file should be deleted after its content is consumed");
+    }
+
+    [TestMethod]
+    public async Task WhenCleanupCreatedFilesIsFalse_DoesNotDeleteDepsFile_Async()
+    {
+        // Arrange
+        const string componentString = "org.apache.commons:commons-lang3:jar:3.12.0";
+        this.SetupMvnCliSuccess(componentString);
+
+        var scanRequest = new ScanRequest(
+            new System.IO.DirectoryInfo(System.IO.Path.GetTempPath()),
+            null,
+            null,
+            new System.Collections.Generic.Dictionary<string, string>(),
+            null,
+            new Microsoft.ComponentDetection.Common.DependencyGraph.ComponentRecorder(),
+            cleanupCreatedFiles: false);
+
+        // Act
+        var (detectorResult, _) = await this.DetectorTestUtility
+            .WithScanRequest(scanRequest)
+            .ExecuteDetectorAsync();
+
+        // Assert
+        detectorResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+        this.fileUtilityServiceMock.Verify(
+            x => x.Delete(It.IsAny<string>()),
+            Times.Never,
+            "the deps file should not be deleted when CleanupCreatedFiles is false");
+    }
+
+    [TestMethod]
     public async Task TestSmartLoopPreventionInDirectoryTraversal()
     {
         // Arrange - Setup Maven CLI to fail so we use static parser
