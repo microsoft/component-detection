@@ -215,6 +215,32 @@ services:
     }
 
     [TestMethod]
+    public async Task TestCompose_UnresolvedVariableSkippedAsync()
+    {
+        var composeYaml = @"
+services:
+  app:
+    image: ${REGISTRY}/app:${TAG}
+  db:
+    image: postgres:15
+";
+
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+            .WithFile("docker-compose.yml", composeYaml)
+            .ExecuteDetectorAsync();
+
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+        var components = componentRecorder.GetDetectedComponents();
+
+        // Only the literal image reference (postgres:15) should be registered;
+        // the variable-interpolated image (${REGISTRY}/app:${TAG}) should be silently skipped.
+        components.Should().ContainSingle();
+        var dockerRef = components.First().Component as DockerReferenceComponent;
+        dockerRef.Should().NotBeNull();
+        dockerRef.Repository.Should().Be("library/postgres");
+    }
+
+    [TestMethod]
     public async Task TestCompose_ComposeOverrideFileAsync()
     {
         var composeYaml = @"

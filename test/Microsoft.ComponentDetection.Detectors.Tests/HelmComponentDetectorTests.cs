@@ -15,6 +15,12 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 [TestCategory("Governance/ComponentDetection")]
 public class HelmComponentDetectorTests : BaseDetectorTest<HelmComponentDetector>
 {
+    private const string MinimalChartYaml = @"
+apiVersion: v2
+name: my-chart
+version: 0.1.0
+";
+
     [TestMethod]
     public async Task TestHelm_DirectImageStringAsync()
     {
@@ -26,6 +32,7 @@ service:
 ";
 
         var (scanResult, componentRecorder) = await this.DetectorTestUtility
+            .WithFile("Chart.yaml", MinimalChartYaml)
             .WithFile("values.yaml", valuesYaml)
             .ExecuteDetectorAsync();
 
@@ -52,6 +59,7 @@ service:
 ";
 
         var (scanResult, componentRecorder) = await this.DetectorTestUtility
+            .WithFile("Chart.yaml", MinimalChartYaml)
             .WithFile("values.yaml", valuesYaml)
             .ExecuteDetectorAsync();
 
@@ -77,6 +85,7 @@ image:
 ";
 
         var (scanResult, componentRecorder) = await this.DetectorTestUtility
+            .WithFile("Chart.yaml", MinimalChartYaml)
             .WithFile("values.yaml", valuesYaml)
             .ExecuteDetectorAsync();
 
@@ -105,6 +114,7 @@ app:
 ";
 
         var (scanResult, componentRecorder) = await this.DetectorTestUtility
+            .WithFile("Chart.yaml", MinimalChartYaml)
             .WithFile("values.yaml", valuesYaml)
             .ExecuteDetectorAsync();
 
@@ -123,6 +133,7 @@ service:
 ";
 
         var (scanResult, componentRecorder) = await this.DetectorTestUtility
+            .WithFile("Chart.yaml", MinimalChartYaml)
             .WithFile("values.yaml", valuesYaml)
             .ExecuteDetectorAsync();
 
@@ -152,6 +163,22 @@ dependencies:
     }
 
     [TestMethod]
+    public async Task TestHelm_ValuesWithoutChartYamlSkippedAsync()
+    {
+        var valuesYaml = @"
+image: nginx:1.21
+";
+
+        // No Chart.yaml provided — the values file should be skipped entirely.
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+            .WithFile("values.yaml", valuesYaml)
+            .ExecuteDetectorAsync();
+
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+        componentRecorder.GetDetectedComponents().Should().BeEmpty();
+    }
+
+    [TestMethod]
     public async Task TestHelm_ImageWithDigestAsync()
     {
         var valuesYaml = @"
@@ -161,6 +188,7 @@ image:
 ";
 
         var (scanResult, componentRecorder) = await this.DetectorTestUtility
+            .WithFile("Chart.yaml", MinimalChartYaml)
             .WithFile("values.yaml", valuesYaml)
             .ExecuteDetectorAsync();
 
@@ -184,6 +212,7 @@ image:
 ";
 
         var (scanResult, componentRecorder) = await this.DetectorTestUtility
+            .WithFile("Chart.yaml", MinimalChartYaml)
             .WithFile("values.yaml", valuesYaml)
             .ExecuteDetectorAsync();
 
@@ -204,6 +233,7 @@ image: nginx@sha256:abc123def456abc123def456abc123def456abc123def456abc123def456
 ";
 
         var (scanResult, componentRecorder) = await this.DetectorTestUtility
+            .WithFile("Chart.yaml", MinimalChartYaml)
             .WithFile("values.yaml", valuesYaml)
             .ExecuteDetectorAsync();
 
@@ -224,6 +254,7 @@ image: nginx:1.21@sha256:abc123def456abc123def456abc123def456abc123def456abc123d
 ";
 
         var (scanResult, componentRecorder) = await this.DetectorTestUtility
+            .WithFile("Chart.yaml", MinimalChartYaml)
             .WithFile("values.yaml", valuesYaml)
             .ExecuteDetectorAsync();
 
@@ -249,12 +280,29 @@ sidecars:
 ";
 
         var (scanResult, componentRecorder) = await this.DetectorTestUtility
+            .WithFile("Chart.yaml", MinimalChartYaml)
             .WithFile("values.yaml", valuesYaml)
             .ExecuteDetectorAsync();
 
         scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
         var components = componentRecorder.GetDetectedComponents();
         components.Should().HaveCount(2);
+    }
+
+    [TestMethod]
+    public async Task TestHelm_UnresolvedVariableSkippedAsync()
+    {
+        var valuesYaml = @"
+image: ${REGISTRY}/app:${TAG}
+";
+
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+            .WithFile("Chart.yaml", MinimalChartYaml)
+            .WithFile("values.yaml", valuesYaml)
+            .ExecuteDetectorAsync();
+
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+        componentRecorder.GetDetectedComponents().Should().BeEmpty();
     }
 
     [TestMethod]
@@ -265,6 +313,7 @@ image: nginx:1.21
 ";
 
         var (scanResult, componentRecorder) = await this.DetectorTestUtility
+            .WithFile("Chart.yaml", MinimalChartYaml)
             .WithFile("values.yml", valuesYaml)
             .ExecuteDetectorAsync();
 
@@ -280,6 +329,7 @@ image: redis:7-alpine
 ";
 
         var (scanResult, componentRecorder) = await this.DetectorTestUtility
+            .WithFile("Chart.yaml", MinimalChartYaml)
             .WithFile("values.production.yaml", valuesYaml)
             .ExecuteDetectorAsync();
 
@@ -295,6 +345,7 @@ image: postgres:15
 ";
 
         var (scanResult, componentRecorder) = await this.DetectorTestUtility
+            .WithFile("Chart.yaml", MinimalChartYaml)
             .WithFile("myapp-values-dev.yml", valuesYaml)
             .ExecuteDetectorAsync();
 

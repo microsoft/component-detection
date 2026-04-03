@@ -329,7 +329,7 @@ spec:
     }
 
     [TestMethod]
-    public async Task TestK8s_ImageWithTagAndDigestAsync()
+    public async Task TestK8s_UnresolvedVariablesSkippedAsync()
     {
         var manifest = @"
 apiVersion: v1
@@ -339,7 +339,9 @@ metadata:
 spec:
   containers:
     - name: app
-      image: nginx:1.21@sha256:abc123def456abc123def456abc123def456abc123def456abc123def456abc1
+      image: ${REGISTRY}/app:${TAG}
+    - name: sidecar
+      image: nginx:1.21
 ";
 
         var (scanResult, componentRecorder) = await this.DetectorTestUtility
@@ -348,11 +350,13 @@ spec:
 
         scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
         var components = componentRecorder.GetDetectedComponents();
-        components.Should().ContainSingle();
 
+        // Only the literal image reference (nginx:1.21) should be registered;
+        // the variable-interpolated image (${REGISTRY}/app:${TAG}) should be silently skipped.
+        components.Should().ContainSingle();
         var dockerRef = components.First().Component as DockerReferenceComponent;
         dockerRef.Should().NotBeNull();
+        dockerRef.Repository.Should().Be("library/nginx");
         dockerRef.Tag.Should().Be("1.21");
-        dockerRef.Digest.Should().Be("sha256:abc123def456abc123def456abc123def456abc123def456abc123def456abc1");
     }
 }

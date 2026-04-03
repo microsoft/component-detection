@@ -2,6 +2,7 @@
 namespace Microsoft.ComponentDetection.Detectors.Helm;
 
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading;
@@ -15,6 +16,8 @@ using YamlDotNet.RepresentationModel;
 
 public class HelmComponentDetector : FileComponentDetector, IDefaultOffComponentDetector
 {
+    private readonly ConcurrentDictionary<string, bool> helmChartDirectories = new(StringComparer.OrdinalIgnoreCase);
+
     public HelmComponentDetector(
         IComponentStreamEnumerableFactory componentStreamEnumerableFactory,
         IObservableDirectoryWalkerFactory walkerFactory,
@@ -40,22 +43,38 @@ public class HelmComponentDetector : FileComponentDetector, IDefaultOffComponent
 
     public override IEnumerable<string> Categories => [Enum.GetName(typeof(DetectorClass), DetectorClass.Helm), Enum.GetName(typeof(DetectorClass), DetectorClass.Containers)];
 
+    public override async Task<IndividualDetectorScanResult> ExecuteDetectorAsync(ScanRequest request, CancellationToken cancellationToken = default)
+    {
+        this.helmChartDirectories.Clear();
+        return await base.ExecuteDetectorAsync(request, cancellationToken);
+    }
+
     protected override async Task OnFileFoundAsync(ProcessRequest processRequest, IDictionary<string, string> detectorArgs, CancellationToken cancellationToken = default)
     {
-        var singleFileComponentRecorder = processRequest.SingleFileComponentRecorder;
         var file = processRequest.ComponentStream;
+        var fileName = Path.GetFileName(file.Location);
+        var directory = Path.GetDirectoryName(file.Location);
+
+        // Chart.yaml/Chart.yml presence marks the directory as a Helm chart root.
+        if (IsChartFile(fileName))
+        {
+            this.helmChartDirectories.TryAdd(directory, true);
+            return;
+        }
+
+        // Only process values files — and only when co-located with a Chart.yaml in the same directory.
+        if (!IsValuesFile(fileName))
+        {
+            return;
+        }
+
+        if (!this.helmChartDirectories.ContainsKey(directory))
+        {
+            return;
+        }
 
         try
         {
-            var fileName = Path.GetFileName(file.Location);
-
-            // Only process files that are likely to contain image references. This is a heuristic to avoid parsing irrelevant YAML files.
-            if (!fileName.Contains("values", StringComparison.OrdinalIgnoreCase) ||
-                !(fileName.EndsWith(".yaml", StringComparison.OrdinalIgnoreCase) || fileName.EndsWith(".yml", StringComparison.OrdinalIgnoreCase)))
-            {
-                return;
-            }
-
             this.Logger.LogInformation("Discovered Helm values file: {Location}", file.Location);
 
             string contents;
@@ -72,13 +91,22 @@ public class HelmComponentDetector : FileComponentDetector, IDefaultOffComponent
                 return;
             }
 
-            this.ExtractImageReferencesFromValues(yaml, singleFileComponentRecorder, file.Location);
+            this.ExtractImageReferencesFromValues(yaml, processRequest.SingleFileComponentRecorder, file.Location);
         }
         catch (Exception e)
         {
             this.Logger.LogError(e, "Failed to parse Helm file: {Location}", file.Location);
         }
     }
+
+    private static bool IsChartFile(string fileName) =>
+        fileName.Equals("Chart.yaml", StringComparison.OrdinalIgnoreCase) ||
+        fileName.Equals("Chart.yml", StringComparison.OrdinalIgnoreCase);
+
+    private static bool IsValuesFile(string fileName) =>
+        fileName.Contains("values", StringComparison.OrdinalIgnoreCase) &&
+        (fileName.EndsWith(".yaml", StringComparison.OrdinalIgnoreCase) ||
+         fileName.EndsWith(".yml", StringComparison.OrdinalIgnoreCase));
 
     private void ExtractImageReferencesFromValues(YamlStream yaml, ISingleFileComponentRecorder recorder, string fileLocation)
     {

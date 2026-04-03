@@ -5,7 +5,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Common;
@@ -192,6 +191,6 @@ public class DockerfileComponentDetector : FileComponentDetector, IDefaultOffCom
 
     private bool HasUnresolvedVariables(string reference)
     {
-        return new Regex("[${}]").IsMatch(reference);
+        return DockerReferenceUtility.HasUnresolvedVariables(reference);
     }
 }
