@@ -70,11 +70,12 @@
 
 - [NuGet](nuget.md)
 
-| Detector                                         | Status |
-| ------------------------------------------------ | ------ |
-| NuGetComponentDetector                           | Stable |
-| NuGetPackagesConfigDetector                      | Stable |
-| NuGetProjectModelProjectCentricComponentDetector | Stable |
+| Detector                                         | Status     |
+| ------------------------------------------------ | ---------- |
+| NuGetComponentDetector                           | Stable     |
+| NuGetPackagesConfigDetector                      | Stable     |
+| NuGetProjectModelProjectCentricComponentDetector | Stable     |
+| MSBuildBinaryLogComponentDetector                | DefaultOff |
 
 - [Pip](pip.md)
 
