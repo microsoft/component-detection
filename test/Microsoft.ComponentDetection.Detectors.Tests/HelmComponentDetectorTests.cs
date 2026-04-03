@@ -163,6 +163,31 @@ dependencies:
     }
 
     [TestMethod]
+    public async Task TestHelm_ValuesFileObservedBeforeChartYamlAsync()
+    {
+        // Verify that values files are processed even when they are enumerated
+        // before the co-located Chart.yaml (non-deterministic file order).
+        var valuesYaml = @"
+image: nginx:1.21
+";
+
+        // values.yaml is registered first (before Chart.yaml) to simulate the
+        // problematic enumeration order the two-pass OnPrepareDetectionAsync fixes.
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+            .WithFile("values.yaml", valuesYaml)
+            .WithFile("Chart.yaml", MinimalChartYaml)
+            .ExecuteDetectorAsync();
+
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+        componentRecorder.GetDetectedComponents().Should().ContainSingle();
+
+        var dockerRef = componentRecorder.GetDetectedComponents().First().Component as DockerReferenceComponent;
+        dockerRef.Should().NotBeNull();
+        dockerRef.Repository.Should().Be("library/nginx");
+        dockerRef.Tag.Should().Be("1.21");
+    }
+
+    [TestMethod]
     public async Task TestHelm_ValuesWithoutChartYamlSkippedAsync()
     {
         var valuesYaml = @"

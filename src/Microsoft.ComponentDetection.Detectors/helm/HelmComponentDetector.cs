@@ -5,6 +5,8 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
+using System.Reactive.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Common;
@@ -49,30 +51,39 @@ public class HelmComponentDetector : FileComponentDetector, IDefaultOffComponent
         return await base.ExecuteDetectorAsync(request, cancellationToken);
     }
 
+    protected override async Task<IObservable<ProcessRequest>> OnPrepareDetectionAsync(
+        IObservable<ProcessRequest> processRequests,
+        IDictionary<string, string> detectorArgs,
+        CancellationToken cancellationToken = default)
+    {
+        // Materialize all matching files first so that chart directories are fully
+        // known before any values file is decided on, regardless of enumeration order.
+        var allRequests = await processRequests.ToList();
+
+        // Pass 1: record every directory that contains a Chart.yaml / Chart.yml.
+        foreach (var request in allRequests)
+        {
+            if (IsChartFile(Path.GetFileName(request.ComponentStream.Location)))
+            {
+                this.helmChartDirectories.TryAdd(
+                    Path.GetDirectoryName(request.ComponentStream.Location), true);
+            }
+        }
+
+        // Pass 2: emit only the values files that sit in a known chart directory.
+        return allRequests
+            .Where(r =>
+                IsValuesFile(Path.GetFileName(r.ComponentStream.Location)) &&
+                this.helmChartDirectories.ContainsKey(Path.GetDirectoryName(r.ComponentStream.Location)))
+            .ToObservable();
+    }
+
     protected override async Task OnFileFoundAsync(ProcessRequest processRequest, IDictionary<string, string> detectorArgs, CancellationToken cancellationToken = default)
     {
         var file = processRequest.ComponentStream;
-        var fileName = Path.GetFileName(file.Location);
-        var directory = Path.GetDirectoryName(file.Location);
 
-        // Chart.yaml/Chart.yml presence marks the directory as a Helm chart root.
-        if (IsChartFile(fileName))
-        {
-            this.helmChartDirectories.TryAdd(directory, true);
-            return;
-        }
-
-        // Only process values files — and only when co-located with a Chart.yaml in the same directory.
-        if (!IsValuesFile(fileName))
-        {
-            return;
-        }
-
-        if (!this.helmChartDirectories.ContainsKey(directory))
-        {
-            return;
-        }
-
+        // OnPrepareDetectionAsync has already filtered to values files co-located
+        // with a Chart.yaml — no further filename/directory checks are needed.
         try
         {
             this.Logger.LogInformation("Discovered Helm values file: {Location}", file.Location);
