@@ -224,7 +224,7 @@ services:
 ";
 
         var (scanResult, componentRecorder) = await this.DetectorTestUtility
-            .WithFile("compose.override.yml", composeYaml, ["compose.*.yml"])
+            .WithFile("compose.override.yml", composeYaml)
             .ExecuteDetectorAsync();
 
         scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
@@ -241,7 +241,7 @@ services:
 ";
 
         var (scanResult, componentRecorder) = await this.DetectorTestUtility
-            .WithFile("compose.prod.yaml", composeYaml, ["compose.*.yaml"])
+            .WithFile("compose.prod.yaml", composeYaml)
             .ExecuteDetectorAsync();
 
         scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);

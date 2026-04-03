@@ -209,7 +209,7 @@ FROM ${BASE_IMAGE}:latest
         var dockerfile = "FROM alpine:3.18\n";
 
         var (scanResult, componentRecorder) = await this.DetectorTestUtility
-            .WithFile("app.dockerfile", dockerfile, ["*.dockerfile"])
+            .WithFile("app.dockerfile", dockerfile)
             .ExecuteDetectorAsync();
 
         scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);

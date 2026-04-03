@@ -265,7 +265,7 @@ image: nginx:1.21
 ";
 
         var (scanResult, componentRecorder) = await this.DetectorTestUtility
-            .WithFile("values.yml", valuesYaml, ["*values*.yml"])
+            .WithFile("values.yml", valuesYaml)
             .ExecuteDetectorAsync();
 
         scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
@@ -280,7 +280,7 @@ image: redis:7-alpine
 ";
 
         var (scanResult, componentRecorder) = await this.DetectorTestUtility
-            .WithFile("values.production.yaml", valuesYaml, ["*values*.yaml"])
+            .WithFile("values.production.yaml", valuesYaml)
             .ExecuteDetectorAsync();
 
         scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
@@ -295,7 +295,7 @@ image: postgres:15
 ";
 
         var (scanResult, componentRecorder) = await this.DetectorTestUtility
-            .WithFile("myapp-values-dev.yml", valuesYaml, ["*values*.yml"])
+            .WithFile("myapp-values-dev.yml", valuesYaml)
             .ExecuteDetectorAsync();
 
         scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
@@ -312,7 +312,7 @@ version: 0.1.0
 ";
 
         var (scanResult, componentRecorder) = await this.DetectorTestUtility
-            .WithFile("chart.yaml", chartYaml, ["chart.yaml"])
+            .WithFile("chart.yaml", chartYaml)
             .ExecuteDetectorAsync();
 
         scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
@@ -329,7 +329,7 @@ version: 0.1.0
 ";
 
         var (scanResult, componentRecorder) = await this.DetectorTestUtility
-            .WithFile("Chart.yml", chartYaml, ["Chart.yml"])
+            .WithFile("Chart.yml", chartYaml)
             .ExecuteDetectorAsync();
 
         scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
