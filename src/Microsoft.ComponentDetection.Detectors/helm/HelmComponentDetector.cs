@@ -47,7 +47,16 @@ public class HelmComponentDetector : FileComponentDetector, IDefaultOffComponent
 
         try
         {
-            this.Logger.LogInformation("Discovered Helm file: {Location}", file.Location);
+            var fileName = Path.GetFileName(file.Location);
+
+            // Only process files that are likely to contain image references. This is a heuristic to avoid parsing irrelevant YAML files.
+            if (!fileName.Contains("values", StringComparison.OrdinalIgnoreCase) ||
+                !(fileName.EndsWith(".yaml", StringComparison.OrdinalIgnoreCase) || fileName.EndsWith(".yml", StringComparison.OrdinalIgnoreCase)))
+            {
+                return;
+            }
+
+            this.Logger.LogInformation("Discovered Helm values file: {Location}", file.Location);
 
             string contents;
             using (var reader = new StreamReader(file.Stream))
@@ -63,13 +72,7 @@ public class HelmComponentDetector : FileComponentDetector, IDefaultOffComponent
                 return;
             }
 
-            var fileName = Path.GetFileName(file.Location);
-
-            if (fileName.Contains("values", StringComparison.OrdinalIgnoreCase) &&
-                (fileName.EndsWith(".yaml", StringComparison.OrdinalIgnoreCase) || fileName.EndsWith(".yml", StringComparison.OrdinalIgnoreCase)))
-            {
-                this.ExtractImageReferencesFromValues(yaml, singleFileComponentRecorder, file.Location);
-            }
+            this.ExtractImageReferencesFromValues(yaml, singleFileComponentRecorder, file.Location);
         }
         catch (Exception e)
         {
