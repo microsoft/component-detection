@@ -78,6 +78,19 @@ public class DockerComposeComponentDetector : FileComponentDetector, IDefaultOff
         }
     }
 
+    private static YamlMappingNode GetMappingChild(YamlMappingNode parent, string key)
+    {
+        foreach (var entry in parent.Children)
+        {
+            if (entry.Key is YamlScalarNode scalarKey && string.Equals(scalarKey.Value, key, StringComparison.OrdinalIgnoreCase))
+            {
+                return entry.Value as YamlMappingNode;
+            }
+        }
+
+        return null;
+    }
+
     private void ExtractImageReferences(YamlMappingNode rootMapping, ISingleFileComponentRecorder recorder, string fileLocation)
     {
         var services = GetMappingChild(rootMapping, "services");
@@ -123,18 +136,5 @@ public class DockerComposeComponentDetector : FileComponentDetector, IDefaultOff
         {
             this.Logger.LogWarning(e, "Failed to parse image reference '{ImageReference}' in {Location}", imageReference, fileLocation);
         }
-    }
-
-    private static YamlMappingNode GetMappingChild(YamlMappingNode parent, string key)
-    {
-        foreach (var entry in parent.Children)
-        {
-            if (entry.Key is YamlScalarNode scalarKey && string.Equals(scalarKey.Value, key, StringComparison.OrdinalIgnoreCase))
-            {
-                return entry.Value as YamlMappingNode;
-            }
-        }
-
-        return null;
     }
 }

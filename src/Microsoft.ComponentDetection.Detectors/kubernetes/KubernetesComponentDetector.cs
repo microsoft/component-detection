@@ -107,6 +107,32 @@ public class KubernetesComponentDetector : FileComponentDetector, IDefaultOffCom
         return !string.IsNullOrEmpty(apiVersion) && !string.IsNullOrEmpty(kind) && KubernetesKinds.Contains(kind);
     }
 
+    private static YamlMappingNode GetMappingChild(YamlMappingNode parent, string key)
+    {
+        foreach (var entry in parent.Children)
+        {
+            if (entry.Key is YamlScalarNode scalarKey && string.Equals(scalarKey.Value, key, StringComparison.OrdinalIgnoreCase))
+            {
+                return entry.Value as YamlMappingNode;
+            }
+        }
+
+        return null;
+    }
+
+    private static YamlSequenceNode GetSequenceChild(YamlMappingNode parent, string key)
+    {
+        foreach (var entry in parent.Children)
+        {
+            if (entry.Key is YamlScalarNode scalarKey && string.Equals(scalarKey.Value, key, StringComparison.OrdinalIgnoreCase))
+            {
+                return entry.Value as YamlSequenceNode;
+            }
+        }
+
+        return null;
+    }
+
     private void ExtractImageReferences(YamlMappingNode rootMapping, ISingleFileComponentRecorder recorder, string fileLocation)
     {
         // For Pod, the spec is at the top level
@@ -202,31 +228,5 @@ public class KubernetesComponentDetector : FileComponentDetector, IDefaultOffCom
         {
             this.Logger.LogWarning(e, "Failed to parse image reference '{ImageReference}' in {Location}", imageReference, fileLocation);
         }
-    }
-
-    private static YamlMappingNode GetMappingChild(YamlMappingNode parent, string key)
-    {
-        foreach (var entry in parent.Children)
-        {
-            if (entry.Key is YamlScalarNode scalarKey && string.Equals(scalarKey.Value, key, StringComparison.OrdinalIgnoreCase))
-            {
-                return entry.Value as YamlMappingNode;
-            }
-        }
-
-        return null;
-    }
-
-    private static YamlSequenceNode GetSequenceChild(YamlMappingNode parent, string key)
-    {
-        foreach (var entry in parent.Children)
-        {
-            if (entry.Key is YamlScalarNode scalarKey && string.Equals(scalarKey.Value, key, StringComparison.OrdinalIgnoreCase))
-            {
-                return entry.Value as YamlSequenceNode;
-            }
-        }
-
-        return null;
     }
 }
