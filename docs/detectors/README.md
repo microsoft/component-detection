@@ -18,6 +18,12 @@
 | -------------------------- | ---------- |
 | CondaLockComponentDetector | DefaultOff |
 
+- [Docker Compose](dockercompose.md)
+
+| Detector                        | Status     |
+| ------------------------------- | ---------- |
+| DockerComposeComponentDetector  | DefaultOff |
+
 - [Dockerfile](dockerfile.md)
 
 | Detector                    | Status     |
@@ -42,11 +48,23 @@
 | ----------------------- | ------ |
 | GradleComponentDetector | Stable |
 
+- [Helm](helm.md)
+
+| Detector               | Status     |
+| ---------------------- | ---------- |
+| HelmComponentDetector  | DefaultOff |
+
 - [Ivy](ivy.md)
 
 | Detector    | Status       |
 | ----------- | ------------ |
 | IvyDetector | Experimental |
+
+- [Kubernetes](kubernetes.md)
+
+| Detector                       | Status     |
+| ------------------------------ | ---------- |
+| KubernetesComponentDetector    | DefaultOff |
 
 - [Linux](linux.md)
 

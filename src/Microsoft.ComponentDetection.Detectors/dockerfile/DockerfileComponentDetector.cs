@@ -5,7 +5,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Common;
@@ -143,7 +142,7 @@ public class DockerfileComponentDetector : FileComponentDetector, IDefaultOffCom
 
         if (!string.IsNullOrEmpty(stageNameReference))
         {
-            if (this.HasUnresolvedVariables(stageNameReference))
+            if (DockerReferenceUtility.HasUnresolvedVariables(stageNameReference))
             {
                 return null;
             }
@@ -151,7 +150,7 @@ public class DockerfileComponentDetector : FileComponentDetector, IDefaultOffCom
             return DockerReferenceUtility.ParseFamiliarName(stageNameReference);
         }
 
-        if (this.HasUnresolvedVariables(reference))
+        if (DockerReferenceUtility.HasUnresolvedVariables(reference))
         {
             return null;
         }
@@ -172,7 +171,7 @@ public class DockerfileComponentDetector : FileComponentDetector, IDefaultOffCom
         stageNameMap.TryGetValue(reference, out var stageNameReference);
         if (!string.IsNullOrEmpty(stageNameReference))
         {
-            if (this.HasUnresolvedVariables(stageNameReference))
+            if (DockerReferenceUtility.HasUnresolvedVariables(stageNameReference))
             {
                 return null;
             }
@@ -182,16 +181,11 @@ public class DockerfileComponentDetector : FileComponentDetector, IDefaultOffCom
             }
         }
 
-        if (this.HasUnresolvedVariables(reference))
+        if (DockerReferenceUtility.HasUnresolvedVariables(reference))
         {
             return null;
         }
 
         return DockerReferenceUtility.ParseFamiliarName(reference);
-    }
-
-    private bool HasUnresolvedVariables(string reference)
-    {
-        return new Regex("[${}]").IsMatch(reference);
     }
 }

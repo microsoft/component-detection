@@ -38,6 +38,15 @@ public static class DockerReferenceUtility
     private const string LEGACYDEFAULTDOMAIN = "index.docker.io";
     private const string OFFICIALREPOSITORYNAME = "library";
 
+    /// <summary>
+    /// Returns true if the reference contains unresolved variable placeholders (e.g., ${VAR}, {{ .Values.tag }}).
+    /// Such references should be skipped before calling <see cref="ParseFamiliarName"/> or <see cref="ParseQualifiedName"/>.
+    /// </summary>
+    /// <param name="reference">The image reference string to check.</param>
+    /// <returns><c>true</c> if the reference contains variable placeholder characters; otherwise <c>false</c>.</returns>
+    public static bool HasUnresolvedVariables(string reference) =>
+        reference.IndexOfAny(['$', '{', '}']) >= 0;
+
     public static DockerReference ParseQualifiedName(string qualifiedName)
     {
         var regexp = DockerRegex.ReferenceRegexp;

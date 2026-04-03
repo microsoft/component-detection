@@ -5,11 +5,14 @@ using Microsoft.ComponentDetection.Common.Telemetry;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Detectors.CocoaPods;
 using Microsoft.ComponentDetection.Detectors.Conan;
+using Microsoft.ComponentDetection.Detectors.DockerCompose;
 using Microsoft.ComponentDetection.Detectors.Dockerfile;
 using Microsoft.ComponentDetection.Detectors.DotNet;
 using Microsoft.ComponentDetection.Detectors.Go;
 using Microsoft.ComponentDetection.Detectors.Gradle;
+using Microsoft.ComponentDetection.Detectors.Helm;
 using Microsoft.ComponentDetection.Detectors.Ivy;
+using Microsoft.ComponentDetection.Detectors.Kubernetes;
 using Microsoft.ComponentDetection.Detectors.Linux;
 using Microsoft.ComponentDetection.Detectors.Linux.Factories;
 using Microsoft.ComponentDetection.Detectors.Linux.Filters;
@@ -87,6 +90,9 @@ public static class ServiceCollectionExtensions
         // Dockerfile
         services.AddSingleton<IComponentDetector, DockerfileComponentDetector>();
 
+        // Docker Compose
+        services.AddSingleton<IComponentDetector, DockerComposeComponentDetector>();
+
         // DotNet
         services.AddSingleton<IComponentDetector, DotNetComponentDetector>();
 
@@ -96,6 +102,9 @@ public static class ServiceCollectionExtensions
 
         // Gradle
         services.AddSingleton<IComponentDetector, GradleComponentDetector>();
+
+        // Helm
+        services.AddSingleton<IComponentDetector, HelmComponentDetector>();
 
         // Ivy
         services.AddSingleton<IComponentDetector, IvyDetector>();
@@ -170,6 +179,9 @@ public static class ServiceCollectionExtensions
 
         // uv
         services.AddSingleton<IComponentDetector, UvLockComponentDetector>();
+
+        // Kubernetes
+        services.AddSingleton<IComponentDetector, KubernetesComponentDetector>();
 
         return services;
     }
