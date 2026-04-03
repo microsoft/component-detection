@@ -115,6 +115,36 @@ public class DetectorRestrictionServiceTests
     }
 
     [TestMethod]
+    public void WithRestrictions_DetectorIdAllowListTakesPrecedenceOverCategoryForDefaultOff()
+    {
+        // When both AllowedDetectorIds and AllowedDetectorCategories are specified,
+        // the ID allow-list should constrain which DefaultOff detectors are re-introduced
+        // by category expansion — i.e., the result is an intersection, not a union.
+        var r = new DetectorRestrictions();
+
+        // A regular (on-by-default) detector in the "Containers" category.
+        var containerDetectorMock = this.GenerateDetector("ContainerDetector", ["Containers"]);
+
+        // Two DefaultOff detectors also in the "Containers" category.
+        var defaultOff1 = this.GenerateDetector("defaultOff1", ["Containers", "DockerCompose"]).As<IDefaultOffComponentDetector>();
+        var defaultOff2 = this.GenerateDetector("defaultOff2", ["Containers", "Helm"]).As<IDefaultOffComponentDetector>();
+
+        this.detectors = this.detectors.Union([containerDetectorMock.Object, defaultOff1.Object, defaultOff2.Object]).ToArray();
+
+        // Explicitly allow only "ContainerDetector" by ID; also filter by "Containers" category.
+        // Without the fix, AllowedDetectorCategories would add defaultOff1 and defaultOff2 even
+        // though they're not in AllowedDetectorIds. With the fix, only ContainerDetector appears.
+        r.AllowedDetectorIds = ["ContainerDetector"];
+        r.AllowedDetectorCategories = ["Containers"];
+
+        var restrictedDetectors = this.serviceUnderTest.ApplyRestrictions(r, this.detectors);
+        restrictedDetectors
+            .Should().Contain(containerDetectorMock.Object)
+            .And.NotContain(defaultOff1.Object)
+            .And.NotContain(defaultOff2.Object);
+    }
+
+    [TestMethod]
     public void WithRestrictions_FiltersBasedOnDetectorId()
     {
         var r = new DetectorRestrictions

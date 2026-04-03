@@ -72,8 +72,17 @@ internal class DetectorRestrictionService : IDetectorRestrictionService
 
             detectors = detectors.Where(CategoryFilter).ToList();
 
-            // Also include DefaultOff detectors whose categories match
-            detectors = detectors.Union(defaultOffDetectors.Where(CategoryFilter)).ToList();
+            // Also include DefaultOff detectors whose categories match.
+            // If an explicit detector ID allow-list was provided, respect it here too so that
+            // category expansion cannot re-introduce detectors that were excluded by that list.
+            var matchingDefaultOffDetectors = defaultOffDetectors.Where(CategoryFilter);
+            if (restrictions.AllowedDetectorIds != null && restrictions.AllowedDetectorIds.Any())
+            {
+                matchingDefaultOffDetectors = matchingDefaultOffDetectors
+                    .Where(d => restrictions.AllowedDetectorIds.Contains(d.Id, StringComparer.OrdinalIgnoreCase));
+            }
+
+            detectors = detectors.Union(matchingDefaultOffDetectors).ToList();
 
             if (!detectors.Any())
             {
