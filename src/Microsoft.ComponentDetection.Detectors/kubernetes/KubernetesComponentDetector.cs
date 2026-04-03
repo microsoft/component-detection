@@ -11,6 +11,7 @@ using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.Internal;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.Extensions.Logging;
+using YamlDotNet.Core;
 using YamlDotNet.RepresentationModel;
 
 public class KubernetesComponentDetector : FileComponentDetector, IDefaultOffComponentDetector
@@ -60,6 +61,13 @@ public class KubernetesComponentDetector : FileComponentDetector, IDefaultOffCom
                 contents = await reader.ReadToEndAsync(cancellationToken);
             }
 
+            // Skip files that aren't Kubernetes manifests.
+            if (!contents.Contains("apiVersion", StringComparison.Ordinal) ||
+                !contents.Contains("kind", StringComparison.Ordinal))
+            {
+                return;
+            }
+
             var yaml = new YamlStream();
             yaml.Load(new StringReader(contents));
 
@@ -79,32 +87,14 @@ public class KubernetesComponentDetector : FileComponentDetector, IDefaultOffCom
                 this.ExtractImageReferences(rootMapping, singleFileComponentRecorder, file.Location);
             }
         }
+        catch (YamlException e)
+        {
+            this.Logger.LogWarning(e, "Failed to parse YAML file: {Location}", file.Location);
+        }
         catch (Exception e)
         {
-            // Not all YAML files are Kubernetes manifests; silently skip parse errors
-            this.Logger.LogDebug(e, "Skipping non-Kubernetes YAML file: {Location}", file.Location);
+            this.Logger.LogError(e, "Unexpected error processing file: {Location}", file.Location);
         }
-    }
-
-    private bool IsKubernetesManifest(YamlMappingNode rootMapping)
-    {
-        string apiVersion = null;
-        string kind = null;
-
-        foreach (var entry in rootMapping.Children)
-        {
-            var key = (entry.Key as YamlScalarNode)?.Value;
-            if (string.Equals(key, "apiVersion", StringComparison.OrdinalIgnoreCase))
-            {
-                apiVersion = (entry.Value as YamlScalarNode)?.Value;
-            }
-            else if (string.Equals(key, "kind", StringComparison.OrdinalIgnoreCase))
-            {
-                kind = (entry.Value as YamlScalarNode)?.Value;
-            }
-        }
-
-        return !string.IsNullOrEmpty(apiVersion) && !string.IsNullOrEmpty(kind) && KubernetesKinds.Contains(kind);
     }
 
     private static YamlMappingNode GetMappingChild(YamlMappingNode parent, string key)
@@ -131,6 +121,27 @@ public class KubernetesComponentDetector : FileComponentDetector, IDefaultOffCom
         }
 
         return null;
+    }
+
+    private bool IsKubernetesManifest(YamlMappingNode rootMapping)
+    {
+        string apiVersion = null;
+        string kind = null;
+
+        foreach (var entry in rootMapping.Children)
+        {
+            var key = (entry.Key as YamlScalarNode)?.Value;
+            if (string.Equals(key, "apiVersion", StringComparison.OrdinalIgnoreCase))
+            {
+                apiVersion = (entry.Value as YamlScalarNode)?.Value;
+            }
+            else if (string.Equals(key, "kind", StringComparison.OrdinalIgnoreCase))
+            {
+                kind = (entry.Value as YamlScalarNode)?.Value;
+            }
+        }
+
+        return !string.IsNullOrEmpty(apiVersion) && !string.IsNullOrEmpty(kind) && KubernetesKinds.Contains(kind);
     }
 
     private void ExtractImageReferences(YamlMappingNode rootMapping, ISingleFileComponentRecorder recorder, string fileLocation)
