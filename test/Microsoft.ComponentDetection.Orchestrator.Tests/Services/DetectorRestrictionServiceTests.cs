@@ -83,6 +83,38 @@ public class DetectorRestrictionServiceTests
     }
 
     [TestMethod]
+    public void WithRestrictions_AllowsDefaultOffWithCategoryRestriction()
+    {
+        var r = new DetectorRestrictions();
+        var detectorMock = this.GenerateDetector("defaultOffDetector", ["Containers", "DockerCompose"]);
+        var defaultOffDetectorMock = detectorMock.As<IDefaultOffComponentDetector>();
+        this.detectors = this.detectors.Union([defaultOffDetectorMock.Object]).ToArray();
+        r.AllowedDetectorCategories = ["Containers"];
+        var restrictedDetectors = this.serviceUnderTest.ApplyRestrictions(r, this.detectors);
+        restrictedDetectors
+            .Should().Contain(defaultOffDetectorMock.Object);
+    }
+
+    [TestMethod]
+    public void WithRestrictions_AllowsMultipleDefaultOffWithCategoryRestriction()
+    {
+        var r = new DetectorRestrictions();
+        var detector1Mock = this.GenerateDetector("detector1", ["Containers", "DockerCompose"]);
+        var defaultOff1 = detector1Mock.As<IDefaultOffComponentDetector>();
+        var detector2Mock = this.GenerateDetector("detector2", ["Containers", "Helm"]);
+        var defaultOff2 = detector2Mock.As<IDefaultOffComponentDetector>();
+        var detector3Mock = this.GenerateDetector("detector3", ["Pip"]);
+        var defaultOff3 = detector3Mock.As<IDefaultOffComponentDetector>();
+        this.detectors = this.detectors.Union([defaultOff1.Object, defaultOff2.Object, defaultOff3.Object]).ToArray();
+        r.AllowedDetectorCategories = ["Containers"];
+        var restrictedDetectors = this.serviceUnderTest.ApplyRestrictions(r, this.detectors);
+        restrictedDetectors
+            .Should().Contain(defaultOff1.Object)
+            .And.Contain(defaultOff2.Object)
+            .And.NotContain(defaultOff3.Object);
+    }
+
+    [TestMethod]
     public void WithRestrictions_FiltersBasedOnDetectorId()
     {
         var r = new DetectorRestrictions

@@ -26,7 +26,7 @@ The detector attempts to resolve Dockerfile variables using the `ResolveVariable
 
 ## Known limitations
 
-- **DefaultOff Status**: This detector must be explicitly enabled using `--DetectorArgs DockerReference=EnableIfDefaultOff`
+- **DefaultOff Status**: This detector must be explicitly enabled using `--DetectorArgs DockerReference=EnableIfDefaultOff`, or by enabling all container detectors at once with `--DetectorCategories Containers`
 - **Variable Resolution**: Image references containing unresolved Dockerfile `ARG` or `ENV` variables are not reported, which may lead to under-reporting in Dockerfiles that heavily use build-time variables
 - **No Version Pinning Validation**: The detector does not warn about unpinned image versions (e.g., `latest` tags), which are generally discouraged in production Dockerfiles
 - **No Digest Support**: While Docker supports content-addressable image references using SHA256 digests (e.g., `ubuntu@sha256:abc...`), the parsing and reporting of these references depends on the underlying `DockerReferenceUtility.ParseFamiliarName()` implementation

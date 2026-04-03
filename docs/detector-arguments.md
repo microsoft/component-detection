@@ -28,9 +28,11 @@ dotnet run --project "src\Microsoft.ComponentDetection\Microsoft.ComponentDetect
   --DetectorCategories        A comma separated list with the categories of
                               components that are going to be scanned. The
                               detectors that are going to run are the ones that
-                              belongs to the categories.The possible values are:
+                              belongs to the categories. DefaultOff detectors
+                              matching a requested category are also enabled.
+                              The possible values are:
                               Npm, NuGet, Maven, RubyGems, Cargo, Pip, GoMod,
-                              CocoaPods, Linux.
+                              CocoaPods, Linux, Containers.
 
   --DetectorsFilter           A comma separated list with the identifiers of the
                               specific detectors to be used. This is meant to be

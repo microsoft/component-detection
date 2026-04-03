@@ -56,4 +56,7 @@ public enum DetectorClass
 
     /// <summary>Indicates a detector applies to Kubernetes manifest image references.</summary>
     Kubernetes,
+
+    /// <summary>Indicates a detector applies to container image references across Dockerfile, Docker Compose, Helm, and Kubernetes.</summary>
+    Containers,
 }

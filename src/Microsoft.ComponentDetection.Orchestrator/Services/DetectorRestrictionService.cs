@@ -59,7 +59,7 @@ internal class DetectorRestrictionService : IDetectorRestrictionService
         // If someone specifies an "allow list", use it, otherwise assume everything is allowed
         if (detectorCategories != null && detectorCategories.Any() && !detectorCategories.Contains(allCategoryName))
         {
-            detectors = detectors.Where(x =>
+            bool CategoryFilter(IComponentDetector x)
             {
                 if (x.Categories != null)
                 {
@@ -68,7 +68,13 @@ internal class DetectorRestrictionService : IDetectorRestrictionService
                 }
 
                 return false;
-            }).ToList();
+            }
+
+            detectors = detectors.Where(CategoryFilter).ToList();
+
+            // Also include DefaultOff detectors whose categories match
+            detectors = detectors.Union(defaultOffDetectors.Where(CategoryFilter)).ToList();
+
             if (!detectors.Any())
             {
                 throw new InvalidDetectorCategoriesException($"Categories {string.Join(",", detectorCategories)} did not match any available detectors.");
