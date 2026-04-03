@@ -151,18 +151,18 @@ public class HelmComponentDetector : FileComponentDetector, IDefaultOffComponent
             var childKey = (child.Key as YamlScalarNode)?.Value;
             var childValue = (child.Value as YamlScalarNode)?.Value;
 
-            switch (childKey?.ToLowerInvariant())
+            switch (childKey?.ToUpperInvariant())
             {
-                case "repository":
+                case "REPOSITORY":
                     repository = childValue;
                     break;
-                case "tag":
+                case "TAG":
                     tag = childValue;
                     break;
-                case "digest":
+                case "DIGEST":
                     digest = childValue;
                     break;
-                case "registry":
+                case "REGISTRY":
                     registry = childValue;
                     break;
                 default:
