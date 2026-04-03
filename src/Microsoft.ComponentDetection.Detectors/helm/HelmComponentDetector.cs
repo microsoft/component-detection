@@ -41,7 +41,7 @@ public class HelmComponentDetector : FileComponentDetector, IDefaultOffComponent
 
     public override int Version => 1;
 
-    public override IEnumerable<string> Categories => [Enum.GetName(typeof(DetectorClass), DetectorClass.Helm), Enum.GetName(typeof(DetectorClass), DetectorClass.Containers)];
+    public override IEnumerable<string> Categories => [Enum.GetName(typeof(DetectorClass), DetectorClass.Helm)];
 
     public override async Task<IndividualDetectorScanResult> ExecuteDetectorAsync(ScanRequest request, CancellationToken cancellationToken = default)
     {

@@ -44,7 +44,7 @@ Images containing unresolved variables (e.g., `{{ .Values.tag }}`) are skipped t
 
 ## Known limitations
 
-- **DefaultOff Status**: This detector must be explicitly enabled using `--DetectorArgs Helm=EnableIfDefaultOff`, or by enabling all container detectors at once with `--DetectorCategories Containers`
+- **DefaultOff Status**: This detector must be explicitly enabled using `--DetectorArgs Helm=EnableIfDefaultOff`
 - **Values Files Only**: Only files with `values` in the name are parsed for image references. Chart.yaml files are matched but not processed
 - **Variable Resolution**: Image references containing unresolved Helm template expressions are not reported
 - **No Dependency Graph**: All detected images are registered as independent components without parent-child relationships

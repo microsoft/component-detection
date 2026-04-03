@@ -42,7 +42,7 @@ Images containing unresolved variables (e.g., `${TAG}` or `{{ .Values.tag }}`) a
 
 ## Known limitations
 
-- **DefaultOff Status**: This detector must be explicitly enabled using `--DetectorArgs DockerCompose=EnableIfDefaultOff`, or by enabling all container detectors at once with `--DetectorCategories Containers`
+- **DefaultOff Status**: This detector must be explicitly enabled using `--DetectorArgs DockerCompose=EnableIfDefaultOff`
 - **Variable Resolution**: Image references containing unresolved environment variables or template expressions are not reported, which may lead to under-reporting in compose files that heavily use variable substitution
 - **Build-Only Services**: Services that only specify a `build` directive without an `image` field are not reported
 - **No Dependency Graph**: All detected images are registered as independent components without parent-child relationships

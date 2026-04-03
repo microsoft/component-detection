@@ -39,7 +39,7 @@ public class DockerComposeComponentDetector : FileComponentDetector, IDefaultOff
 
     public override int Version => 1;
 
-    public override IEnumerable<string> Categories => [Enum.GetName(typeof(DetectorClass), DetectorClass.DockerCompose), Enum.GetName(typeof(DetectorClass), DetectorClass.Containers)];
+    public override IEnumerable<string> Categories => [Enum.GetName(typeof(DetectorClass), DetectorClass.DockerCompose)];
 
     protected override async Task OnFileFoundAsync(ProcessRequest processRequest, IDictionary<string, string> detectorArgs, CancellationToken cancellationToken = default)
     {
