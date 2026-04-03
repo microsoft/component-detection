@@ -213,4 +213,38 @@ services:
         var components = componentRecorder.GetDetectedComponents();
         components.Should().ContainSingle();
     }
+
+    [TestMethod]
+    public async Task TestCompose_ComposeOverrideFileAsync()
+    {
+        var composeYaml = @"
+services:
+  web:
+    image: nginx:1.21
+";
+
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+            .WithFile("compose.override.yml", composeYaml, ["compose.*.yml"])
+            .ExecuteDetectorAsync();
+
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+        componentRecorder.GetDetectedComponents().Should().ContainSingle();
+    }
+
+    [TestMethod]
+    public async Task TestCompose_ComposeOverrideYamlAsync()
+    {
+        var composeYaml = @"
+services:
+  db:
+    image: postgres:15
+";
+
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+            .WithFile("compose.prod.yaml", composeYaml, ["compose.*.yaml"])
+            .ExecuteDetectorAsync();
+
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+        componentRecorder.GetDetectedComponents().Should().ContainSingle();
+    }
 }

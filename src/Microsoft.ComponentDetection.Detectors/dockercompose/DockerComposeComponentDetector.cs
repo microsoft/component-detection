@@ -32,6 +32,7 @@ public class DockerComposeComponentDetector : FileComponentDetector, IDefaultOff
         "docker-compose.yml", "docker-compose.yaml",
         "docker-compose.*.yml", "docker-compose.*.yaml",
         "compose.yml", "compose.yaml",
+        "compose.*.yml", "compose.*.yaml",
     ];
 
     public override IEnumerable<ComponentType> SupportedComponentTypes => [ComponentType.DockerReference];
