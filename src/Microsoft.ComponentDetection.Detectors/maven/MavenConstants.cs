@@ -15,9 +15,4 @@ public static class MavenConstants
     /// Detector ID for MvnCliComponentDetector.
     /// </summary>
     public const string MvnCliDetectorId = "MvnCli";
-
-    /// <summary>
-    /// Detector ID for MavenWithFallbackDetector.
-    /// </summary>
-    public const string MavenWithFallbackDetectorId = "MavenWithFallback";
 }
