@@ -174,6 +174,29 @@ services:
     }
 
     [TestMethod]
+    public async Task TestCompose_ImageWithTagAndDigestAsync()
+    {
+        var composeYaml = @"
+services:
+  app:
+    image: nginx:1.21@sha256:abc123def456abc123def456abc123def456abc123def456abc123def456abc1
+";
+
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+            .WithFile("docker-compose.yaml", composeYaml)
+            .ExecuteDetectorAsync();
+
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+        var components = componentRecorder.GetDetectedComponents();
+        components.Should().ContainSingle();
+
+        var dockerRef = components.First().Component as DockerReferenceComponent;
+        dockerRef.Should().NotBeNull();
+        dockerRef.Tag.Should().Be("1.21");
+        dockerRef.Digest.Should().Be("sha256:abc123def456abc123def456abc123def456abc123def456abc123def456abc1");
+    }
+
+    [TestMethod]
     public async Task TestCompose_OverrideFileAsync()
     {
         var composeYaml = @"

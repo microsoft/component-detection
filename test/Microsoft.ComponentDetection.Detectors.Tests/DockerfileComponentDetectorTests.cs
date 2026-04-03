@@ -103,6 +103,25 @@ COPY --from=build /app/dist /usr/share/nginx/html
     }
 
     [TestMethod]
+    public async Task TestDockerfile_WithTagAndDigestAsync()
+    {
+        var dockerfile = "FROM nginx:1.21@sha256:abc123def456abc123def456abc123def456abc123def456abc123def456abc1\n";
+
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+            .WithFile("dockerfile", dockerfile)
+            .ExecuteDetectorAsync();
+
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+        var components = componentRecorder.GetDetectedComponents();
+        components.Should().ContainSingle();
+
+        var dockerRef = components.First().Component as DockerReferenceComponent;
+        dockerRef.Should().NotBeNull();
+        dockerRef.Tag.Should().Be("1.21");
+        dockerRef.Digest.Should().Be("sha256:abc123def456abc123def456abc123def456abc123def456abc123def456abc1");
+    }
+
+    [TestMethod]
     public async Task TestDockerfile_CopyFromExternalImageAsync()
     {
         var dockerfile = @"FROM nginx:1.21

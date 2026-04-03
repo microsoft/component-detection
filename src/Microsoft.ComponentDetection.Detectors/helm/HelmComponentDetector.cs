@@ -171,13 +171,14 @@ public class HelmComponentDetector : FileComponentDetector, IDefaultOffComponent
             ? $"{registry}/{repository}"
             : repository;
 
+        if (!string.IsNullOrWhiteSpace(tag))
+        {
+            imageRef = $"{imageRef}:{tag}";
+        }
+
         if (!string.IsNullOrWhiteSpace(digest))
         {
             imageRef = $"{imageRef}@{digest}";
-        }
-        else if (!string.IsNullOrWhiteSpace(tag))
-        {
-            imageRef = $"{imageRef}:{tag}";
         }
 
         this.TryRegisterImageReference(imageRef, recorder, fileLocation);

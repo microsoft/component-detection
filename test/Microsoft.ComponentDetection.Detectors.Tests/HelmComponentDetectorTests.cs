@@ -174,6 +174,70 @@ image:
     }
 
     [TestMethod]
+    public async Task TestHelm_StructuredImageWithTagAndDigestAsync()
+    {
+        var valuesYaml = @"
+image:
+  repository: nginx
+  tag: ""1.21""
+  digest: ""sha256:abc123def456abc123def456abc123def456abc123def456abc123def456abc1""
+";
+
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+            .WithFile("values.yaml", valuesYaml)
+            .ExecuteDetectorAsync();
+
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+        var components = componentRecorder.GetDetectedComponents();
+        components.Should().ContainSingle();
+
+        var dockerRef = components.First().Component as DockerReferenceComponent;
+        dockerRef.Should().NotBeNull();
+        dockerRef.Digest.Should().Be("sha256:abc123def456abc123def456abc123def456abc123def456abc123def456abc1");
+    }
+
+    [TestMethod]
+    public async Task TestHelm_DirectImageStringWithDigestAsync()
+    {
+        var valuesYaml = @"
+image: nginx@sha256:abc123def456abc123def456abc123def456abc123def456abc123def456abc1
+";
+
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+            .WithFile("values.yaml", valuesYaml)
+            .ExecuteDetectorAsync();
+
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+        var components = componentRecorder.GetDetectedComponents();
+        components.Should().ContainSingle();
+
+        var dockerRef = components.First().Component as DockerReferenceComponent;
+        dockerRef.Should().NotBeNull();
+        dockerRef.Digest.Should().Be("sha256:abc123def456abc123def456abc123def456abc123def456abc123def456abc1");
+    }
+
+    [TestMethod]
+    public async Task TestHelm_DirectImageStringWithTagAndDigestAsync()
+    {
+        var valuesYaml = @"
+image: nginx:1.21@sha256:abc123def456abc123def456abc123def456abc123def456abc123def456abc1
+";
+
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+            .WithFile("values.yaml", valuesYaml)
+            .ExecuteDetectorAsync();
+
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+        var components = componentRecorder.GetDetectedComponents();
+        components.Should().ContainSingle();
+
+        var dockerRef = components.First().Component as DockerReferenceComponent;
+        dockerRef.Should().NotBeNull();
+        dockerRef.Tag.Should().Be("1.21");
+        dockerRef.Digest.Should().Be("sha256:abc123def456abc123def456abc123def456abc123def456abc123def456abc1");
+    }
+
+    [TestMethod]
     public async Task TestHelm_ImagesInSequenceAsync()
     {
         var valuesYaml = @"
