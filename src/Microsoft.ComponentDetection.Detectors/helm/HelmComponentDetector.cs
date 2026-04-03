@@ -194,6 +194,11 @@ public class HelmComponentDetector : FileComponentDetector, IDefaultOffComponent
 
     private void TryRegisterImageReference(string imageReference, ISingleFileComponentRecorder recorder, string fileLocation)
     {
+        if (DockerReferenceUtility.HasUnresolvedVariables(imageReference))
+        {
+            return;
+        }
+
         try
         {
             var dockerRef = DockerReferenceUtility.ParseFamiliarName(imageReference);

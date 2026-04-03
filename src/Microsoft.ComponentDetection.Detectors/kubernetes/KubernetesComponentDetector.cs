@@ -227,6 +227,11 @@ public class KubernetesComponentDetector : FileComponentDetector, IDefaultOffCom
 
     private void TryRegisterImageReference(string imageReference, ISingleFileComponentRecorder recorder, string fileLocation)
     {
+        if (DockerReferenceUtility.HasUnresolvedVariables(imageReference))
+        {
+            return;
+        }
+
         try
         {
             var dockerRef = DockerReferenceUtility.ParseFamiliarName(imageReference);
