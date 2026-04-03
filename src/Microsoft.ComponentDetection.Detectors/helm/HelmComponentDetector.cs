@@ -117,6 +117,9 @@ public class HelmComponentDetector : FileComponentDetector, IDefaultOffComponent
                     case YamlMappingNode imageMapping:
                         this.TryRegisterStructuredImageReference(imageMapping, recorder, fileLocation);
                         break;
+
+                    default:
+                        break;
                 }
             }
             else if (entry.Value is YamlMappingNode childMapping)
@@ -161,6 +164,8 @@ public class HelmComponentDetector : FileComponentDetector, IDefaultOffComponent
                     break;
                 case "registry":
                     registry = childValue;
+                    break;
+                default:
                     break;
             }
         }
