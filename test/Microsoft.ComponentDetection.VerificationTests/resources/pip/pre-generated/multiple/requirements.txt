@@ -9,4 +9,4 @@ keyring==25.2.1
 more-itertools==10.2.0
 numpy==1.26.4
 pywin32-ctypes==0.2.2
-requests==2.32.4
+requests==2.33.0
