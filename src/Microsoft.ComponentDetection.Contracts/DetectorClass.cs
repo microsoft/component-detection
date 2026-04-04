@@ -47,4 +47,7 @@ public enum DetectorClass
 
     /// <summary> Indicates a detector applies to Swift packages.</summary>
     Swift,
+
+    /// <summary>Indicates a detector applies to system packages (RPM, APK, DPKG, etc.).</summary>
+    SystemPackages,
 }

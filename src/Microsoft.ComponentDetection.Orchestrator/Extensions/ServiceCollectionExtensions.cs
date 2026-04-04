@@ -19,6 +19,7 @@ using Microsoft.ComponentDetection.Detectors.NuGet;
 using Microsoft.ComponentDetection.Detectors.Pip;
 using Microsoft.ComponentDetection.Detectors.Pnpm;
 using Microsoft.ComponentDetection.Detectors.Poetry;
+using Microsoft.ComponentDetection.Detectors.Rpm;
 using Microsoft.ComponentDetection.Detectors.Ruby;
 using Microsoft.ComponentDetection.Detectors.Rust;
 using Microsoft.ComponentDetection.Detectors.Spdx;
@@ -115,6 +116,9 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IArtifactFilter, Mariner2ArtifactFilter>();
         services.AddSingleton<IComponentDetector, LinuxContainerDetector>();
         services.AddSingleton<IComponentDetector, LinuxApplicationLayerDetector>();
+
+        // RPM
+        services.AddSingleton<IComponentDetector, RpmDbDetector>();
 
         // Maven
         services.AddSingleton<IMavenCommandService, MavenCommandService>();
