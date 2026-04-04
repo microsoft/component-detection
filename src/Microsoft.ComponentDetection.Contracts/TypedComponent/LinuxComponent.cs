@@ -2,6 +2,7 @@
 namespace Microsoft.ComponentDetection.Contracts.TypedComponent;
 
 using System;
+using System.Collections.Generic;
 using System.Text.Json.Serialization;
 using PackageUrl;
 
@@ -60,10 +61,20 @@ public class LinuxComponent : TypedComponent
             {
                 packageType = "rpm";
             }
+            else if (this.IsAlpine())
+            {
+                packageType = "apk";
+            }
 
             if (packageType != null)
             {
-                return new PackageUrl(packageType, this.Distribution, this.Name, this.Version, null, null);
+                var distroId = this.GetDistroId();
+                var qualifiers = new SortedDictionary<string, string>
+                {
+                    { "distro", $"{distroId}-{this.Release}" },
+                };
+
+                return new PackageUrl(packageType, distroId, this.Name, this.Version, qualifiers, null);
             }
 
             return null;
@@ -95,5 +106,20 @@ public class LinuxComponent : TypedComponent
     private bool IsRHEL()
     {
         return this.Distribution.Equals("RED HAT ENTERPRISE LINUX", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private bool IsAlpine()
+    {
+        return this.Distribution.Equals("ALPINE", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private string GetDistroId()
+    {
+        if (this.IsRHEL())
+        {
+            return "redhat";
+        }
+
+        return this.Distribution.ToLowerInvariant();
     }
 }

@@ -47,6 +47,9 @@ public class PurlGenerationTests
 
         ubuntuComponent.PackageUrl.Type.Should().Be("deb");
         debianComponent.PackageUrl.Type.Should().Be("deb");
+
+        ubuntuComponent.PackageUrl.Qualifiers["distro"].Should().Be("ubuntu-18.04");
+        debianComponent.PackageUrl.Qualifiers["distro"].Should().Be("debian-buster");
     }
 
     [TestMethod]
@@ -61,17 +64,29 @@ public class PurlGenerationTests
         centosComponent.PackageUrl.Type.Should().Be("rpm");
         fedoraComponent.PackageUrl.Type.Should().Be("rpm");
         rhelComponent.PackageUrl.Type.Should().Be("rpm");
+
+        centosComponent.PackageUrl.Qualifiers["distro"].Should().Be("centos-18.04");
+        fedoraComponent.PackageUrl.Qualifiers["distro"].Should().Be("fedora-18.04");
+        rhelComponent.PackageUrl.Qualifiers["distro"].Should().Be("redhat-18.04");
     }
 
     [TestMethod]
-    public void AlpineAndUnknownDoNotHavePurls()
+    public void AlpineIsApkType()
     {
-        // Alpine is not yet defined
-        // https://github.com/package-url/purl-spec/blame/180c46d266c45aa2bd81a2038af3f78e87bb4a25/README.rst#L711
+        // Alpine uses "apk" purl type
+        // https://github.com/package-url/purl-spec/blob/master/PURL-TYPES.rst#apk
         var alpineComponent = new LinuxComponent("Alpine", "3.13", "bash", "1");
+
+        alpineComponent.PackageUrl.Type.Should().Be("apk");
+        alpineComponent.PackageUrl.Namespace.Should().Be("alpine");
+        alpineComponent.PackageUrl.Qualifiers["distro"].Should().Be("alpine-3.13");
+    }
+
+    [TestMethod]
+    public void UnknownDistroDoesNotHavePurl()
+    {
         var unknownLinuxComponent = new LinuxComponent("Linux", "0", "bash", "1'");
 
-        alpineComponent.PackageUrl.Should().BeNull();
         unknownLinuxComponent.PackageUrl.Should().BeNull();
     }
 
@@ -86,6 +101,16 @@ public class PurlGenerationTests
 
         ubuntuComponent.PackageUrl.Namespace.Should().Be("ubuntu");
         fedoraComponent.PackageUrl.Namespace.Should().Be("fedora");
+    }
+
+    [TestMethod]
+    public void RhelNamespaceIsRedhat()
+    {
+        // RHEL should use "redhat" as the namespace and distro id, matching Syft conventions
+        var rhelComponent = new LinuxComponent("Red Hat Enterprise Linux", "9.0", "bash", "1");
+
+        rhelComponent.PackageUrl.Namespace.Should().Be("redhat");
+        rhelComponent.PackageUrl.Qualifiers["distro"].Should().Be("redhat-9.0");
     }
 
     [TestMethod]
