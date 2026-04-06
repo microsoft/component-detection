@@ -35,7 +35,6 @@ public class HelmComponentDetector : FileComponentDetector, IDefaultOffComponent
     public override IList<string> SearchPatterns { get; } =
     [
         "Chart.yaml", "Chart.yml",
-        "chart.yaml", "chart.yml",
         "*values*.yaml", "*values*.yml",
     ];
 
