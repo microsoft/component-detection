@@ -1,3 +1,4 @@
+#nullable enable
 namespace Microsoft.ComponentDetection.Detectors.DockerCompose;
 
 using System;
@@ -38,7 +39,7 @@ public class DockerComposeComponentDetector : FileComponentDetector, IDefaultOff
 
     public override int Version => 1;
 
-    public override IEnumerable<string> Categories => [Enum.GetName(typeof(DetectorClass), DetectorClass.DockerCompose)];
+    public override IEnumerable<string> Categories => [Enum.GetName(typeof(DetectorClass), DetectorClass.DockerCompose)!];
 
     protected override async Task OnFileFoundAsync(ProcessRequest processRequest, IDictionary<string, string> detectorArgs, CancellationToken cancellationToken = default)
     {
@@ -77,7 +78,7 @@ public class DockerComposeComponentDetector : FileComponentDetector, IDefaultOff
         }
     }
 
-    private static YamlMappingNode GetMappingChild(YamlMappingNode parent, string key)
+    private static YamlMappingNode? GetMappingChild(YamlMappingNode parent, string key)
     {
         foreach (var entry in parent.Children)
         {

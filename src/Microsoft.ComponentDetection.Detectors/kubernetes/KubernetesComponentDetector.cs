@@ -1,3 +1,4 @@
+#nullable enable
 namespace Microsoft.ComponentDetection.Detectors.Kubernetes;
 
 using System;
@@ -46,7 +47,7 @@ public class KubernetesComponentDetector : FileComponentDetector, IDefaultOffCom
 
     public override int Version => 1;
 
-    public override IEnumerable<string> Categories => [Enum.GetName(typeof(DetectorClass), DetectorClass.Kubernetes)];
+    public override IEnumerable<string> Categories => [Enum.GetName(typeof(DetectorClass), DetectorClass.Kubernetes)!];
 
     protected override async Task OnFileFoundAsync(ProcessRequest processRequest, IDictionary<string, string> detectorArgs, CancellationToken cancellationToken = default)
     {
@@ -97,7 +98,7 @@ public class KubernetesComponentDetector : FileComponentDetector, IDefaultOffCom
         }
     }
 
-    private static YamlMappingNode GetMappingChild(YamlMappingNode parent, string key)
+    private static YamlMappingNode? GetMappingChild(YamlMappingNode parent, string key)
     {
         foreach (var entry in parent.Children)
         {
@@ -110,7 +111,7 @@ public class KubernetesComponentDetector : FileComponentDetector, IDefaultOffCom
         return null;
     }
 
-    private static YamlSequenceNode GetSequenceChild(YamlMappingNode parent, string key)
+    private static YamlSequenceNode? GetSequenceChild(YamlMappingNode parent, string key)
     {
         foreach (var entry in parent.Children)
         {
@@ -125,17 +126,17 @@ public class KubernetesComponentDetector : FileComponentDetector, IDefaultOffCom
 
     private bool IsKubernetesManifest(YamlMappingNode rootMapping)
     {
-        string apiVersion = null;
-        string kind = null;
+        string? apiVersion = null;
+        string? kind = null;
 
         foreach (var entry in rootMapping.Children)
         {
-            var key = (entry.Key as YamlScalarNode)?.Value;
-            if (string.Equals(key, "apiVersion", StringComparison.OrdinalIgnoreCase))
+            var entryKey = (entry.Key as YamlScalarNode)?.Value;
+            if (string.Equals(entryKey, "apiVersion", StringComparison.OrdinalIgnoreCase))
             {
                 apiVersion = (entry.Value as YamlScalarNode)?.Value;
             }
-            else if (string.Equals(key, "kind", StringComparison.OrdinalIgnoreCase))
+            else if (string.Equals(entryKey, "kind", StringComparison.OrdinalIgnoreCase))
             {
                 kind = (entry.Value as YamlScalarNode)?.Value;
             }

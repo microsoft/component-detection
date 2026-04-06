@@ -1,3 +1,4 @@
+#nullable enable
 namespace Microsoft.ComponentDetection.Detectors.Helm;
 
 using System;
@@ -41,7 +42,7 @@ public class HelmComponentDetector : FileComponentDetector, IDefaultOffComponent
 
     public override int Version => 1;
 
-    public override IEnumerable<string> Categories => [Enum.GetName(typeof(DetectorClass), DetectorClass.Helm)];
+    public override IEnumerable<string> Categories => [Enum.GetName(typeof(DetectorClass), DetectorClass.Helm)!];
 
     public override async Task<IndividualDetectorScanResult> ExecuteDetectorAsync(ScanRequest request, CancellationToken cancellationToken = default)
     {
@@ -64,7 +65,7 @@ public class HelmComponentDetector : FileComponentDetector, IDefaultOffComponent
             if (IsChartFile(Path.GetFileName(request.ComponentStream.Location)))
             {
                 this.helmChartDirectories.TryAdd(
-                    Path.GetDirectoryName(request.ComponentStream.Location), true);
+                    Path.GetDirectoryName(request.ComponentStream.Location)!, true);
             }
         }
 
@@ -72,7 +73,7 @@ public class HelmComponentDetector : FileComponentDetector, IDefaultOffComponent
         return allRequests
             .Where(r =>
                 IsValuesFile(Path.GetFileName(r.ComponentStream.Location)) &&
-                this.helmChartDirectories.ContainsKey(Path.GetDirectoryName(r.ComponentStream.Location)))
+                this.helmChartDirectories.ContainsKey(Path.GetDirectoryName(r.ComponentStream.Location)!))
             .ToObservable();
     }
 
@@ -178,10 +179,10 @@ public class HelmComponentDetector : FileComponentDetector, IDefaultOffComponent
 
     private void TryRegisterStructuredImageReference(YamlMappingNode imageMapping, ISingleFileComponentRecorder recorder, string fileLocation)
     {
-        string repository = null;
-        string tag = null;
-        string digest = null;
-        string registry = null;
+        string? repository = null;
+        string? tag = null;
+        string? digest = null;
+        string? registry = null;
 
         foreach (var child in imageMapping.Children)
         {

@@ -1,3 +1,4 @@
+#nullable enable
 namespace Microsoft.ComponentDetection.Detectors.Tests;
 
 using System.IO;
