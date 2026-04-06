@@ -18,6 +18,7 @@ The Kubernetes detector parses Kubernetes manifest YAML files to extract Docker 
 The detector recognizes the following Kubernetes resource kinds:
 
 - `Pod`
+- `PodTemplate`
 - `Deployment`
 - `StatefulSet`
 - `DaemonSet`
