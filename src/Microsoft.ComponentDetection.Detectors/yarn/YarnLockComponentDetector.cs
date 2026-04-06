@@ -8,11 +8,11 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
-using global::DotNet.Globbing;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.Internal;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.ComponentDetection.Detectors.Npm;
+using Microsoft.Extensions.FileSystemGlobbing;
 using Microsoft.Extensions.Logging;
 
 public class YarnLockComponentDetector : FileComponentDetector
@@ -259,21 +259,26 @@ public class YarnLockComponentDetector : FileComponentDetector
 
     private void GetWorkspaceDependencies(IList<string> yarnWorkspaces, DirectoryInfo root, IDictionary<string, IDictionary<string, bool>> dependencies, IDictionary<string, string> workspaceDependencyVsLocationMap)
     {
-        var ignoreCase = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
-
-        var globOptions = new GlobOptions()
-        {
-            Evaluation = new EvaluationOptions()
-            {
-                CaseInsensitive = ignoreCase,
-            },
-        };
+        var comparison = RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
+            ? StringComparison.OrdinalIgnoreCase
+            : StringComparison.Ordinal;
 
         foreach (var workspacePattern in yarnWorkspaces)
         {
-            var glob = Glob.Parse($"{root.FullName.Replace('\\', '/')}/{workspacePattern}/package.json", globOptions);
+            var matcher = new Matcher(comparison);
+            matcher.AddInclude($"{workspacePattern}/package.json");
 
-            var componentStreams = this.ComponentStreamEnumerableFactory.GetComponentStreams(root, (file) => glob.IsMatch(file.FullName.Replace('\\', '/')), null, true);
+            var rootPath = root.FullName.Replace('\\', '/');
+
+            var componentStreams = this.ComponentStreamEnumerableFactory.GetComponentStreams(
+                root,
+                (file) =>
+                {
+                    var relativePath = Path.GetRelativePath(root.FullName, file.FullName).Replace('\\', '/');
+                    return matcher.Match(relativePath).HasMatches;
+                },
+                null,
+                true);
 
             foreach (var stream in componentStreams)
             {
