@@ -31,4 +31,14 @@ public class PatternMatchingUtilityTests
 
         matcher(input).Should().Be(expected);
     }
+
+    [TestMethod]
+    public void PatternMatcher_MultiplePatterns_MatchesAny()
+    {
+        var matcher = PatternMatchingUtility.GetFilePatternMatcher(["a*", "*b"]);
+
+        matcher("apple").Should().BeTrue();
+        matcher("crab").Should().BeTrue();
+        matcher("middle").Should().BeFalse();
+    }
 }
