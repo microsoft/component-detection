@@ -147,7 +147,7 @@ public class HelmComponentDetector : FileComponentDetector, IDefaultOffComponent
                 {
                     // image: nginx:1.21
                     case YamlScalarNode scalarValue when !string.IsNullOrWhiteSpace(scalarValue.Value):
-                        this.TryRegisterImageReference(scalarValue.Value, recorder, fileLocation);
+                        DockerReferenceUtility.TryRegisterImageReference(scalarValue.Value, recorder);
                         break;
 
                     // image:
@@ -228,27 +228,6 @@ public class HelmComponentDetector : FileComponentDetector, IDefaultOffComponent
             imageRef = $"{imageRef}@{digest}";
         }
 
-        this.TryRegisterImageReference(imageRef, recorder, fileLocation);
-    }
-
-    private void TryRegisterImageReference(string imageReference, ISingleFileComponentRecorder recorder, string fileLocation)
-    {
-        if (DockerReferenceUtility.HasUnresolvedVariables(imageReference))
-        {
-            return;
-        }
-
-        try
-        {
-            var dockerRef = DockerReferenceUtility.ParseFamiliarName(imageReference);
-            if (dockerRef != null)
-            {
-                recorder.RegisterUsage(new DetectedComponent(dockerRef.ToTypedDockerReferenceComponent()));
-            }
-        }
-        catch (Exception e)
-        {
-            this.Logger.LogWarning(e, "Failed to parse image reference '{ImageReference}' in {Location}", imageReference, fileLocation);
-        }
+        DockerReferenceUtility.TryRegisterImageReference(imageRef, recorder);
     }
 }

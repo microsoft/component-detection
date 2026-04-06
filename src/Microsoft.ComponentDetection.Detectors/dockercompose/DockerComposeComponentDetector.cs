@@ -115,31 +115,10 @@ public class DockerComposeComponentDetector : FileComponentDetector, IDefaultOff
                     var imageRef = (entry.Value as YamlScalarNode)?.Value;
                     if (!string.IsNullOrWhiteSpace(imageRef))
                     {
-                        this.TryRegisterImageReference(imageRef, recorder, fileLocation);
+                        DockerReferenceUtility.TryRegisterImageReference(imageRef, recorder);
                     }
                 }
             }
-        }
-    }
-
-    private void TryRegisterImageReference(string imageReference, ISingleFileComponentRecorder recorder, string fileLocation)
-    {
-        if (DockerReferenceUtility.HasUnresolvedVariables(imageReference))
-        {
-            return;
-        }
-
-        try
-        {
-            var dockerRef = DockerReferenceUtility.ParseFamiliarName(imageReference);
-            if (dockerRef != null)
-            {
-                recorder.RegisterUsage(new DetectedComponent(dockerRef.ToTypedDockerReferenceComponent()));
-            }
-        }
-        catch (Exception e)
-        {
-            this.Logger.LogWarning(e, "Failed to parse image reference '{ImageReference}' in {Location}", imageReference, fileLocation);
         }
     }
 }

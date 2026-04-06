@@ -47,6 +47,44 @@ public static class DockerReferenceUtility
     public static bool HasUnresolvedVariables(string reference) =>
         reference.IndexOfAny(['$', '{', '}']) >= 0;
 
+    /// <summary>
+    /// Attempts to parse an image reference string into a <see cref="DockerReference"/>.
+    /// Returns <c>null</c> if the reference contains unresolved variables or cannot be parsed.
+    /// </summary>
+    /// <param name="imageReference">The image reference string to parse.</param>
+    /// <returns>A <see cref="DockerReference"/> if parsing succeeds; otherwise <c>null</c>.</returns>
+    public static DockerReference? TryParseImageReference(string imageReference)
+    {
+        if (HasUnresolvedVariables(imageReference))
+        {
+            return null;
+        }
+
+        try
+        {
+            return ParseFamiliarName(imageReference);
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// Parses an image reference and registers it with the recorder if valid.
+    /// Silently skips references with unresolved variables or that cannot be parsed.
+    /// </summary>
+    /// <param name="imageReference">The image reference string to parse.</param>
+    /// <param name="recorder">The component recorder to register the image with.</param>
+    public static void TryRegisterImageReference(string imageReference, ISingleFileComponentRecorder recorder)
+    {
+        var dockerRef = TryParseImageReference(imageReference);
+        if (dockerRef != null)
+        {
+            recorder.RegisterUsage(new DetectedComponent(dockerRef.ToTypedDockerReferenceComponent()));
+        }
+    }
+
     public static DockerReference ParseQualifiedName(string qualifiedName)
     {
         var regexp = DockerRegex.ReferenceRegexp;

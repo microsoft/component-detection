@@ -142,20 +142,10 @@ public class DockerfileComponentDetector : FileComponentDetector, IDefaultOffCom
 
         if (!string.IsNullOrEmpty(stageNameReference))
         {
-            if (DockerReferenceUtility.HasUnresolvedVariables(stageNameReference))
-            {
-                return null;
-            }
-
-            return DockerReferenceUtility.ParseFamiliarName(stageNameReference);
+            return DockerReferenceUtility.TryParseImageReference(stageNameReference);
         }
 
-        if (DockerReferenceUtility.HasUnresolvedVariables(reference))
-        {
-            return null;
-        }
-
-        return DockerReferenceUtility.ParseFamiliarName(reference);
+        return DockerReferenceUtility.TryParseImageReference(reference);
     }
 
     private DockerReference ParseCopyInstruction(DockerfileConstruct construct, char escapeChar, Dictionary<string, string> stageNameMap)
@@ -171,21 +161,9 @@ public class DockerfileComponentDetector : FileComponentDetector, IDefaultOffCom
         stageNameMap.TryGetValue(reference, out var stageNameReference);
         if (!string.IsNullOrEmpty(stageNameReference))
         {
-            if (DockerReferenceUtility.HasUnresolvedVariables(stageNameReference))
-            {
-                return null;
-            }
-            else
-            {
-                return DockerReferenceUtility.ParseFamiliarName(stageNameReference);
-            }
+            return DockerReferenceUtility.TryParseImageReference(stageNameReference);
         }
 
-        if (DockerReferenceUtility.HasUnresolvedVariables(reference))
-        {
-            return null;
-        }
-
-        return DockerReferenceUtility.ParseFamiliarName(reference);
+        return DockerReferenceUtility.TryParseImageReference(reference);
     }
 }
