@@ -1,5 +1,6 @@
 namespace Microsoft.ComponentDetection.Detectors.Tests;
 
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using AwesomeAssertions;
@@ -196,6 +197,23 @@ image: nginx:1.21
         // No Chart.yaml provided — the values file should be skipped entirely.
         var (scanResult, componentRecorder) = await this.DetectorTestUtility
             .WithFile("values.yaml", valuesYaml)
+            .ExecuteDetectorAsync();
+
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+        componentRecorder.GetDetectedComponents().Should().BeEmpty();
+    }
+
+    [TestMethod]
+    public async Task TestHelm_ValuesInDifferentDirectoryFromChartSkippedAsync()
+    {
+        var valuesYaml = @"
+image: nginx:1.21
+";
+
+        // Chart.yaml exists but in a different directory than values.yaml.
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+            .WithFile("Chart.yaml", MinimalChartYaml, fileLocation: Path.Combine(Path.GetTempPath(), "chartA", "Chart.yaml"))
+            .WithFile("values.yaml", valuesYaml, fileLocation: Path.Combine(Path.GetTempPath(), "chartB", "values.yaml"))
             .ExecuteDetectorAsync();
 
         scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
