@@ -41,4 +41,12 @@ public class PatternMatchingUtilityTests
         matcher("crab").Should().BeTrue();
         matcher("middle").Should().BeFalse();
     }
+
+    [TestMethod]
+    public void PatternMatcher_EmptyPatterns_DoesNotThrow()
+    {
+        var matcher = PatternMatchingUtility.GetFilePatternMatcher([]);
+
+        matcher("anything").Should().BeFalse();
+    }
 }
