@@ -254,6 +254,12 @@ internal class DetectorProcessingService : IDetectorProcessingService
 
         foreach (var directoryExclusion in directoryExclusionList)
         {
+            if (!allowWindowsPaths && directoryExclusion.Contains('\\'))
+            {
+                this.logger.LogDebug("Skipping directory exclusion pattern {Pattern} because it contains backslashes and Windows-style paths are not enabled.", directoryExclusion);
+                continue;
+            }
+
             var pattern = directoryExclusion.Replace('\\', '/');
             matcher.AddInclude(pattern);
 
@@ -269,7 +275,17 @@ internal class DetectorProcessingService : IDetectorProcessingService
         {
             var path = Path.Combine(directoryName.ToString(), name.ToString()).Replace('\\', '/');
 
-            if (matcher.Match(path).HasMatches)
+            // FileSystemGlobbing requires relative paths for matching.
+            // Strip the leading slash (or drive letter on Windows) so that
+            // patterns like **/dir/** can match against the full directory path.
+            var relativePath = path.StartsWith('/') ? path[1..] : path;
+            if (relativePath.Length > 1 && relativePath[1] == ':')
+            {
+                // Windows drive letter, e.g. "C:/foo" → "foo"
+                relativePath = relativePath[3..];
+            }
+
+            if (matcher.Match(relativePath).HasMatches)
             {
                 this.logger.LogDebug("Excluding folder {Path} because it matched a directory exclusion glob.", path);
                 return true;

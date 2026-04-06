@@ -268,8 +268,6 @@ public class YarnLockComponentDetector : FileComponentDetector
             var matcher = new Matcher(comparison);
             matcher.AddInclude($"{workspacePattern}/package.json");
 
-            var rootPath = root.FullName.Replace('\\', '/');
-
             var componentStreams = this.ComponentStreamEnumerableFactory.GetComponentStreams(
                 root,
                 (file) =>

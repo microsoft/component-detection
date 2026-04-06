@@ -441,7 +441,7 @@ public class RustSbomDetector : FileComponentDetector
     /// <param name="excludes">Collection of glob patterns to exclude workspace members (e.g., "examples/*", "tests/*").</param>
     /// <remarks>
     /// This method normalizes all paths and patterns for cross-platform compatibility.
-    /// On Windows, patterns are evaluated case-insensitively, while on other platforms they are case-sensitive.
+    /// Patterns are always evaluated case-insensitively.
     /// The glob rule is used to determine whether files in descendant directories should be skipped during detection.
     /// </remarks>
     private void AddGlobRule(string root, IEnumerable<string> includes, IEnumerable<string> excludes)
