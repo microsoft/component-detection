@@ -47,7 +47,7 @@ public class KubernetesComponentDetector : FileComponentDetector, IDefaultOffCom
 
     public override int Version => 1;
 
-    public override IEnumerable<string> Categories => [Enum.GetName(typeof(DetectorClass), DetectorClass.Kubernetes)!];
+    public override IEnumerable<string> Categories => [nameof(DetectorClass.Kubernetes)];
 
     protected override async Task OnFileFoundAsync(ProcessRequest processRequest, IDictionary<string, string> detectorArgs, CancellationToken cancellationToken = default)
     {
