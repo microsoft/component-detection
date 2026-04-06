@@ -19,6 +19,7 @@ public class KubernetesComponentDetector : FileComponentDetector, IDefaultOffCom
     private static readonly HashSet<string> KubernetesKinds = new(StringComparer.OrdinalIgnoreCase)
     {
         "Pod",
+        "PodTemplate",
         "Deployment",
         "StatefulSet",
         "DaemonSet",
