@@ -29,6 +29,20 @@ public class KubernetesComponentDetector : FileComponentDetector, IDefaultOffCom
         "ReplicationController",
     };
 
+    // Pre-computed "kind: <value>" patterns for fast text-based rejection.
+    // Ordered by prevalence: most common K8s kinds first for early exit.
+    private static readonly string[] KubernetesKindPatterns = [
+        "kind: Deployment",
+        "kind: Pod",
+        "kind: StatefulSet",
+        "kind: DaemonSet",
+        "kind: Job",
+        "kind: CronJob",
+        "kind: ReplicaSet",
+        "kind: PodTemplate",
+        "kind: ReplicationController",
+    ];
+
     public KubernetesComponentDetector(
         IComponentStreamEnumerableFactory componentStreamEnumerableFactory,
         IObservableDirectoryWalkerFactory walkerFactory,
@@ -62,9 +76,8 @@ public class KubernetesComponentDetector : FileComponentDetector, IDefaultOffCom
                 contents = await reader.ReadToEndAsync(cancellationToken);
             }
 
-            // Skip files that aren't Kubernetes manifests.
-            if (!contents.Contains("apiVersion", StringComparison.Ordinal) ||
-                !contents.Contains("kind", StringComparison.Ordinal))
+            // Fast text-based rejection before expensive YAML parsing.
+            if (!LooksLikeKubernetesManifest(contents))
             {
                 return;
             }
@@ -79,7 +92,7 @@ public class KubernetesComponentDetector : FileComponentDetector, IDefaultOffCom
                     continue;
                 }
 
-                if (!this.IsKubernetesManifest(rootMapping))
+                if (!IsKubernetesManifest(rootMapping))
                 {
                     continue;
                 }
@@ -124,7 +137,35 @@ public class KubernetesComponentDetector : FileComponentDetector, IDefaultOffCom
         return null;
     }
 
-    private bool IsKubernetesManifest(YamlMappingNode rootMapping)
+    /// <summary>
+    /// Fast text-based pre-filter. Checks for "apiVersion" and a known "kind: &lt;K8sKind&gt;"
+    /// pattern using span operations to reject non-Kubernetes YAML without YAML parsing.
+    /// </summary>
+    private static bool LooksLikeKubernetesManifest(string contents)
+    {
+        var span = contents.AsSpan();
+
+        // Must contain apiVersion to be any kind of K8s manifest.
+        if (span.IndexOf("apiVersion".AsSpan(), StringComparison.Ordinal) < 0)
+        {
+            return false;
+        }
+
+        // Check for a known "kind: <K8sResource>" pattern. This is much more specific
+        // than just checking for "kind" and eliminates non-K8s YAML files (GitHub Actions,
+        // Azure Pipelines, CloudFormation, etc.) that also contain generic "kind" keys.
+        foreach (var pattern in KubernetesKindPatterns)
+        {
+            if (span.IndexOf(pattern.AsSpan(), StringComparison.OrdinalIgnoreCase) >= 0)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static bool IsKubernetesManifest(YamlMappingNode rootMapping)
     {
         string? apiVersion = null;
         string? kind = null;
@@ -139,6 +180,12 @@ public class KubernetesComponentDetector : FileComponentDetector, IDefaultOffCom
             else if (string.Equals(entryKey, "kind", StringComparison.OrdinalIgnoreCase))
             {
                 kind = (entry.Value as YamlScalarNode)?.Value;
+            }
+
+            // Both fields found — stop iterating remaining keys.
+            if (apiVersion != null && kind != null)
+            {
+                break;
             }
         }
 
