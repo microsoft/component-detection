@@ -329,6 +329,34 @@ spec:
     }
 
     [TestMethod]
+    public async Task TestK8s_ImageWithTagAndDigestAsync()
+    {
+        var manifest = @"
+apiVersion: v1
+kind: Pod
+metadata:
+  name: my-pod
+spec:
+  containers:
+    - name: app
+      image: nginx:1.21@sha256:abc123def456abc123def456abc123def456abc123def456abc123def456abc1
+";
+
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+            .WithFile("pod.yaml", manifest)
+            .ExecuteDetectorAsync();
+
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+        var components = componentRecorder.GetDetectedComponents();
+        components.Should().ContainSingle();
+
+        var dockerRef = components.First().Component as DockerReferenceComponent;
+        dockerRef.Should().NotBeNull();
+        dockerRef.Tag.Should().Be("1.21");
+        dockerRef.Digest.Should().Be("sha256:abc123def456abc123def456abc123def456abc123def456abc123def456abc1");
+    }
+
+    [TestMethod]
     public async Task TestK8s_UnresolvedVariablesSkippedAsync()
     {
         var manifest = @"
