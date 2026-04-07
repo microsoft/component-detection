@@ -17,6 +17,7 @@ public class SafeFileEnumerable : IEnumerable<MatchedFile>
     private readonly IPathUtilityService pathUtilityService;
     private readonly bool recursivelyScanDirectories;
     private readonly Func<FileInfo, bool> fileMatchingPredicate;
+    private readonly PatternMatchingUtility.CompiledMatcher compiledMatcher;
 
     private readonly EnumerationOptions enumerationOptions;
 
@@ -32,6 +33,7 @@ public class SafeFileEnumerable : IEnumerable<MatchedFile>
         this.recursivelyScanDirectories = recursivelyScanDirectories;
         this.pathUtilityService = pathUtilityService;
         this.enumeratedDirectories = previouslyEnumeratedDirectories;
+        this.compiledMatcher = PatternMatchingUtility.Compile(searchPatterns);
 
         this.enumerationOptions = new EnumerationOptions()
         {
@@ -58,14 +60,8 @@ public class SafeFileEnumerable : IEnumerable<MatchedFile>
                     throw new InvalidOperationException("Encountered directory when expecting a file");
                 }
 
-                var foundPattern = entry.FileName.ToString();
-                foreach (var searchPattern in this.searchPatterns)
-                {
-                    if (PathUtilityService.MatchesPattern(searchPattern, ref entry))
-                    {
-                        foundPattern = searchPattern;
-                    }
-                }
+                var foundPattern = this.compiledMatcher.GetMatchingPattern(entry.FileName)
+                    ?? entry.FileName.ToString();
 
                 return new MatchedFile() { File = fi, Pattern = foundPattern };
             },
@@ -78,15 +74,7 @@ public class SafeFileEnumerable : IEnumerable<MatchedFile>
                     return false;
                 }
 
-                foreach (var searchPattern in this.searchPatterns)
-                {
-                    if (PathUtilityService.MatchesPattern(searchPattern, ref entry))
-                    {
-                        return true;
-                    }
-                }
-
-                return false;
+                return this.compiledMatcher.IsMatch(entry.FileName);
             },
             ShouldRecursePredicate = (ref FileSystemEntry entry) =>
             {

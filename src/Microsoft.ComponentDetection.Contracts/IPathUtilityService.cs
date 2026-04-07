@@ -29,14 +29,6 @@ public interface IPathUtilityService
     bool IsFileBelowAnother(string aboveFilePath, string belowFilePath);
 
     /// <summary>
-    /// Returns true if file name matches pattern.
-    /// </summary>
-    /// <param name="searchPattern">Search pattern.</param>
-    /// <param name="fileName">File name without directory.</param>
-    /// <returns>Returns true if file name matches a pattern, otherwise false.</returns>
-    bool MatchesPattern(string searchPattern, string fileName);
-
-    /// <summary>
     /// Normalize the path directory seperator to / on Unix systems and on Windows.
     /// This is the behavior we want as Windows accepts / as a separator.
     /// </summary>

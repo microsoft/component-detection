@@ -2,38 +2,61 @@ namespace Microsoft.ComponentDetection.Common;
 
 using System;
 using System.Collections.Generic;
+using System.IO.Enumeration;
 using System.Linq;
 
 public static class PatternMatchingUtility
 {
-    public delegate bool FilePatternMatcher(ReadOnlySpan<char> span);
+    public static bool MatchesPattern(string pattern, string fileName) =>
+        FileSystemName.MatchesSimpleExpression(pattern, fileName, ignoreCase: true);
 
-    public static FilePatternMatcher GetFilePatternMatcher(IEnumerable<string> patterns)
+    public static string? GetMatchingPattern(string fileName, IEnumerable<string> patterns)
     {
-        var matchers = patterns.Select<string, FilePatternMatcher>(pattern => pattern switch
+        var span = fileName.AsSpan();
+        foreach (var pattern in patterns)
         {
-            _ when pattern.StartsWith('*') && pattern.EndsWith('*') =>
-                pattern.Length <= 2
-                    ? _ => true
-                    : span => span.Contains(pattern.AsSpan(1, pattern.Length - 2), StringComparison.Ordinal),
-            _ when pattern.StartsWith('*') =>
-                span => span.EndsWith(pattern.AsSpan(1), StringComparison.Ordinal),
-            _ when pattern.EndsWith('*') =>
-                span => span.StartsWith(pattern.AsSpan(0, pattern.Length - 1), StringComparison.Ordinal),
-            _ => span => span.Equals(pattern.AsSpan(), StringComparison.Ordinal),
-        }).ToList();
-
-        return span =>
-        {
-            foreach (var matcher in matchers)
+            if (FileSystemName.MatchesSimpleExpression(pattern, span, ignoreCase: true))
             {
-                if (matcher(span))
+                return pattern;
+            }
+        }
+
+        return null;
+    }
+
+    internal static CompiledMatcher Compile(IEnumerable<string> patterns) => new(patterns);
+
+    internal sealed class CompiledMatcher
+    {
+        private readonly string[] patterns;
+
+        public CompiledMatcher(IEnumerable<string> patterns) =>
+            this.patterns = patterns.ToArray();
+
+        public bool IsMatch(ReadOnlySpan<char> fileName)
+        {
+            foreach (var pattern in this.patterns)
+            {
+                if (FileSystemName.MatchesSimpleExpression(pattern, fileName, ignoreCase: true))
                 {
                     return true;
                 }
             }
 
             return false;
-        };
+        }
+
+        public string? GetMatchingPattern(ReadOnlySpan<char> fileName)
+        {
+            foreach (var pattern in this.patterns)
+            {
+                if (FileSystemName.MatchesSimpleExpression(pattern, fileName, ignoreCase: true))
+                {
+                    return pattern;
+                }
+            }
+
+            return null;
+        }
     }
 }
