@@ -1,5 +1,6 @@
 namespace Microsoft.ComponentDetection.Contracts.TypedComponent;
 
+using System;
 using System.Runtime.Serialization;
 using System.Text.Json.Serialization;
 
@@ -55,6 +56,11 @@ public enum ComponentType : byte
 
     [EnumMember]
     ContainerImageReference = 16,
+
+    /// <summary>Backward compatibility alias for <see cref="ContainerImageReference"/>.</summary>
+    [EnumMember]
+    [Obsolete("Use ContainerImageReference instead.")]
+    DockerReference = ContainerImageReference,
 
     [EnumMember]
     Conan = 17,

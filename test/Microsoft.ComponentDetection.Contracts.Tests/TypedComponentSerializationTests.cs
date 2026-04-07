@@ -273,8 +273,12 @@ public class TypedComponentSerializationTests
     [TestMethod]
     public void TypedComponentMapping_AllMappedTypes_AreUnique()
     {
-        // Ensure no two discriminators map to the same type
-        var mappedTypes = TypedComponentMapping.TypeDiscriminatorToType.Values.ToList();
+        // Ensure no two discriminators map to the same type, except for known backward-compatibility aliases
+        var backwardCompatAliases = new System.Collections.Generic.HashSet<string>(StringComparer.OrdinalIgnoreCase) { "DockerReference" };
+        var mappedTypes = TypedComponentMapping.TypeDiscriminatorToType
+            .Where(kvp => !backwardCompatAliases.Contains(kvp.Key))
+            .Select(kvp => kvp.Value)
+            .ToList();
         var uniqueTypes = mappedTypes.Distinct().ToList();
 
         mappedTypes.Should().HaveCount(uniqueTypes.Count, "Each component type should map to a unique concrete type");

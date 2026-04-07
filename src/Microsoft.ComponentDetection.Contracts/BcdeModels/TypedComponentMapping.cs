@@ -32,6 +32,7 @@ internal static class TypedComponentMapping
         { nameof(ComponentType.Linux), typeof(LinuxComponent) },
         { nameof(ComponentType.Conda), typeof(CondaComponent) },
         { nameof(ComponentType.ContainerImageReference), typeof(ContainerImageReferenceComponent) },
+        { "DockerReference", typeof(ContainerImageReferenceComponent) },
         { nameof(ComponentType.Vcpkg), typeof(VcpkgComponent) },
         { nameof(ComponentType.Spdx), typeof(SpdxComponent) },
         { nameof(ComponentType.DotNet), typeof(DotNetComponent) },
