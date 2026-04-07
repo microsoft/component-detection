@@ -10,38 +10,43 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 public class PatternMatchingUtilityTests
 {
     [TestMethod]
-    public void PatternMatcher_Matches_StartsWith()
+    [DataRow("test*", "test123", true)]
+    [DataRow("test*", "123test", false)]
+    [DataRow("*test", "123test", true)]
+    [DataRow("*test", "test123", false)]
+    [DataRow("test", "test", true)]
+    [DataRow("test", "123test", false)]
+    [DataRow("*test*", "123test456", true)]
+    [DataRow("*test*", "test456", true)]
+    [DataRow("*test*", "123test", true)]
+    [DataRow("*test*", "test", true)]
+    [DataRow("*test*", "tes", false)]
+    [DataRow("*", "anything", true)]
+    [DataRow("*", "", true)]
+    [DataRow("**", "anything", true)]
+    [DataRow("**", "", true)]
+    public void PatternMatcher_MatchesExpected(string pattern, string input, bool expected)
     {
-        var pattern = "test*";
-        var input = "test123";
-
         var matcher = PatternMatchingUtility.GetFilePatternMatcher([pattern]);
 
-        matcher(input).Should().BeTrue();
-        matcher("123test").Should().BeFalse();
+        matcher(input).Should().Be(expected);
     }
 
     [TestMethod]
-    public void PatternMatcher_Matches_EndsWith()
+    public void PatternMatcher_MultiplePatterns_MatchesAny()
     {
-        var pattern = "*test";
-        var input = "123test";
+        var matcher = PatternMatchingUtility.GetFilePatternMatcher(["a*", "*b"]);
 
-        var matcher = PatternMatchingUtility.GetFilePatternMatcher([pattern]);
-
-        matcher(input).Should().BeTrue();
-        matcher("test123").Should().BeFalse();
+        matcher("apple").Should().BeTrue();
+        matcher("crab").Should().BeTrue();
+        matcher("middle").Should().BeFalse();
     }
 
     [TestMethod]
-    public void PatternMatcher_Matches_Exact()
+    public void PatternMatcher_EmptyPatterns_DoesNotThrow()
     {
-        var pattern = "test";
-        var input = "test";
+        var matcher = PatternMatchingUtility.GetFilePatternMatcher([]);
 
-        var matcher = PatternMatchingUtility.GetFilePatternMatcher([pattern]);
-
-        matcher(input).Should().BeTrue();
-        matcher("123test").Should().BeFalse();
+        matcher("anything").Should().BeFalse();
     }
 }

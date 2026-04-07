@@ -10,7 +10,6 @@ using System.Linq;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
-using DotNet.Globbing;
 using Microsoft.ComponentDetection.Common;
 using Microsoft.ComponentDetection.Common.DependencyGraph;
 using Microsoft.ComponentDetection.Common.Telemetry.Records;
@@ -18,6 +17,7 @@ using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.BcdeModels;
 using Microsoft.ComponentDetection.Orchestrator.Commands;
 using Microsoft.ComponentDetection.Orchestrator.Experiments;
+using Microsoft.Extensions.FileSystemGlobbing;
 using Microsoft.Extensions.Logging;
 using Spectre.Console;
 using static System.Environment;
@@ -249,35 +249,49 @@ internal class DetectorProcessingService : IDetectorProcessingService
             };
         }
 
-        var minimatchers = new Dictionary<string, Glob>();
-
-        var globOptions = new GlobOptions()
-        {
-            Evaluation = new EvaluationOptions()
-            {
-                CaseInsensitive = ignoreCase,
-            },
-        };
+        var comparison = ignoreCase ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
+        var matcher = new Matcher(comparison);
 
         foreach (var directoryExclusion in directoryExclusionList)
         {
-            minimatchers.Add(directoryExclusion, Glob.Parse(allowWindowsPaths ? directoryExclusion : /* [] escapes special chars */ directoryExclusion.Replace("\\", "[\\]"), globOptions));
+            if (!allowWindowsPaths && directoryExclusion.Contains('\\'))
+            {
+                this.logger.LogDebug("Skipping directory exclusion pattern {Pattern} because it contains backslashes and Windows-style paths are not enabled.", directoryExclusion);
+                continue;
+            }
+
+            var pattern = directoryExclusion.Replace('\\', '/');
+            matcher.AddInclude(pattern);
+
+            // FileSystemGlobbing's ** does not match zero trailing segments,
+            // so **/dir/** won't match "dir" itself. Add **/dir to cover that case.
+            if (pattern.EndsWith("/**"))
+            {
+                matcher.AddInclude(pattern[..^3]);
+            }
         }
 
         return (name, directoryName) =>
         {
-            var path = Path.Combine(directoryName.ToString(), name.ToString());
+            var path = Path.Combine(directoryName.ToString(), name.ToString()).Replace('\\', '/');
 
-            return minimatchers.Any(minimatcherKeyValue =>
+            // FileSystemGlobbing requires relative paths for matching.
+            // Strip the leading slash (or drive letter on Windows) so that
+            // patterns like **/dir/** can match against the full directory path.
+            var relativePath = path.StartsWith('/') ? path[1..] : path;
+            if (relativePath.Length > 1 && relativePath[1] == ':')
             {
-                if (minimatcherKeyValue.Value.IsMatch(path))
-                {
-                    this.logger.LogDebug("Excluding folder {Path} because it matched glob {Glob}.", path, minimatcherKeyValue.Key);
-                    return true;
-                }
+                // Windows drive letter, e.g. "C:/foo" → "foo"
+                relativePath = relativePath[3..];
+            }
 
-                return false;
-            });
+            if (matcher.Match(relativePath).HasMatches)
+            {
+                this.logger.LogDebug("Excluding folder {Path} because it matched a directory exclusion glob.", path);
+                return true;
+            }
+
+            return false;
         };
     }
 
