@@ -30,7 +30,7 @@ using System;
 using System.Diagnostics.CodeAnalysis;
 using Microsoft.ComponentDetection.Contracts;
 
-public static class DockerReferenceUtility
+public static class ContainerImageReferenceUtility
 {
     // NameTotalLengthMax is the maximum total number of characters in a repository name.
     private const int NameTotalLengthMax = 255;
@@ -38,9 +38,9 @@ public static class DockerReferenceUtility
     private const string LEGACYDEFAULTDOMAIN = "index.docker.io";
     private const string OFFICIALREPOSITORYNAME = "library";
 
-    public static DockerReference ParseQualifiedName(string qualifiedName)
+    public static ContainerImageReference ParseQualifiedName(string qualifiedName)
     {
-        var regexp = DockerRegex.ReferenceRegexp;
+        var regexp = ContainerImageRegex.ReferenceRegexp;
         if (!regexp.IsMatch(qualifiedName))
         {
             if (string.IsNullOrWhiteSpace(qualifiedName))
@@ -66,7 +66,7 @@ public static class DockerReferenceUtility
 
         var reference = new Reference();
 
-        var nameMatch = DockerRegex.AnchoredNameRegexp.Match(name).Groups;
+        var nameMatch = ContainerImageRegex.AnchoredNameRegexp.Match(name).Groups;
         if (nameMatch.Count == 3)
         {
             reference.Domain = nameMatch[1].Value;
@@ -86,7 +86,7 @@ public static class DockerReferenceUtility
             reference.Digest = matches[3].Value;
         }
 
-        return CreateDockerReference(reference);
+        return CreateContainerImageReference(reference);
     }
 
     public static (string Domain, string Remainder) SplitDockerDomain(string name)
@@ -123,9 +123,9 @@ public static class DockerReferenceUtility
     }
 
     [SuppressMessage("Globalization", "CA1308:Normalize strings to uppercase", Justification = "Explicitly checks for character case.")]
-    public static DockerReference ParseFamiliarName(string name)
+    public static ContainerImageReference ParseFamiliarName(string name)
     {
-        if (DockerRegex.AnchoredIdentifierRegexp.IsMatch(name))
+        if (ContainerImageRegex.AnchoredIdentifierRegexp.IsMatch(name))
         {
             throw new ReferenceNameNotCanonicalException(name);
         }
@@ -151,23 +151,23 @@ public static class DockerReferenceUtility
         return ParseQualifiedName($"{domain}/{remainder}");
     }
 
-    public static DockerReference ParseAll(string name)
+    public static ContainerImageReference ParseAll(string name)
     {
-        if (DockerRegex.AnchoredIdentifierRegexp.IsMatch(name))
+        if (ContainerImageRegex.AnchoredIdentifierRegexp.IsMatch(name))
         {
-            return CreateDockerReference(new Reference { Digest = $"sha256:{name}" });
+            return CreateContainerImageReference(new Reference { Digest = $"sha256:{name}" });
         }
 
         if (DigestUtility.CheckDigest(name, false))
         {
-            return CreateDockerReference(new Reference { Digest = name });
+            return CreateContainerImageReference(new Reference { Digest = name });
         }
 
         return ParseFamiliarName(name);
     }
 
-    private static DockerReference CreateDockerReference(Reference options)
+    private static ContainerImageReference CreateContainerImageReference(Reference options)
     {
-        return DockerReference.CreateDockerReference(options.Repository, options.Domain, options.Digest, options.Tag);
+        return ContainerImageReference.CreateContainerImageReference(options.Repository, options.Domain, options.Digest, options.Tag);
     }
 }

@@ -42,8 +42,8 @@ public enum DetectorClass
     /// <summary>Indicates a detector applies to Vcpkg packages.</summary>
     Vcpkg,
 
-    /// <summary>Indicates a detector applies to Docker references.</summary>
-    DockerReference,
+    /// <summary>Indicates a detector applies to container image references.</summary>
+    ContainerImageReference,
 
     /// <summary> Indicates a detector applies to Swift packages.</summary>
     Swift,

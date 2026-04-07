@@ -54,7 +54,7 @@ public enum ComponentType : byte
     Vcpkg = 15,
 
     [EnumMember]
-    DockerReference = 16,
+    ContainerImageReference = 16,
 
     [EnumMember]
     Conan = 17,

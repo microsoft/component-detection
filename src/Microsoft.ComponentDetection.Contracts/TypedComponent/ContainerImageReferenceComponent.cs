@@ -3,20 +3,20 @@ namespace Microsoft.ComponentDetection.Contracts.TypedComponent;
 
 using System.Text.Json.Serialization;
 
-public class DockerReferenceComponent : TypedComponent
+public class ContainerImageReferenceComponent : TypedComponent
 {
-    public DockerReferenceComponent(string hash, string repository = null, string tag = null)
+    public ContainerImageReferenceComponent(string hash, string repository = null, string tag = null)
     {
-        this.Digest = this.ValidateRequiredInput(hash, nameof(this.Digest), nameof(ComponentType.DockerReference));
+        this.Digest = this.ValidateRequiredInput(hash, nameof(this.Digest), nameof(ComponentType.ContainerImageReference));
         this.Repository = repository;
         this.Tag = tag;
     }
 
-    public DockerReferenceComponent(DockerReference reference)
+    public ContainerImageReferenceComponent(ContainerImageReference reference)
     {
     }
 
-    public DockerReferenceComponent()
+    public ContainerImageReferenceComponent()
     {
         /* Reserved for deserialization */
     }
@@ -34,13 +34,13 @@ public class DockerReferenceComponent : TypedComponent
     public string Domain { get; set; }
 
     [JsonIgnore]
-    public override ComponentType Type => ComponentType.DockerReference;
+    public override ComponentType Type => ComponentType.ContainerImageReference;
 
-    public DockerReference FullReference
+    public ContainerImageReference FullReference
     {
         get
         {
-            return DockerReference.CreateDockerReference(this.Repository, this.Domain, this.Digest, this.Tag);
+            return ContainerImageReference.CreateContainerImageReference(this.Repository, this.Domain, this.Digest, this.Tag);
         }
     }
 

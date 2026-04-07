@@ -36,11 +36,11 @@ public class DockerfileComponentDetector : FileComponentDetector, IDefaultOffCom
 
     public override string Id { get; } = "DockerReference";
 
-    public override IEnumerable<string> Categories => [Enum.GetName(typeof(DetectorClass), DetectorClass.DockerReference)];
+    public override IEnumerable<string> Categories => [Enum.GetName(typeof(DetectorClass), DetectorClass.ContainerImageReference)];
 
     public override IList<string> SearchPatterns { get; } = ["dockerfile", "dockerfile.*", "*.dockerfile"];
 
-    public override IEnumerable<ComponentType> SupportedComponentTypes { get; } = [ComponentType.DockerReference];
+    public override IEnumerable<ComponentType> SupportedComponentTypes { get; } = [ComponentType.ContainerImageReference];
 
     public override int Version => 1;
 
@@ -77,19 +77,19 @@ public class DockerfileComponentDetector : FileComponentDetector, IDefaultOffCom
             var imageReference = this.ProcessDockerfileConstruct(instruction, dockerfileModel.EscapeChar, stageNameMap);
             if (imageReference != null)
             {
-                singleFileComponentRecorder.RegisterUsage(new DetectedComponent(imageReference.ToTypedDockerReferenceComponent()));
+                singleFileComponentRecorder.RegisterUsage(new DetectedComponent(imageReference.ToTypedContainerImageReferenceComponent()));
             }
         }
 
         return Task.CompletedTask;
     }
 
-    private DockerReference ProcessDockerfileConstruct(DockerfileConstruct construct, char escapeChar, Dictionary<string, string> stageNameMap)
+    private ContainerImageReference ProcessDockerfileConstruct(DockerfileConstruct construct, char escapeChar, Dictionary<string, string> stageNameMap)
     {
         try
         {
             var instructionKeyword = construct.Type;
-            DockerReference baseImage = null;
+            ContainerImageReference baseImage = null;
             if (instructionKeyword == ConstructType.Instruction)
             {
                 var constructType = construct.GetType().Name;
@@ -110,12 +110,12 @@ public class DockerfileComponentDetector : FileComponentDetector, IDefaultOffCom
         }
         catch (Exception e)
         {
-            this.Logger.LogError(e, "Failed to detect a DockerReference component, the component will not be registered.");
+            this.Logger.LogError(e, "Failed to detect a ContainerImageReference component, the component will not be registered.");
             return null;
         }
     }
 
-    private DockerReference ParseFromInstruction(DockerfileConstruct construct, char escapeChar, Dictionary<string, string> stageNameMap)
+    private ContainerImageReference ParseFromInstruction(DockerfileConstruct construct, char escapeChar, Dictionary<string, string> stageNameMap)
     {
         var tokens = construct.Tokens.ToArray();
         var resolvedFromStatement = construct.ResolveVariables(escapeChar).TrimEnd();
@@ -148,7 +148,7 @@ public class DockerfileComponentDetector : FileComponentDetector, IDefaultOffCom
                 return null;
             }
 
-            return DockerReferenceUtility.ParseFamiliarName(stageNameReference);
+            return ContainerImageReferenceUtility.ParseFamiliarName(stageNameReference);
         }
 
         if (this.HasUnresolvedVariables(reference))
@@ -156,10 +156,10 @@ public class DockerfileComponentDetector : FileComponentDetector, IDefaultOffCom
             return null;
         }
 
-        return DockerReferenceUtility.ParseFamiliarName(reference);
+        return ContainerImageReferenceUtility.ParseFamiliarName(reference);
     }
 
-    private DockerReference ParseCopyInstruction(DockerfileConstruct construct, char escapeChar, Dictionary<string, string> stageNameMap)
+    private ContainerImageReference ParseCopyInstruction(DockerfileConstruct construct, char escapeChar, Dictionary<string, string> stageNameMap)
     {
         var resolvedCopyStatement = construct.ResolveVariables(escapeChar).TrimEnd();
         var copyInstruction = (CopyInstruction)construct;
@@ -178,7 +178,7 @@ public class DockerfileComponentDetector : FileComponentDetector, IDefaultOffCom
             }
             else
             {
-                return DockerReferenceUtility.ParseFamiliarName(stageNameReference);
+                return ContainerImageReferenceUtility.ParseFamiliarName(stageNameReference);
             }
         }
 
@@ -187,7 +187,7 @@ public class DockerfileComponentDetector : FileComponentDetector, IDefaultOffCom
             return null;
         }
 
-        return DockerReferenceUtility.ParseFamiliarName(reference);
+        return ContainerImageReferenceUtility.ParseFamiliarName(reference);
     }
 
     private bool HasUnresolvedVariables(string reference)

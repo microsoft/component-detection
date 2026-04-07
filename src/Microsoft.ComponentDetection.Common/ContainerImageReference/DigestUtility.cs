@@ -16,7 +16,7 @@ public static class DigestUtility
         var indexOfColon = digest.IndexOf(':');
         if (indexOfColon < 0 ||
             indexOfColon + 1 == digest.Length ||
-            !DockerRegex.AnchoredDigestRegexp.IsMatch(digest))
+            !ContainerImageRegex.AnchoredDigestRegexp.IsMatch(digest))
         {
             if (throwError)
             {

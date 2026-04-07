@@ -3,7 +3,7 @@ namespace Microsoft.ComponentDetection.Common;
 using System.Linq;
 using System.Text.RegularExpressions;
 
-public static class DockerRegex
+public static class ContainerImageRegex
 {
     public static readonly Regex AlphaNumericRegexp = new Regex("[a-z0-9]+");
     public static readonly Regex SeparatorRegexp = new Regex("(?:[._]|__|[-]*)");
