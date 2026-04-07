@@ -57,7 +57,7 @@ public enum ComponentType : byte
     [EnumMember]
     ContainerImageReference = 16,
 
-    /// <summary>Backward compatibility alias for <see cref="ContainerImageReference"/>.</summary>
+    /// <summary>Deprecated. Backward compatibility alias for <see cref="ContainerImageReference"/>. This alias will be removed in a future major version. Use <see cref="ContainerImageReference"/> instead.</summary>
     [EnumMember]
     [Obsolete("Use ContainerImageReference instead.")]
     DockerReference = ContainerImageReference,

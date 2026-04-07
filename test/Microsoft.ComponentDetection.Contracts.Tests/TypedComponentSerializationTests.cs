@@ -2,6 +2,7 @@
 namespace Microsoft.ComponentDetection.Contracts.Tests;
 
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
 using AwesomeAssertions;
@@ -274,7 +275,7 @@ public class TypedComponentSerializationTests
     public void TypedComponentMapping_AllMappedTypes_AreUnique()
     {
         // Ensure no two discriminators map to the same type, except for known backward-compatibility aliases
-        var backwardCompatAliases = new System.Collections.Generic.HashSet<string>(StringComparer.OrdinalIgnoreCase) { "DockerReference" };
+        var backwardCompatAliases = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "DockerReference" };
         var mappedTypes = TypedComponentMapping.TypeDiscriminatorToType
             .Where(kvp => !backwardCompatAliases.Contains(kvp.Key))
             .Select(kvp => kvp.Value)
