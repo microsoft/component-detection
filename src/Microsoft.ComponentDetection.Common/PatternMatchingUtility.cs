@@ -7,15 +7,23 @@ using System.Linq;
 
 public static class PatternMatchingUtility
 {
-    public static bool MatchesPattern(string pattern, string fileName) =>
-        FileSystemName.MatchesSimpleExpression(pattern, fileName, ignoreCase: true);
+    public static bool MatchesPattern(string pattern, string fileName) => IsPatternMatch(pattern, fileName.AsSpan());
 
+    /// <summary>
+    /// Returns the first matching pattern for <paramref name="fileName"/>.
+    /// Earlier patterns in <paramref name="patterns"/> have higher priority when multiple match.
+    /// </summary>
+    /// <returns>The first matching pattern, or <see langword="null"/> if no patterns match.</returns>
     public static string? GetMatchingPattern(string fileName, IEnumerable<string> patterns)
+        => GetFirstMatchingPattern(fileName.AsSpan(), patterns);
+
+    public static CompiledMatcher Compile(IEnumerable<string> patterns) => new(patterns);
+
+    private static string? GetFirstMatchingPattern(ReadOnlySpan<char> fileName, IEnumerable<string> patterns)
     {
-        var span = fileName.AsSpan();
         foreach (var pattern in patterns)
         {
-            if (FileSystemName.MatchesSimpleExpression(pattern, span, ignoreCase: true))
+            if (IsPatternMatch(pattern, fileName))
             {
                 return pattern;
             }
@@ -24,39 +32,23 @@ public static class PatternMatchingUtility
         return null;
     }
 
-    internal static CompiledMatcher Compile(IEnumerable<string> patterns) => new(patterns);
+    private static bool IsPatternMatch(string pattern, ReadOnlySpan<char> fileName) =>
+        FileSystemName.MatchesSimpleExpression(pattern, fileName, ignoreCase: true);
 
-    internal sealed class CompiledMatcher
+    public sealed class CompiledMatcher
     {
         private readonly string[] patterns;
 
         public CompiledMatcher(IEnumerable<string> patterns) =>
             this.patterns = patterns.ToArray();
 
-        public bool IsMatch(ReadOnlySpan<char> fileName)
-        {
-            foreach (var pattern in this.patterns)
-            {
-                if (FileSystemName.MatchesSimpleExpression(pattern, fileName, ignoreCase: true))
-                {
-                    return true;
-                }
-            }
+        public bool IsMatch(ReadOnlySpan<char> fileName) => GetFirstMatchingPattern(fileName, this.patterns) is not null;
 
-            return false;
-        }
-
-        public string? GetMatchingPattern(ReadOnlySpan<char> fileName)
-        {
-            foreach (var pattern in this.patterns)
-            {
-                if (FileSystemName.MatchesSimpleExpression(pattern, fileName, ignoreCase: true))
-                {
-                    return pattern;
-                }
-            }
-
-            return null;
-        }
+        /// <summary>
+        /// Returns the first matching pattern for <paramref name="fileName"/>.
+        /// Earlier patterns in the compiled set have higher priority when multiple match.
+        /// </summary>
+        /// <returns>The first matching pattern, or <see langword="null"/> if no patterns match.</returns>
+        public string? GetMatchingPattern(ReadOnlySpan<char> fileName) => GetFirstMatchingPattern(fileName, this.patterns);
     }
 }

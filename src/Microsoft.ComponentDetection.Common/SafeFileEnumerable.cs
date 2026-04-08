@@ -60,6 +60,8 @@ public class SafeFileEnumerable : IEnumerable<MatchedFile>
                     throw new InvalidOperationException("Encountered directory when expecting a file");
                 }
 
+                // Pattern priority is first-match-wins: earlier entries in searchPatterns
+                // are treated as higher priority when multiple patterns match.
                 var foundPattern = this.compiledMatcher.GetMatchingPattern(entry.FileName)
                     ?? entry.FileName.ToString();
 
