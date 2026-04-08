@@ -31,6 +31,12 @@ public static class PatternMatchingUtility
     public static CompiledMatcher Compile(IEnumerable<string> patterns)
     {
         ArgumentNullException.ThrowIfNull(patterns);
+        return patterns is string[] array ? Compile(array) : new(patterns.ToArray());
+    }
+
+    public static CompiledMatcher Compile(string[] patterns)
+    {
+        ArgumentNullException.ThrowIfNull(patterns);
         return new(patterns);
     }
 
@@ -49,6 +55,22 @@ public static class PatternMatchingUtility
         return null;
     }
 
+    /// <summary>
+    /// Fast path for pre-validated pattern arrays. Skips per-element null checks.
+    /// </summary>
+    private static string? GetFirstMatchingPattern(ReadOnlySpan<char> fileName, string[] patterns)
+    {
+        foreach (var pattern in patterns)
+        {
+            if (IsPatternMatch(pattern, fileName))
+            {
+                return pattern;
+            }
+        }
+
+        return null;
+    }
+
     private static bool IsPatternMatch(string pattern, ReadOnlySpan<char> fileName) =>
         FileSystemName.MatchesSimpleExpression(pattern, fileName, ignoreCase: true);
 
@@ -57,10 +79,15 @@ public static class PatternMatchingUtility
         private readonly string[] patterns;
 
         public CompiledMatcher(IEnumerable<string> patterns)
+            : this(patterns?.ToArray()!)
+        {
+        }
+
+        internal CompiledMatcher(string[] patterns)
         {
             ArgumentNullException.ThrowIfNull(patterns);
-            this.patterns = patterns.ToArray();
-            ValidatePatternElements(this.patterns);
+            ValidatePatternElements(patterns);
+            this.patterns = patterns;
         }
 
         public bool IsMatch(ReadOnlySpan<char> fileName) => GetFirstMatchingPattern(fileName, this.patterns) is not null;
