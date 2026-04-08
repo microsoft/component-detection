@@ -136,4 +136,18 @@ public class PatternMatchingUtilityTests
         Action action = () => PatternMatchingUtility.Compile(null);
         action.Should().ThrowExactly<ArgumentNullException>();
     }
+
+    [TestMethod]
+    public void Compile_ThrowsForNullPatternElement()
+    {
+        Action action = () => PatternMatchingUtility.Compile(["*.json", null, "*.xml"]);
+        action.Should().ThrowExactly<ArgumentNullException>();
+    }
+
+    [TestMethod]
+    public void GetMatchingPattern_ThrowsForNullPatternElement()
+    {
+        Action action = () => PatternMatchingUtility.GetMatchingPattern("package.json", ["*.xml", null, "*.yaml"]);
+        action.Should().ThrowExactly<ArgumentNullException>();
+    }
 }

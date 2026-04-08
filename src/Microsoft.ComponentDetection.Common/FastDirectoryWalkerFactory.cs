@@ -207,28 +207,9 @@ internal class FastDirectoryWalkerFactory : IObservableDirectoryWalkerFactory
 
     public IObservable<FileSystemInfo> Subscribe(DirectoryInfo root, IEnumerable<string> patterns)
     {
-        if (this.pendingScans.TryGetValue(root, out var scannerObservable))
-        {
-            var patternsArray = patterns as string[] ?? patterns.ToArray();
-
-            this.logger.LogDebug("Logging patterns {Patterns} for {Root}", string.Join(":", patternsArray), root.FullName);
-
-            var compiled = PatternMatchingUtility.Compile(patternsArray);
-
-            var inner = scannerObservable.Value.Where(fsi =>
-            {
-                if (fsi is FileInfo fi)
-                {
-                    return compiled.IsMatch(fi.Name.AsSpan());
-                }
-
-                return true;
-            });
-
-            return inner;
-        }
-
-        throw new InvalidOperationException("Subscribe called without initializing scanner");
+        var patternsArray = patterns as string[] ?? patterns.ToArray();
+        var compiled = PatternMatchingUtility.Compile(patternsArray);
+        return this.Subscribe(root, patternsArray, compiled);
     }
 
     public IObservable<ProcessRequest> GetFilteredComponentStreamObservable(DirectoryInfo root, IEnumerable<string> patterns, IComponentRecorder componentRecorder)
@@ -236,7 +217,7 @@ internal class FastDirectoryWalkerFactory : IObservableDirectoryWalkerFactory
         var patternsArray = patterns as string[] ?? patterns.ToArray();
         var compiled = PatternMatchingUtility.Compile(patternsArray);
 
-        var observable = this.Subscribe(root, patternsArray).OfType<FileInfo>()
+        var observable = this.Subscribe(root, patternsArray, compiled).OfType<FileInfo>()
             .Select(f => new
             {
                 File = f,
@@ -274,6 +255,28 @@ internal class FastDirectoryWalkerFactory : IObservableDirectoryWalkerFactory
     private FileSystemInfo Transform(ref FileSystemEntry entry)
     {
         return entry.ToFileSystemInfo();
+    }
+
+    private IObservable<FileSystemInfo> Subscribe(DirectoryInfo root, string[] patterns, PatternMatchingUtility.CompiledMatcher compiled)
+    {
+        if (this.pendingScans.TryGetValue(root, out var scannerObservable))
+        {
+            this.logger.LogDebug("Logging patterns {Patterns} for {Root}", string.Join(":", patterns), root.FullName);
+
+            var inner = scannerObservable.Value.Where(fsi =>
+            {
+                if (fsi is FileInfo fi)
+                {
+                    return compiled.IsMatch(fi.Name.AsSpan());
+                }
+
+                return true;
+            });
+
+            return inner;
+        }
+
+        throw new InvalidOperationException("Subscribe called without initializing scanner");
     }
 
     private IObservable<FileSystemInfo> CreateDirectoryWalker(DirectoryInfo di, ExcludeDirectoryPredicate directoryExclusionPredicate, int minimumConnectionCount, IEnumerable<string> filePatterns)

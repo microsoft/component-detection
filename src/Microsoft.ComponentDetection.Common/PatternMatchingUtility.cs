@@ -38,6 +38,8 @@ public static class PatternMatchingUtility
     {
         foreach (var pattern in patterns)
         {
+            ArgumentNullException.ThrowIfNull(pattern);
+
             if (IsPatternMatch(pattern, fileName))
             {
                 return pattern;
@@ -58,6 +60,7 @@ public static class PatternMatchingUtility
         {
             ArgumentNullException.ThrowIfNull(patterns);
             this.patterns = patterns.ToArray();
+            ValidatePatternElements(this.patterns);
         }
 
         public bool IsMatch(ReadOnlySpan<char> fileName) => GetFirstMatchingPattern(fileName, this.patterns) is not null;
@@ -68,5 +71,13 @@ public static class PatternMatchingUtility
         /// </summary>
         /// <returns>The first matching pattern, or <see langword="null"/> if no patterns match.</returns>
         public string? GetMatchingPattern(ReadOnlySpan<char> fileName) => GetFirstMatchingPattern(fileName, this.patterns);
+
+        private static void ValidatePatternElements(IEnumerable<string> patterns)
+        {
+            foreach (var pattern in patterns)
+            {
+                ArgumentNullException.ThrowIfNull(pattern);
+            }
+        }
     }
 }
