@@ -40,10 +40,11 @@ internal class FastDirectoryWalkerFactory : IObservableDirectoryWalkerFactory
             }
 
             PatternMatchingUtility.CompiledMatcher fileIsMatch = null;
+            var patternsArray = filePatterns?.ToArray();
 
-            if (filePatterns != null && filePatterns.Any())
+            if (patternsArray is { Length: > 0 })
             {
-                fileIsMatch = PatternMatchingUtility.Compile(filePatterns);
+                fileIsMatch = PatternMatchingUtility.Compile(patternsArray);
             }
 
             var sw = Stopwatch.StartNew();
@@ -208,9 +209,11 @@ internal class FastDirectoryWalkerFactory : IObservableDirectoryWalkerFactory
     {
         if (this.pendingScans.TryGetValue(root, out var scannerObservable))
         {
-            this.logger.LogDebug("Logging patterns {Patterns} for {Root}", string.Join(":", patterns), root.FullName);
+            var patternsArray = patterns as string[] ?? patterns.ToArray();
 
-            var compiled = PatternMatchingUtility.Compile(patterns);
+            this.logger.LogDebug("Logging patterns {Patterns} for {Root}", string.Join(":", patternsArray), root.FullName);
+
+            var compiled = PatternMatchingUtility.Compile(patternsArray);
 
             var inner = scannerObservable.Value.Where(fsi =>
             {
@@ -230,9 +233,10 @@ internal class FastDirectoryWalkerFactory : IObservableDirectoryWalkerFactory
 
     public IObservable<ProcessRequest> GetFilteredComponentStreamObservable(DirectoryInfo root, IEnumerable<string> patterns, IComponentRecorder componentRecorder)
     {
-        var compiled = PatternMatchingUtility.Compile(patterns);
+        var patternsArray = patterns as string[] ?? patterns.ToArray();
+        var compiled = PatternMatchingUtility.Compile(patternsArray);
 
-        var observable = this.Subscribe(root, patterns).OfType<FileInfo>()
+        var observable = this.Subscribe(root, patternsArray).OfType<FileInfo>()
             .Select(f => new
             {
                 File = f,
