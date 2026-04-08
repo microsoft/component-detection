@@ -29,20 +29,6 @@ public class KubernetesComponentDetector : FileComponentDetector, IDefaultOffCom
         "ReplicationController",
     };
 
-    // Pre-computed "kind: <value>" patterns for fast text-based rejection.
-    // Ordered by prevalence: most common K8s kinds first for early exit.
-    private static readonly string[] KubernetesKindPatterns = [
-        "kind: Deployment",
-        "kind: Pod",
-        "kind: StatefulSet",
-        "kind: DaemonSet",
-        "kind: Job",
-        "kind: CronJob",
-        "kind: ReplicaSet",
-        "kind: PodTemplate",
-        "kind: ReplicationController",
-    ];
-
     public KubernetesComponentDetector(
         IComponentStreamEnumerableFactory componentStreamEnumerableFactory,
         IObservableDirectoryWalkerFactory walkerFactory,
@@ -139,7 +125,9 @@ public class KubernetesComponentDetector : FileComponentDetector, IDefaultOffCom
 
     /// <summary>
     /// Fast text-based pre-filter. Checks for "apiVersion" and a known "kind: &lt;K8sKind&gt;"
-    /// pattern using span operations to reject non-Kubernetes YAML without YAML parsing.
+    /// pattern using line-based scanning to reject non-Kubernetes YAML without YAML parsing.
+    /// Tolerates varied whitespace (e.g. "kind:Deployment", "kind:   Deployment") and
+    /// optional quotes around the value.
     /// </summary>
     private static bool LooksLikeKubernetesManifest(string contents)
     {
@@ -151,12 +139,40 @@ public class KubernetesComponentDetector : FileComponentDetector, IDefaultOffCom
             return false;
         }
 
-        // Check for a known "kind: <K8sResource>" pattern. This is much more specific
-        // than just checking for "kind" and eliminates non-K8s YAML files (GitHub Actions,
-        // Azure Pipelines, CloudFormation, etc.) that also contain generic "kind" keys.
-        foreach (var pattern in KubernetesKindPatterns)
+        // Scan line-by-line for a "kind: <K8sResource>" entry, tolerating varied
+        // whitespace and quotes to avoid false negatives on valid manifests.
+        foreach (var line in span.EnumerateLines())
         {
-            if (span.IndexOf(pattern.AsSpan(), StringComparison.OrdinalIgnoreCase) >= 0)
+            var trimmed = line.TrimStart();
+            if (!trimmed.StartsWith("kind", StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
+            var afterKind = trimmed.Slice(4).TrimStart();
+            if (afterKind.IsEmpty || afterKind[0] != ':')
+            {
+                continue;
+            }
+
+            var value = afterKind.Slice(1).Trim();
+
+            // Strip inline YAML comments (K8s kind values never contain '#').
+            var commentIdx = value.IndexOf('#');
+            if (commentIdx >= 0)
+            {
+                value = value.Slice(0, commentIdx).TrimEnd();
+            }
+
+            // Strip optional surrounding quotes (e.g. kind: "Deployment").
+            if (value.Length >= 2 &&
+                ((value[0] == '"' && value[^1] == '"') ||
+                 (value[0] == '\'' && value[^1] == '\'')))
+            {
+                value = value.Slice(1, value.Length - 2).Trim();
+            }
+
+            if (!value.IsEmpty && KubernetesKinds.Contains(value.ToString()))
             {
                 return true;
             }

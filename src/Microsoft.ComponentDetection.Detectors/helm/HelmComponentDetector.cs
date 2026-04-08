@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reactive.Linq;
+using System.Reactive.Threading.Tasks;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Common;
@@ -57,7 +58,7 @@ public class HelmComponentDetector : FileComponentDetector, IDefaultOffComponent
     {
         // Materialize all matching files first so that chart directories are fully
         // known before any values file is decided on, regardless of enumeration order.
-        var allRequests = await processRequests.ToList();
+        var allRequests = await processRequests.ToList().ToTask(cancellationToken);
 
         // Pass 1: record every directory that contains a Chart.yaml / Chart.yml.
         foreach (var request in allRequests)
