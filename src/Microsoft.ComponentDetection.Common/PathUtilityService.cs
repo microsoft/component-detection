@@ -1,6 +1,7 @@
 #nullable disable
 namespace Microsoft.ComponentDetection.Common;
 
+using System;
 using System.IO;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.Extensions.Logging;
@@ -42,6 +43,9 @@ internal class PathUtilityService : IPathUtilityService
         var fileInfo = new FileInfo(path);
         return fileInfo.Exists ? this.ResolvePathFromInfo(fileInfo) : null;
     }
+
+    [Obsolete("Use PatternMatchingUtility.MatchesPattern instead.")]
+    public bool MatchesPattern(string pattern, string fileName) => PatternMatchingUtility.MatchesPattern(pattern, fileName);
 
     private string ResolvePathFromInfo(FileSystemInfo info) => info.LinkTarget ?? info.FullName;
 

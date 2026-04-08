@@ -11,7 +11,6 @@ using Microsoft.Extensions.Logging;
 
 public class SafeFileEnumerable : IEnumerable<MatchedFile>
 {
-    private readonly IEnumerable<string> searchPatterns;
     private readonly ExcludeDirectoryPredicate directoryExclusionPredicate;
     private readonly DirectoryInfo directory;
     private readonly IPathUtilityService pathUtilityService;
@@ -28,7 +27,6 @@ public class SafeFileEnumerable : IEnumerable<MatchedFile>
     {
         this.directory = directory;
         this.logger = logger;
-        this.searchPatterns = searchPatterns;
         this.directoryExclusionPredicate = directoryExclusionPredicate;
         this.recursivelyScanDirectories = recursivelyScanDirectories;
         this.pathUtilityService = pathUtilityService;

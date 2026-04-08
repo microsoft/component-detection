@@ -109,4 +109,31 @@ public class PatternMatchingUtilityTests
         compiled.IsMatch("yarn.lock".AsSpan()).Should().BeTrue();
         compiled.IsMatch("README.md".AsSpan()).Should().BeFalse();
     }
+
+    [TestMethod]
+    public void MatchesPattern_ThrowsForNullInputs()
+    {
+        Action nullPattern = () => PatternMatchingUtility.MatchesPattern(null, "package.json");
+        Action nullFileName = () => PatternMatchingUtility.MatchesPattern("*.json", null);
+
+        nullPattern.Should().ThrowExactly<ArgumentNullException>();
+        nullFileName.Should().ThrowExactly<ArgumentNullException>();
+    }
+
+    [TestMethod]
+    public void GetMatchingPattern_ThrowsForNullInputs()
+    {
+        Action nullFileName = () => PatternMatchingUtility.GetMatchingPattern(null, ["*.json"]);
+        Action nullPatterns = () => PatternMatchingUtility.GetMatchingPattern("package.json", null);
+
+        nullFileName.Should().ThrowExactly<ArgumentNullException>();
+        nullPatterns.Should().ThrowExactly<ArgumentNullException>();
+    }
+
+    [TestMethod]
+    public void Compile_ThrowsForNullPatterns()
+    {
+        Action action = () => PatternMatchingUtility.Compile(null);
+        action.Should().ThrowExactly<ArgumentNullException>();
+    }
 }

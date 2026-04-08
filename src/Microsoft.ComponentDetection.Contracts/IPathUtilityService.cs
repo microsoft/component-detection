@@ -1,6 +1,8 @@
 #nullable disable
 namespace Microsoft.ComponentDetection.Contracts;
 
+using System;
+
 /// <summary>
 /// Wraps some common folder operations, shared across command line app and service.
 /// </summary>
@@ -27,6 +29,15 @@ public interface IPathUtilityService
     /// <param name="belowFilePath">The file path to find within the top file path.</param>
     /// <returns>Returns true if the below file path exists under the above file path, otherwise false.</returns>
     bool IsFileBelowAnother(string aboveFilePath, string belowFilePath);
+
+    /// <summary>
+    /// Matches file names to simple wildcard patterns.
+    /// </summary>
+    /// <param name="pattern">Pattern to match against.</param>
+    /// <param name="fileName">File name to evaluate.</param>
+    /// <returns>Returns true when the file name matches the pattern, otherwise false.</returns>
+    [Obsolete("Use PatternMatchingUtility.MatchesPattern instead.")]
+    bool MatchesPattern(string pattern, string fileName);
 
     /// <summary>
     /// Normalize the path directory seperator to / on Unix systems and on Windows.

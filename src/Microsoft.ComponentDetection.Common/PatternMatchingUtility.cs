@@ -7,7 +7,13 @@ using System.Linq;
 
 public static class PatternMatchingUtility
 {
-    public static bool MatchesPattern(string pattern, string fileName) => IsPatternMatch(pattern, fileName.AsSpan());
+    public static bool MatchesPattern(string pattern, string fileName)
+    {
+        ArgumentNullException.ThrowIfNull(pattern);
+        ArgumentNullException.ThrowIfNull(fileName);
+
+        return IsPatternMatch(pattern, fileName.AsSpan());
+    }
 
     /// <summary>
     /// Returns the first matching pattern for <paramref name="fileName"/>.
@@ -15,9 +21,18 @@ public static class PatternMatchingUtility
     /// </summary>
     /// <returns>The first matching pattern, or <see langword="null"/> if no patterns match.</returns>
     public static string? GetMatchingPattern(string fileName, IEnumerable<string> patterns)
-        => GetFirstMatchingPattern(fileName.AsSpan(), patterns);
+    {
+        ArgumentNullException.ThrowIfNull(fileName);
+        ArgumentNullException.ThrowIfNull(patterns);
 
-    public static CompiledMatcher Compile(IEnumerable<string> patterns) => new(patterns);
+        return GetFirstMatchingPattern(fileName.AsSpan(), patterns);
+    }
+
+    public static CompiledMatcher Compile(IEnumerable<string> patterns)
+    {
+        ArgumentNullException.ThrowIfNull(patterns);
+        return new(patterns);
+    }
 
     private static string? GetFirstMatchingPattern(ReadOnlySpan<char> fileName, IEnumerable<string> patterns)
     {
@@ -39,8 +54,11 @@ public static class PatternMatchingUtility
     {
         private readonly string[] patterns;
 
-        public CompiledMatcher(IEnumerable<string> patterns) =>
+        public CompiledMatcher(IEnumerable<string> patterns)
+        {
+            ArgumentNullException.ThrowIfNull(patterns);
             this.patterns = patterns.ToArray();
+        }
 
         public bool IsMatch(ReadOnlySpan<char> fileName) => GetFirstMatchingPattern(fileName, this.patterns) is not null;
 
