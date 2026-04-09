@@ -5,7 +5,7 @@ using System;
 /// <summary>
 /// Specifies the type of image reference.
 /// </summary>
-internal enum ImageReferenceKind
+public enum ImageReferenceKind
 {
     /// <summary>
     /// A Docker image reference (e.g., "node:latest", "sha256:abc123").
@@ -31,7 +31,7 @@ internal enum ImageReferenceKind
 /// <summary>
 /// Represents a parsed image reference from the scan input, with its type and cleaned reference string.
 /// </summary>
-internal class ImageReference
+public class ImageReference
 {
     private const string OciDirPrefix = "oci-dir:";
     private const string OciArchivePrefix = "oci-archive:";
