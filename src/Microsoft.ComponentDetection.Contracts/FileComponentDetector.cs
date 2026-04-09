@@ -35,7 +35,7 @@ public abstract class FileComponentDetector : IComponentDetector
     public abstract string Id { get; }
 
     /// <summary>
-    /// Gets the search patterns used to produce the list of valid folders to scan.
+    /// Gets the search patterns used to produce the list of valid files to scan.
     /// The first pattern that matches a given file will be used to determine how that file is processed, so more specific patterns should be listed before more general ones. Wildcards are accepted.
     /// </summary>
     public abstract IList<string> SearchPatterns { get; }
