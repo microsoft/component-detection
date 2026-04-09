@@ -79,7 +79,7 @@ public static class PatternMatchingUtility
         private readonly string[] patterns;
 
         public CompiledMatcher(IEnumerable<string> patterns)
-            : this(patterns?.ToArray()!)
+            : this(patterns is string[] arr ? arr : (patterns ?? throw new ArgumentNullException(nameof(patterns))).ToArray())
         {
         }
 
