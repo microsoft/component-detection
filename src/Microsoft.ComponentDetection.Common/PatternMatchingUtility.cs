@@ -86,8 +86,8 @@ public static class PatternMatchingUtility
         internal CompiledMatcher(string[] patterns)
         {
             ArgumentNullException.ThrowIfNull(patterns);
-            ValidatePatternElements(patterns);
-            this.patterns = patterns;
+            this.patterns = (string[])patterns.Clone();
+            ValidatePatternElements(this.patterns);
         }
 
         public bool IsMatch(ReadOnlySpan<char> fileName) => GetFirstMatchingPattern(fileName, this.patterns) is not null;
