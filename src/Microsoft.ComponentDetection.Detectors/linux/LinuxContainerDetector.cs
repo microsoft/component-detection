@@ -127,6 +127,10 @@ public class LinuxContainerDetector(
                 GetTimeout(request.DetectorArgs)
             );
         }
+        catch (Exception e)
+        {
+            this.logger.LogError(e, "Unexpected error during Linux container image scanning");
+        }
 
         return new IndividualDetectorScanResult
         {
@@ -285,6 +289,10 @@ public class LinuxContainerDetector(
                     );
             }
         }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
         catch (Exception e)
         {
             this.logger.LogWarning(e, "Processing of image {ContainerImage} (kind {ImageType}) failed", imageRef.OriginalInput, imageRef.Kind);
@@ -387,6 +395,10 @@ public class LinuxContainerDetector(
             ) ?? throw new InvalidOperationException($"Failed to scan image layers for image {containerDetails.ImageId}");
 
             return this.RecordComponents(containerDetails, layers, componentRecorder);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
         }
         catch (Exception e)
         {
@@ -524,6 +536,10 @@ public class LinuxContainerDetector(
             );
 
             return this.RecordComponents(containerDetails, layers, componentRecorder);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
         }
         catch (Exception e)
         {
