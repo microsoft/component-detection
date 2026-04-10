@@ -5,7 +5,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Common;
@@ -143,20 +142,10 @@ public class DockerfileComponentDetector : FileComponentDetector, IDefaultOffCom
 
         if (!string.IsNullOrEmpty(stageNameReference))
         {
-            if (this.HasUnresolvedVariables(stageNameReference))
-            {
-                return null;
-            }
-
-            return DockerReferenceUtility.ParseFamiliarName(stageNameReference);
+            return DockerReferenceUtility.TryParseImageReference(stageNameReference);
         }
 
-        if (this.HasUnresolvedVariables(reference))
-        {
-            return null;
-        }
-
-        return DockerReferenceUtility.ParseFamiliarName(reference);
+        return DockerReferenceUtility.TryParseImageReference(reference);
     }
 
     private DockerReference ParseCopyInstruction(DockerfileConstruct construct, char escapeChar, Dictionary<string, string> stageNameMap)
@@ -172,26 +161,9 @@ public class DockerfileComponentDetector : FileComponentDetector, IDefaultOffCom
         stageNameMap.TryGetValue(reference, out var stageNameReference);
         if (!string.IsNullOrEmpty(stageNameReference))
         {
-            if (this.HasUnresolvedVariables(stageNameReference))
-            {
-                return null;
-            }
-            else
-            {
-                return DockerReferenceUtility.ParseFamiliarName(stageNameReference);
-            }
+            return DockerReferenceUtility.TryParseImageReference(stageNameReference);
         }
 
-        if (this.HasUnresolvedVariables(reference))
-        {
-            return null;
-        }
-
-        return DockerReferenceUtility.ParseFamiliarName(reference);
-    }
-
-    private bool HasUnresolvedVariables(string reference)
-    {
-        return new Regex("[${}]").IsMatch(reference);
+        return DockerReferenceUtility.TryParseImageReference(reference);
     }
 }
