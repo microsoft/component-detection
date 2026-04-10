@@ -2,38 +2,91 @@ namespace Microsoft.ComponentDetection.Common;
 
 using System;
 using System.Collections.Generic;
+using System.IO.Enumeration;
 using System.Linq;
 
 public static class PatternMatchingUtility
 {
-    public delegate bool FilePatternMatcher(ReadOnlySpan<char> span);
-
-    public static FilePatternMatcher GetFilePatternMatcher(IEnumerable<string> patterns)
+    public static bool MatchesPattern(string pattern, string fileName)
     {
-        var matchers = patterns.Select<string, FilePatternMatcher>(pattern => pattern switch
-        {
-            _ when pattern.StartsWith('*') && pattern.EndsWith('*') =>
-                pattern.Length <= 2
-                    ? _ => true
-                    : span => span.Contains(pattern.AsSpan(1, pattern.Length - 2), StringComparison.Ordinal),
-            _ when pattern.StartsWith('*') =>
-                span => span.EndsWith(pattern.AsSpan(1), StringComparison.Ordinal),
-            _ when pattern.EndsWith('*') =>
-                span => span.StartsWith(pattern.AsSpan(0, pattern.Length - 1), StringComparison.Ordinal),
-            _ => span => span.Equals(pattern.AsSpan(), StringComparison.Ordinal),
-        }).ToList();
+        ArgumentNullException.ThrowIfNull(pattern);
+        ArgumentNullException.ThrowIfNull(fileName);
 
-        return span =>
+        return IsPatternMatch(pattern, fileName.AsSpan());
+    }
+
+    /// <summary>
+    /// Returns the first matching pattern for <paramref name="fileName"/>.
+    /// Earlier patterns in <paramref name="patterns"/> have higher priority when multiple match.
+    /// </summary>
+    /// <returns>The first matching pattern, or <see langword="null"/> if no patterns match.</returns>
+    public static string? GetMatchingPattern(string fileName, IEnumerable<string> patterns)
+    {
+        ArgumentNullException.ThrowIfNull(fileName);
+        ArgumentNullException.ThrowIfNull(patterns);
+
+        return Compile(patterns).GetMatchingPattern(fileName.AsSpan());
+    }
+
+    public static CompiledMatcher Compile(IEnumerable<string> patterns)
+    {
+        ArgumentNullException.ThrowIfNull(patterns);
+        return patterns is string[] array ? Compile(array) : new(patterns.ToArray());
+    }
+
+    public static CompiledMatcher Compile(string[] patterns)
+    {
+        ArgumentNullException.ThrowIfNull(patterns);
+        return new(patterns);
+    }
+
+    private static string? GetFirstMatchingPattern(ReadOnlySpan<char> fileName, string[] patterns)
+    {
+        foreach (var pattern in patterns)
         {
-            foreach (var matcher in matchers)
+            if (IsPatternMatch(pattern, fileName))
             {
-                if (matcher(span))
-                {
-                    return true;
-                }
+                return pattern;
             }
+        }
 
-            return false;
-        };
+        return null;
+    }
+
+    private static bool IsPatternMatch(string pattern, ReadOnlySpan<char> fileName) =>
+        FileSystemName.MatchesSimpleExpression(pattern, fileName, ignoreCase: true);
+
+    public sealed class CompiledMatcher
+    {
+        private readonly string[] patterns;
+
+        public CompiledMatcher(IEnumerable<string> patterns)
+            : this(patterns is string[] arr ? arr : (patterns ?? throw new ArgumentNullException(nameof(patterns))).ToArray())
+        {
+        }
+
+        internal CompiledMatcher(string[] patterns)
+        {
+            ArgumentNullException.ThrowIfNull(patterns);
+            this.patterns = (string[])patterns.Clone();
+            ValidatePatternElements(this.patterns);
+        }
+
+        public bool IsMatch(ReadOnlySpan<char> fileName) => GetFirstMatchingPattern(fileName, this.patterns) is not null;
+
+        /// <summary>
+        /// Returns the first matching pattern for <paramref name="fileName"/>.
+        /// Earlier patterns in the compiled set have higher priority when multiple match.
+        /// </summary>
+        /// <returns>The first matching pattern, or <see langword="null"/> if no patterns match.</returns>
+        public string? GetMatchingPattern(ReadOnlySpan<char> fileName) => GetFirstMatchingPattern(fileName, this.patterns);
+
+        private static void ValidatePatternElements(string[] patterns)
+        {
+            foreach (var pattern in patterns)
+            {
+                ArgumentNullException.ThrowIfNull(pattern);
+            }
+        }
     }
 }
