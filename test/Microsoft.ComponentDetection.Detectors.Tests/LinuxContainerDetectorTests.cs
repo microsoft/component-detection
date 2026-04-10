@@ -1297,6 +1297,9 @@ public class LinuxContainerDetectorTests
         // Verifies Fix 2 + OCE catch: when the scanning timeout fires,
         // the OCE propagates out of the scan methods and is caught by
         // ExecuteDetectorAsync, which returns Success with no components.
+        // We pass a pre-cancelled token so the linked timeoutCts is also
+        // cancelled, making the `when (cancellationToken.IsCancellationRequested)`
+        // guard match and re-throw the OCE to ExecuteDetectorAsync.
         var componentRecorder = new ComponentRecorder();
         var detectorArgs = new Dictionary<string, string> { { "Linux.ScanningTimeoutSec", "600" } };
 
@@ -1308,6 +1311,9 @@ public class LinuxContainerDetectorTests
             [NodeLatestImage],
             componentRecorder
         );
+
+        using var cts = new CancellationTokenSource();
+        await cts.CancelAsync();
 
         this.mockSyftLinuxScanner.Setup(scanner =>
                 scanner.ScanLinuxAsync(
@@ -1327,7 +1333,7 @@ public class LinuxContainerDetectorTests
             this.mockLinuxContainerDetectorLogger.Object
         );
 
-        var result = await detector.ExecuteDetectorAsync(scanRequest);
+        var result = await detector.ExecuteDetectorAsync(scanRequest, cts.Token);
 
         result.ResultCode.Should().Be(ProcessingResultCode.Success);
         result.ContainerDetails.Should().BeEmpty();
@@ -1383,6 +1389,8 @@ public class LinuxContainerDetectorTests
         // Verifies Fix 2 in the resolve phase: if the timeout fires
         // during image pull/inspect, the OCE is re-thrown from
         // ResolveImageAsync and caught by ExecuteDetectorAsync.
+        // We pass a pre-cancelled token so the linked timeoutCts is also
+        // cancelled, making the `when` guard match.
         var componentRecorder = new ComponentRecorder();
         var detectorArgs = new Dictionary<string, string> { { "Linux.ScanningTimeoutSec", "600" } };
 
@@ -1395,6 +1403,9 @@ public class LinuxContainerDetectorTests
             componentRecorder
         );
 
+        using var cts = new CancellationTokenSource();
+        await cts.CancelAsync();
+
         this.mockDockerService.Setup(service =>
                 service.ImageExistsLocallyAsync(It.IsAny<string>(), It.IsAny<CancellationToken>())
             )
@@ -1406,7 +1417,7 @@ public class LinuxContainerDetectorTests
             this.mockLinuxContainerDetectorLogger.Object
         );
 
-        var result = await detector.ExecuteDetectorAsync(scanRequest);
+        var result = await detector.ExecuteDetectorAsync(scanRequest, cts.Token);
 
         result.ResultCode.Should().Be(ProcessingResultCode.Success);
         result.ContainerDetails.Should().BeEmpty();
@@ -1416,8 +1427,10 @@ public class LinuxContainerDetectorTests
     [TestMethod]
     public async Task ExecuteDetectorAsync_ScanThrowsOce_OtherImageStillScanned()
     {
-        // When scanning multiple images and one times out, the entire
-        // detector should still return Success (not crash).
+        // When scanning multiple images and one fails with an uncancelled OCE,
+        // the generic catch swallows it, so the other image still scans.
+        // Token is NOT cancelled here — this tests multi-image resilience
+        // via the generic catch path, not the timeout re-throw path.
         var componentRecorder = new ComponentRecorder();
         const string secondImage = "alpine:latest";
         const string secondImageId = "alpine123";
@@ -1434,7 +1447,8 @@ public class LinuxContainerDetectorTests
                 }
             );
 
-        // First image scans fine, second throws OCE
+        // First image (NodeLatestImage) scans fine via default mock.
+        // Second image throws OCE (not tied to cancellation, so generic catch handles it).
         this.mockSyftLinuxScanner.Setup(scanner =>
                 scanner.ScanLinuxAsync(
                     secondImageId,
@@ -1466,5 +1480,19 @@ public class LinuxContainerDetectorTests
 
         // Must not crash, must return Success
         result.ResultCode.Should().Be(ProcessingResultCode.Success);
+
+        // The first image should have been scanned successfully
+        this.mockSyftLinuxScanner.Verify(
+            scanner => scanner.ScanLinuxAsync(
+                NodeLatestDigest,
+                It.IsAny<IEnumerable<DockerLayer>>(),
+                It.IsAny<int>(),
+                It.IsAny<ISet<ComponentType>>(),
+                It.IsAny<LinuxScannerScope>(),
+                It.IsAny<CancellationToken>()),
+            Times.Once);
+
+        // The first image should have produced components
+        componentRecorder.GetDetectedComponents().Should().NotBeEmpty();
     }
 }
