@@ -25,13 +25,20 @@ public class BinarySyftRunnerTests
     }
 
     [TestMethod]
-    public async Task CanRunAsync_ReturnsTrueWhenVersionCheckSucceeds()
+    public async Task CanRunAsync_ReturnsTrueWhenBinaryExistsAndVersionCheckSucceeds()
     {
+        this.mockCommandLineService.Setup(service =>
+                service.CanCommandBeLocatedAsync(
+                    "/usr/local/bin/syft",
+                    null,
+                    "--version"))
+            .ReturnsAsync(true);
+
         this.mockCommandLineService.Setup(service =>
                 service.ExecuteCommandAsync(
                     "/usr/local/bin/syft",
-                    It.IsAny<IEnumerable<string>>(),
-                    It.IsAny<System.IO.DirectoryInfo>(),
+                    null,
+                    null,
                     It.IsAny<CancellationToken>(),
                     "--version"))
             .ReturnsAsync(new CommandLineExecutionResult
@@ -52,13 +59,40 @@ public class BinarySyftRunnerTests
     }
 
     [TestMethod]
+    public async Task CanRunAsync_ReturnsFalseWhenBinaryNotFound()
+    {
+        this.mockCommandLineService.Setup(service =>
+                service.CanCommandBeLocatedAsync(
+                    "/nonexistent/syft",
+                    null,
+                    "--version"))
+            .ReturnsAsync(false);
+
+        var runner = new BinarySyftRunner(
+            "/nonexistent/syft",
+            this.mockCommandLineService.Object,
+            this.mockLogger.Object);
+
+        var result = await runner.CanRunAsync();
+
+        result.Should().BeFalse();
+    }
+
+    [TestMethod]
     public async Task CanRunAsync_ReturnsFalseWhenVersionCheckFails()
     {
         this.mockCommandLineService.Setup(service =>
+                service.CanCommandBeLocatedAsync(
+                    "/usr/local/bin/syft",
+                    null,
+                    "--version"))
+            .ReturnsAsync(true);
+
+        this.mockCommandLineService.Setup(service =>
                 service.ExecuteCommandAsync(
                     "/usr/local/bin/syft",
-                    It.IsAny<IEnumerable<string>>(),
-                    It.IsAny<System.IO.DirectoryInfo>(),
+                    null,
+                    null,
                     It.IsAny<CancellationToken>(),
                     "--version"))
             .ReturnsAsync(new CommandLineExecutionResult

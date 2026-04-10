@@ -41,6 +41,12 @@ internal class BinarySyftRunner : ISyftRunner
     /// <inheritdoc/>
     public async Task<bool> CanRunAsync(CancellationToken cancellationToken = default)
     {
+        if (!await this.commandLineInvocationService.CanCommandBeLocatedAsync(this.syftBinaryPath, null, "--version"))
+        {
+            this.logger.LogInformation("Syft binary at {SyftBinaryPath} was not found in the local environment.", this.syftBinaryPath);
+            return false;
+        }
+
         var result = await this.commandLineInvocationService.ExecuteCommandAsync(
             this.syftBinaryPath,
             null,
