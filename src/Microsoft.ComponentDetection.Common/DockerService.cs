@@ -225,11 +225,11 @@ internal class DockerService : IDockerService
             {
                 await RemoveContainerAsync(container.ID, removeCts.Token);
             }
-            catch (Exception ex) when (ex is OperationCanceledException or TimeoutException)
+            catch (Exception ex)
             {
                 this.logger.LogWarning(
                     ex,
-                    "Timed out removing container {ContainerId} after 30s; abandoning cleanup",
+                    "Failed to remove container {ContainerId}; abandoning cleanup",
                     container.ID);
             }
         }
