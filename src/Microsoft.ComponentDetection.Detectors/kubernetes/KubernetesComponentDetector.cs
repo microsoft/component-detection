@@ -210,8 +210,19 @@ public class KubernetesComponentDetector : FileComponentDetector, IDefaultOffCom
 
     private void ExtractImageReferences(YamlMappingNode rootMapping, ISingleFileComponentRecorder recorder, string fileLocation)
     {
-        // For Pod, the spec is at the top level
-        // For Deployment/StatefulSet/etc, the pod spec is at spec.template.spec
+        // PodTemplate has pod spec at root.template.spec.
+        var rootTemplate = GetMappingChild(rootMapping, "template");
+        if (rootTemplate != null)
+        {
+            var rootTemplateSpec = GetMappingChild(rootTemplate, "spec");
+            if (rootTemplateSpec != null)
+            {
+                this.ExtractContainerImages(rootTemplateSpec, recorder, fileLocation);
+            }
+        }
+
+        // For Pod, the spec is at the top level.
+        // For Deployment/StatefulSet/etc, the pod spec is at spec.template.spec.
         var spec = GetMappingChild(rootMapping, "spec");
         if (spec == null)
         {

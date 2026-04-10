@@ -44,6 +44,38 @@ spec:
     }
 
     [TestMethod]
+    public async Task TestK8s_PodTemplateAsync()
+    {
+        var manifest = @"
+apiVersion: v1
+kind: PodTemplate
+metadata:
+  name: my-template
+template:
+  metadata:
+    labels:
+      app: my-app
+  spec:
+    containers:
+      - name: app
+        image: nginx:1.21
+";
+
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+            .WithFile("podtemplate.yaml", manifest)
+            .ExecuteDetectorAsync();
+
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+        var components = componentRecorder.GetDetectedComponents();
+        components.Should().ContainSingle();
+
+        var dockerRef = components.First().Component as DockerReferenceComponent;
+        dockerRef.Should().NotBeNull();
+        dockerRef.Repository.Should().Be("library/nginx");
+        dockerRef.Tag.Should().Be("1.21");
+    }
+
+    [TestMethod]
     public async Task TestK8s_DeploymentWithMultipleContainersAsync()
     {
         var manifest = @"
