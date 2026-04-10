@@ -149,19 +149,19 @@ public class KubernetesComponentDetector : FileComponentDetector, IDefaultOffCom
                 continue;
             }
 
-            var afterKind = trimmed.Slice(4).TrimStart();
+            var afterKind = trimmed[4..].TrimStart();
             if (afterKind.IsEmpty || afterKind[0] != ':')
             {
                 continue;
             }
 
-            var value = afterKind.Slice(1).Trim();
+            var value = afterKind[1..].Trim();
 
             // Strip inline YAML comments (K8s kind values never contain '#').
             var commentIdx = value.IndexOf('#');
             if (commentIdx >= 0)
             {
-                value = value.Slice(0, commentIdx).TrimEnd();
+                value = value[..commentIdx].TrimEnd();
             }
 
             // Strip optional surrounding quotes (e.g. kind: "Deployment").
@@ -169,7 +169,7 @@ public class KubernetesComponentDetector : FileComponentDetector, IDefaultOffCom
                 ((value[0] == '"' && value[^1] == '"') ||
                  (value[0] == '\'' && value[^1] == '\'')))
             {
-                value = value.Slice(1, value.Length - 2).Trim();
+                value = value[1..^1].Trim();
             }
 
             if (!value.IsEmpty && KubernetesKinds.Contains(value.ToString()))
