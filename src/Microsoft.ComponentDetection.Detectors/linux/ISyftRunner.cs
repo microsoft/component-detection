@@ -10,6 +10,8 @@ using System.Threading.Tasks;
 /// </summary>
 public interface ISyftRunner
 {
+    internal const string SyftSourceKindArgument = "--from";
+
     /// <summary>
     /// Checks whether this runner is able to execute Syft scans in the current environment.
     /// </summary>

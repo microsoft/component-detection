@@ -77,7 +77,7 @@ internal class BinarySyftRunner : ISyftRunner
         IList<string> arguments,
         CancellationToken cancellationToken = default)
     {
-        var syftSource = GetSyftSource(imageReference);
+        var (syftSourceKind, syftSource) = GetSyftSource(imageReference);
         var acquired = false;
 
         try
@@ -91,7 +91,7 @@ internal class BinarySyftRunner : ISyftRunner
                 return (string.Empty, string.Empty);
             }
 
-            var parameters = new[] { syftSource }
+            var parameters = new[] { syftSource, ISyftRunner.SyftSourceKindArgument, syftSourceKind }
                 .Concat(arguments)
                 .ToArray();
 
@@ -121,19 +121,6 @@ internal class BinarySyftRunner : ISyftRunner
         }
     }
 
-    /// <summary>
-    /// Constructs the Syft source argument from an image reference.
-    /// For local images, the host path is used directly with the appropriate scheme prefix.
-    /// </summary>
-    private static string GetSyftSource(ImageReference imageReference) =>
-        imageReference.Kind switch
-        {
-            ImageReferenceKind.DockerImage => imageReference.Reference,
-            ImageReferenceKind.OciLayout => $"oci-dir:{imageReference.Reference}",
-            ImageReferenceKind.OciArchive => $"oci-archive:{imageReference.Reference}",
-            ImageReferenceKind.DockerArchive => $"docker-archive:{imageReference.Reference}",
-            _ => throw new ArgumentOutOfRangeException(
-                nameof(imageReference),
-                $"Unsupported image reference kind '{imageReference.Kind}'."),
-        };
+    private static (string SyftSourceKind, string SyftSource) GetSyftSource(ImageReference imageReference) =>
+        (imageReference.GetSyftSourceKind(), imageReference.Reference);
 }

@@ -62,7 +62,7 @@ internal class DockerSyftRunner : IDockerSyftRunner
         IList<string> arguments,
         CancellationToken cancellationToken = default)
     {
-        var (syftSource, additionalBinds) = GetSyftSourceAndBinds(imageReference);
+        var (syftSourceKind, syftSource, additionalBinds) = GetSyftSourceAndBinds(imageReference);
         var acquired = false;
 
         try
@@ -76,7 +76,7 @@ internal class DockerSyftRunner : IDockerSyftRunner
                 return (string.Empty, string.Empty);
             }
 
-            var command = new List<string> { syftSource }
+            var command = new List<string> { syftSource, ISyftRunner.SyftSourceKindArgument, syftSourceKind }
                 .Concat(arguments)
                 .ToList();
 
@@ -100,16 +100,17 @@ internal class DockerSyftRunner : IDockerSyftRunner
     /// For Docker images, no additional binds are needed. For local images (OCI/archives),
     /// the host path is mounted into the container and the source uses the container-relative path.
     /// </summary>
-    private static (string SyftSource, IList<string> AdditionalBinds) GetSyftSourceAndBinds(ImageReference imageReference)
+    private static (string SyftSourceKind, string SyftSource, IList<string> AdditionalBinds) GetSyftSourceAndBinds(ImageReference imageReference)
     {
         switch (imageReference.Kind)
         {
             case ImageReferenceKind.DockerImage:
-                return (imageReference.Reference, []);
+                return (imageReference.GetSyftSourceKind(), imageReference.Reference, []);
 
             case ImageReferenceKind.OciLayout:
                 return (
-                    $"oci-dir:{LocalImageMountPoint}",
+                    imageReference.GetSyftSourceKind(),
+                    LocalImageMountPoint,
                     [$"{imageReference.Reference}:{LocalImageMountPoint}:ro"]);
 
             case ImageReferenceKind.OciArchive:
@@ -118,7 +119,8 @@ internal class DockerSyftRunner : IDockerSyftRunner
                     ?? throw new InvalidOperationException($"Could not determine parent directory for OCI archive path '{imageReference.Reference}'.");
                 var fileName = Path.GetFileName(imageReference.Reference);
                 return (
-                    $"oci-archive:{LocalImageMountPoint}/{fileName}",
+                    imageReference.GetSyftSourceKind(),
+                    $"{LocalImageMountPoint}/{fileName}",
                     [$"{dir}:{LocalImageMountPoint}:ro"]);
             }
 
@@ -128,14 +130,15 @@ internal class DockerSyftRunner : IDockerSyftRunner
                     ?? throw new InvalidOperationException($"Could not determine parent directory for Docker archive path '{imageReference.Reference}'.");
                 var fileName = Path.GetFileName(imageReference.Reference);
                 return (
-                    $"docker-archive:{LocalImageMountPoint}/{fileName}",
+                    imageReference.GetSyftSourceKind(),
+                    $"{LocalImageMountPoint}/{fileName}",
                     [$"{dir}:{LocalImageMountPoint}:ro"]);
             }
 
             default:
                 throw new ArgumentOutOfRangeException(
                     nameof(imageReference),
-                    $"Unsupported image reference kind '{imageReference.Kind}'.");
+                    $"Unsupported image reference kind '{imageReference.Kind}' for DockerSyft.");
         }
     }
 }

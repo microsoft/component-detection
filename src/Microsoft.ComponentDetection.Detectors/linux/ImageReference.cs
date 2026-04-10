@@ -117,4 +117,24 @@ public class ImageReference
         };
 #pragma warning restore CA1308
     }
+
+    /// <summary>
+    /// Gets the Syft source kind string corresponding to this image reference, which is used in Syft's --from argument.
+    /// See https://oss.anchore.com/docs/guides/sbom/scan-targets/ for details.
+    /// </summary>
+    /// <returns>The Syft source kind string.</returns>
+    /// <exception cref="ArgumentOutOfRangeException">If an unsupported image reference kind is encountered.</exception>
+    public string GetSyftSourceKind()
+    {
+        return this.Kind switch
+        {
+            ImageReferenceKind.DockerImage => "docker",
+            ImageReferenceKind.OciLayout => "oci-dir",
+            ImageReferenceKind.OciArchive => "oci-archive",
+            ImageReferenceKind.DockerArchive => "docker-archive",
+            _ => throw new ArgumentOutOfRangeException(
+                nameof(this.Kind),
+                $"Unsupported image reference kind '{this.Kind}'."),
+        };
+    }
 }

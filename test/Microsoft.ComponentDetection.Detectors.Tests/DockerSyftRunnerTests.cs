@@ -77,7 +77,7 @@ public class DockerSyftRunnerTests
         this.mockDockerService.Verify(
             s => s.CreateAndRunContainerAsync(
                 It.IsAny<string>(),
-                It.Is<IList<string>>(cmd => cmd[0] == "ubuntu:22.04"),
+                It.Is<IList<string>>(cmd => cmd[0] == "ubuntu:22.04" && cmd[1] == "--from" && cmd[2] == "docker"),
                 It.Is<IList<string>>(binds => binds.Count == 0),
                 It.IsAny<CancellationToken>()),
             Times.Once);
@@ -107,7 +107,7 @@ public class DockerSyftRunnerTests
         this.mockDockerService.Verify(
             s => s.CreateAndRunContainerAsync(
                 It.IsAny<string>(),
-                It.Is<IList<string>>(cmd => cmd[0] == "oci-dir:/image"),
+                It.Is<IList<string>>(cmd => cmd[0] == "/image" && cmd[1] == "--from" && cmd[2] == "oci-dir"),
                 It.Is<IList<string>>(binds =>
                     binds.Count == 1 && binds[0] == "/path/to/oci:/image:ro"),
                 It.IsAny<CancellationToken>()),
@@ -139,7 +139,7 @@ public class DockerSyftRunnerTests
         this.mockDockerService.Verify(
             s => s.CreateAndRunContainerAsync(
                 It.IsAny<string>(),
-                It.Is<IList<string>>(cmd => cmd[0] == "oci-archive:/image/image.tar"),
+                It.Is<IList<string>>(cmd => cmd[0] == "/image/image.tar" && cmd[1] == "--from" && cmd[2] == "oci-archive"),
                 It.Is<IList<string>>(binds =>
                     binds.Count == 1 && binds[0] == $"{expectedDir}:/image:ro"),
                 It.IsAny<CancellationToken>()),
@@ -171,7 +171,7 @@ public class DockerSyftRunnerTests
         this.mockDockerService.Verify(
             s => s.CreateAndRunContainerAsync(
                 It.IsAny<string>(),
-                It.Is<IList<string>>(cmd => cmd[0] == "docker-archive:/image/myimage.tar"),
+                It.Is<IList<string>>(cmd => cmd[0] == "/image/myimage.tar" && cmd[1] == "--from" && cmd[2] == "docker-archive"),
                 It.Is<IList<string>>(binds =>
                     binds.Count == 1 && binds[0] == $"{expectedDir}:/image:ro"),
                 It.IsAny<CancellationToken>()),

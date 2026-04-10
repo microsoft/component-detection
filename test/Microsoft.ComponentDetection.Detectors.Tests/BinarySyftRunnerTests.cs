@@ -149,13 +149,15 @@ public class BinarySyftRunnerTests
                 null,
                 It.IsAny<CancellationToken>(),
                 It.Is<string[]>(args =>
-                    args.Length == 6
+                    args.Length == 8
                     && args[0] == "fake_hash"
-                    && args[1] == "--quiet"
-                    && args[2] == "--output"
-                    && args[3] == "json"
-                    && args[4] == "--scope"
-                    && args[5] == "all-layers")),
+                    && args[1] == "--from"
+                    && args[2] == "docker"
+                    && args[3] == "--quiet"
+                    && args[4] == "--output"
+                    && args[5] == "json"
+                    && args[6] == "--scope"
+                    && args[7] == "all-layers")),
             Times.Once);
     }
 
@@ -227,14 +229,15 @@ public class BinarySyftRunnerTests
     }
 
     [TestMethod]
-    [DataRow(ImageReferenceKind.OciLayout, "/path/to/oci", "oci-dir:/path/to/oci")]
-    [DataRow(ImageReferenceKind.OciArchive, "/path/to/image.tar", "oci-archive:/path/to/image.tar")]
-    [DataRow(ImageReferenceKind.DockerArchive, "/path/to/save.tar", "docker-archive:/path/to/save.tar")]
-    [DataRow(ImageReferenceKind.DockerImage, "ubuntu:22.04", "ubuntu:22.04")]
+    [DataRow(ImageReferenceKind.OciLayout, "/path/to/oci", "/path/to/oci", "oci-dir")]
+    [DataRow(ImageReferenceKind.OciArchive, "/path/to/image.tar", "/path/to/image.tar", "oci-archive")]
+    [DataRow(ImageReferenceKind.DockerArchive, "/path/to/save.tar", "/path/to/save.tar", "docker-archive")]
+    [DataRow(ImageReferenceKind.DockerImage, "ubuntu:22.04", "ubuntu:22.04", "docker")]
     public async Task RunSyftAsync_ConstructsCorrectSourceForImageKind(
         ImageReferenceKind kind,
         string reference,
-        string expectedSource)
+        string expectedSource,
+        string expectedSourceKind)
     {
         this.mockCommandLineService.Setup(service =>
                 service.ExecuteCommandAsync(
@@ -270,7 +273,7 @@ public class BinarySyftRunnerTests
                 null,
                 null,
                 It.IsAny<CancellationToken>(),
-                It.Is<string[]>(args => args[0] == expectedSource)),
+                It.Is<string[]>(args => args[0] == expectedSource && args[1] == "--from" && args[2] == expectedSourceKind)),
             Times.Once);
     }
 }
