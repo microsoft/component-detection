@@ -1,0 +1,126 @@
+namespace Microsoft.ComponentDetection.Detectors.Linux;
+
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
+using Microsoft.ComponentDetection.Contracts;
+using Microsoft.Extensions.Logging;
+
+/// <summary>
+/// Runs Syft by invoking a local Syft binary.
+/// </summary>
+internal class BinarySyftRunner : ISyftRunner
+{
+    private static readonly SemaphoreSlim BinarySemaphore = new(2);
+
+    private static readonly int SemaphoreTimeout = Convert.ToInt32(
+        TimeSpan.FromHours(1).TotalMilliseconds);
+
+    private readonly string syftBinaryPath;
+    private readonly ICommandLineInvocationService commandLineInvocationService;
+    private readonly ILogger<BinarySyftRunner> logger;
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="BinarySyftRunner"/> class.
+    /// </summary>
+    /// <param name="syftBinaryPath">The path to the Syft binary.</param>
+    /// <param name="commandLineInvocationService">The command line invocation service.</param>
+    /// <param name="logger">The logger.</param>
+    public BinarySyftRunner(
+        string syftBinaryPath,
+        ICommandLineInvocationService commandLineInvocationService,
+        ILogger<BinarySyftRunner> logger)
+    {
+        this.syftBinaryPath = syftBinaryPath;
+        this.commandLineInvocationService = commandLineInvocationService;
+        this.logger = logger;
+    }
+
+    /// <inheritdoc/>
+    public async Task<bool> CanRunAsync(CancellationToken cancellationToken = default)
+    {
+        if (!await this.commandLineInvocationService.CanCommandBeLocatedAsync(this.syftBinaryPath, null, "--version"))
+        {
+            this.logger.LogInformation("Syft binary at {SyftBinaryPath} was not found in the local environment.", this.syftBinaryPath);
+            return false;
+        }
+
+        var result = await this.commandLineInvocationService.ExecuteCommandAsync(
+            this.syftBinaryPath,
+            null,
+            null,
+            cancellationToken,
+            "--version");
+
+        if (result.ExitCode != 0)
+        {
+            this.logger.LogInformation(
+                "Syft binary at {SyftBinaryPath} failed version check with exit code {ExitCode}. Stderr: {StdErr}",
+                this.syftBinaryPath,
+                result.ExitCode,
+                result.StdErr);
+            return false;
+        }
+
+        this.logger.LogInformation(
+            "Using Syft binary at {SyftBinaryPath}: {SyftVersion}",
+            this.syftBinaryPath,
+            result.StdOut?.Trim());
+        return true;
+    }
+
+    /// <inheritdoc/>
+    public async Task<(string Stdout, string Stderr)> RunSyftAsync(
+        ImageReference imageReference,
+        IList<string> arguments,
+        CancellationToken cancellationToken = default)
+    {
+        var (syftSourceKind, syftSource) = GetSyftSource(imageReference);
+        var acquired = false;
+
+        try
+        {
+            acquired = await BinarySemaphore.WaitAsync(SemaphoreTimeout, cancellationToken);
+            if (!acquired)
+            {
+                this.logger.LogWarning(
+                    "Failed to enter the binary semaphore for image {ImageReference}",
+                    imageReference.Reference);
+                return (string.Empty, string.Empty);
+            }
+
+            var parameters = new[] { syftSource, ISyftRunner.SyftSourceKindArgument, syftSourceKind }
+                .Concat(arguments)
+                .ToArray();
+
+            var result = await this.commandLineInvocationService.ExecuteCommandAsync(
+                this.syftBinaryPath,
+                null,
+                null,
+                cancellationToken,
+                parameters);
+
+            if (result.ExitCode != 0)
+            {
+                this.logger.LogError(
+                    "Syft binary exited with code {ExitCode}. Stderr: {StdErr}",
+                    result.ExitCode,
+                    result.StdErr);
+            }
+
+            return (result.StdOut, result.StdErr);
+        }
+        finally
+        {
+            if (acquired)
+            {
+                BinarySemaphore.Release();
+            }
+        }
+    }
+
+    private static (string SyftSourceKind, string SyftSource) GetSyftSource(ImageReference imageReference) =>
+        (imageReference.GetSyftSourceKind(), imageReference.Reference);
+}

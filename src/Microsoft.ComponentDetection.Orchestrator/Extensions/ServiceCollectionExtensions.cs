@@ -43,6 +43,7 @@ public static class ServiceCollectionExtensions
     public static IServiceCollection AddComponentDetection(this IServiceCollection services)
     {
         // Shared services
+        services.AddLogging();
         services.AddSingleton<ITelemetryService, CommandLineTelemetryService>();
         services.AddSingleton<ICommandLineInvocationService, CommandLineInvocationService>();
         services.AddSingleton<IComponentStreamEnumerableFactory, ComponentStreamEnumerableFactory>();
@@ -102,6 +103,8 @@ public static class ServiceCollectionExtensions
 
         // Linux
         services.AddSingleton<ILinuxScanner, LinuxScanner>();
+        services.AddSingleton<IDockerSyftRunner, DockerSyftRunner>();
+        services.AddSingleton<IBinarySyftRunnerFactory, BinarySyftRunnerFactory>();
         services.AddSingleton<IArtifactComponentFactory, LinuxComponentFactory>();
         services.AddSingleton<IArtifactComponentFactory, NpmComponentFactory>();
         services.AddSingleton<IArtifactComponentFactory, PipComponentFactory>();

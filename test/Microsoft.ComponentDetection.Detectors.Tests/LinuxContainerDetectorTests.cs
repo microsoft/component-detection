@@ -38,15 +38,13 @@ public class LinuxContainerDetectorTests
     private readonly Mock<IDockerService> mockDockerService;
     private readonly Mock<ILogger> mockLogger;
     private readonly Mock<ILogger<LinuxContainerDetector>> mockLinuxContainerDetectorLogger;
+    private readonly Mock<IDockerSyftRunner> mockDockerSyftRunner;
+    private readonly Mock<IBinarySyftRunnerFactory> mockBinarySyftRunnerFactory;
     private readonly Mock<ILinuxScanner> mockSyftLinuxScanner;
 
     public LinuxContainerDetectorTests()
     {
         this.mockDockerService = new Mock<IDockerService>();
-        this.mockDockerService.Setup(service =>
-                service.CanRunLinuxContainersAsync(It.IsAny<CancellationToken>())
-            )
-            .ReturnsAsync(true);
         this.mockDockerService.Setup(service =>
                 service.TryPullImageAsync(It.IsAny<string>(), It.IsAny<CancellationToken>())
             )
@@ -67,15 +65,22 @@ public class LinuxContainerDetectorTests
 
         this.mockLogger = new Mock<ILogger>();
         this.mockLinuxContainerDetectorLogger = new Mock<ILogger<LinuxContainerDetector>>();
+        this.mockDockerSyftRunner = new Mock<IDockerSyftRunner>();
+        this.mockDockerSyftRunner.Setup(runner =>
+                runner.CanRunAsync(It.IsAny<CancellationToken>())
+            )
+            .ReturnsAsync(true);
+        this.mockBinarySyftRunnerFactory = new Mock<IBinarySyftRunnerFactory>();
 
         this.mockSyftLinuxScanner = new Mock<ILinuxScanner>();
         this.mockSyftLinuxScanner.Setup(scanner =>
                 scanner.ScanLinuxAsync(
-                    It.IsAny<string>(),
+                    It.IsAny<ImageReference>(),
                     It.IsAny<IEnumerable<DockerLayer>>(),
                     It.IsAny<int>(),
                     It.IsAny<ISet<ComponentType>>(),
                     It.IsAny<LinuxScannerScope>(),
+                    It.IsAny<ISyftRunner>(),
                     It.IsAny<CancellationToken>()
                 )
             )
@@ -98,6 +103,8 @@ public class LinuxContainerDetectorTests
 
         var linuxContainerDetector = new LinuxContainerDetector(
             this.mockSyftLinuxScanner.Object,
+            this.mockDockerSyftRunner.Object,
+            this.mockBinarySyftRunnerFactory.Object,
             this.mockDockerService.Object,
             this.mockLinuxContainerDetectorLogger.Object
         );
@@ -138,13 +145,15 @@ public class LinuxContainerDetectorTests
             componentRecorder
         );
 
-        this.mockDockerService.Setup(service =>
-                service.CanRunLinuxContainersAsync(It.IsAny<CancellationToken>())
+        this.mockDockerSyftRunner.Setup(runner =>
+                runner.CanRunAsync(It.IsAny<CancellationToken>())
             )
             .ReturnsAsync(false);
 
         var linuxContainerDetector = new LinuxContainerDetector(
             this.mockSyftLinuxScanner.Object,
+            this.mockDockerSyftRunner.Object,
+            this.mockBinarySyftRunnerFactory.Object,
             this.mockDockerService.Object,
             this.mockLinuxContainerDetectorLogger.Object
         );
@@ -183,6 +192,8 @@ public class LinuxContainerDetectorTests
 
         var linuxContainerDetector = new LinuxContainerDetector(
             this.mockSyftLinuxScanner.Object,
+            this.mockDockerSyftRunner.Object,
+            this.mockBinarySyftRunnerFactory.Object,
             this.mockDockerService.Object,
             this.mockLinuxContainerDetectorLogger.Object
         );
@@ -221,6 +232,8 @@ public class LinuxContainerDetectorTests
 
         var linuxContainerDetector = new LinuxContainerDetector(
             this.mockSyftLinuxScanner.Object,
+            this.mockDockerSyftRunner.Object,
+            this.mockBinarySyftRunnerFactory.Object,
             this.mockDockerService.Object,
             this.mockLinuxContainerDetectorLogger.Object
         );
@@ -256,6 +269,8 @@ public class LinuxContainerDetectorTests
 
         var linuxContainerDetector = new LinuxContainerDetector(
             this.mockSyftLinuxScanner.Object,
+            this.mockDockerSyftRunner.Object,
+            this.mockBinarySyftRunnerFactory.Object,
             this.mockDockerService.Object,
             this.mockLinuxContainerDetectorLogger.Object
         );
@@ -276,11 +291,12 @@ public class LinuxContainerDetectorTests
         this.mockSyftLinuxScanner.Verify(
             scanner =>
                 scanner.ScanLinuxAsync(
-                    It.IsAny<string>(),
+                    It.IsAny<ImageReference>(),
                     It.IsAny<IEnumerable<DockerLayer>>(),
                     It.IsAny<int>(),
                     It.IsAny<ISet<ComponentType>>(),
                     It.IsAny<LinuxScannerScope>(),
+                    It.IsAny<ISyftRunner>(),
                     It.IsAny<CancellationToken>()
                 ),
             Times.Once
@@ -302,6 +318,8 @@ public class LinuxContainerDetectorTests
 
         var linuxContainerDetector = new LinuxContainerDetector(
             this.mockSyftLinuxScanner.Object,
+            this.mockDockerSyftRunner.Object,
+            this.mockBinarySyftRunnerFactory.Object,
             this.mockDockerService.Object,
             this.mockLinuxContainerDetectorLogger.Object
         );
@@ -333,6 +351,8 @@ public class LinuxContainerDetectorTests
 
         var linuxContainerDetector = new LinuxContainerDetector(
             this.mockSyftLinuxScanner.Object,
+            this.mockDockerSyftRunner.Object,
+            this.mockBinarySyftRunnerFactory.Object,
             this.mockDockerService.Object,
             this.mockLinuxContainerDetectorLogger.Object
         );
@@ -342,11 +362,12 @@ public class LinuxContainerDetectorTests
         this.mockSyftLinuxScanner.Verify(
             scanner =>
                 scanner.ScanLinuxAsync(
-                    It.IsAny<string>(),
+                    It.IsAny<ImageReference>(),
                     It.IsAny<IEnumerable<DockerLayer>>(),
                     It.IsAny<int>(),
                     It.IsAny<ISet<ComponentType>>(),
                     expectedScope,
+                    It.IsAny<ISyftRunner>(),
                     It.IsAny<CancellationToken>()
                 ),
             Times.Once
@@ -429,9 +450,9 @@ public class LinuxContainerDetectorTests
 
             this.mockSyftLinuxScanner.Setup(scanner =>
                     scanner.GetSyftOutputAsync(
-                        It.IsAny<string>(),
-                        It.IsAny<IList<string>>(),
+                        It.IsAny<ImageReference>(),
                         It.IsAny<LinuxScannerScope>(),
+                        It.IsAny<ISyftRunner>(),
                         It.IsAny<CancellationToken>()
                     )
                 )
@@ -456,10 +477,12 @@ public class LinuxContainerDetectorTests
                 .Returns(layerMappedComponents);
 
             var linuxContainerDetector = new LinuxContainerDetector(
-                this.mockSyftLinuxScanner.Object,
-                this.mockDockerService.Object,
-                this.mockLinuxContainerDetectorLogger.Object
-            );
+            this.mockSyftLinuxScanner.Object,
+            this.mockDockerSyftRunner.Object,
+            this.mockBinarySyftRunnerFactory.Object,
+            this.mockDockerService.Object,
+            this.mockLinuxContainerDetectorLogger.Object
+        );
 
             var scanResult = await linuxContainerDetector.ExecuteDetectorAsync(scanRequest);
 
@@ -484,10 +507,9 @@ public class LinuxContainerDetectorTests
             this.mockSyftLinuxScanner.Verify(
                 scanner =>
                     scanner.GetSyftOutputAsync(
-                        It.Is<string>(s => s.StartsWith("oci-dir:")),
-                        It.Is<IList<string>>(binds =>
-                            binds.Count == 1 && binds[0].Contains(ociDir)),
+                        It.Is<ImageReference>(r => r.Kind == ImageReferenceKind.OciLayout),
                         It.IsAny<LinuxScannerScope>(),
+                        It.IsAny<ISyftRunner>(),
                         It.IsAny<CancellationToken>()
                     ),
                 Times.Once
@@ -563,9 +585,9 @@ public class LinuxContainerDetectorTests
 
             this.mockSyftLinuxScanner.Setup(scanner =>
                     scanner.GetSyftOutputAsync(
-                        It.IsAny<string>(),
-                        It.IsAny<IList<string>>(),
+                        It.IsAny<ImageReference>(),
                         It.IsAny<LinuxScannerScope>(),
+                        It.IsAny<ISyftRunner>(),
                         It.IsAny<CancellationToken>()
                     )
                 )
@@ -581,10 +603,12 @@ public class LinuxContainerDetectorTests
                 .Returns([]);
 
             var linuxContainerDetector = new LinuxContainerDetector(
-                this.mockSyftLinuxScanner.Object,
-                this.mockDockerService.Object,
-                this.mockLinuxContainerDetectorLogger.Object
-            );
+            this.mockSyftLinuxScanner.Object,
+            this.mockDockerSyftRunner.Object,
+            this.mockBinarySyftRunnerFactory.Object,
+            this.mockDockerService.Object,
+            this.mockLinuxContainerDetectorLogger.Object
+        );
 
             await linuxContainerDetector.ExecuteDetectorAsync(scanRequest);
 
@@ -592,10 +616,9 @@ public class LinuxContainerDetectorTests
             this.mockSyftLinuxScanner.Verify(
                 scanner =>
                     scanner.GetSyftOutputAsync(
-                        It.Is<string>(s => s.StartsWith("oci-dir:")),
-                        It.Is<IList<string>>(binds =>
-                            binds.Count == 1 && binds[0].Contains(ociDir)),
+                        It.Is<ImageReference>(r => r.Kind == ImageReferenceKind.OciLayout && r.Reference == ociDir),
                         It.IsAny<LinuxScannerScope>(),
+                        It.IsAny<ISyftRunner>(),
                         It.IsAny<CancellationToken>()
                     ),
                 Times.Once
@@ -651,9 +674,9 @@ public class LinuxContainerDetectorTests
 
             this.mockSyftLinuxScanner.Setup(scanner =>
                     scanner.GetSyftOutputAsync(
-                        It.IsAny<string>(),
-                        It.IsAny<IList<string>>(),
+                        It.IsAny<ImageReference>(),
                         It.IsAny<LinuxScannerScope>(),
+                        It.IsAny<ISyftRunner>(),
                         It.IsAny<CancellationToken>()
                     )
                 )
@@ -669,20 +692,21 @@ public class LinuxContainerDetectorTests
                 .Returns([]);
 
             var linuxContainerDetector = new LinuxContainerDetector(
-                this.mockSyftLinuxScanner.Object,
-                this.mockDockerService.Object,
-                this.mockLinuxContainerDetectorLogger.Object
-            );
+            this.mockSyftLinuxScanner.Object,
+            this.mockDockerSyftRunner.Object,
+            this.mockBinarySyftRunnerFactory.Object,
+            this.mockDockerService.Object,
+            this.mockLinuxContainerDetectorLogger.Object
+        );
 
             await linuxContainerDetector.ExecuteDetectorAsync(scanRequest);
 
             this.mockSyftLinuxScanner.Verify(
                 scanner =>
                     scanner.GetSyftOutputAsync(
-                        It.Is<string>(s => s.StartsWith("oci-dir:")),
-                        It.Is<IList<string>>(binds =>
-                            binds.Count == 1 && binds[0].Contains(ociDir) && !binds[0].Contains(ociDirWithExtraComponents)),
+                        It.Is<ImageReference>(r => r.Kind == ImageReferenceKind.OciLayout && r.Reference.Contains(ociDir) && !r.Reference.Contains(ociDirWithExtraComponents)),
                         It.IsAny<LinuxScannerScope>(),
+                        It.IsAny<ISyftRunner>(),
                         It.IsAny<CancellationToken>()
                     ),
                 Times.Once
@@ -739,9 +763,9 @@ public class LinuxContainerDetectorTests
 
             this.mockSyftLinuxScanner.Setup(scanner =>
                     scanner.GetSyftOutputAsync(
-                        It.IsAny<string>(),
-                        It.IsAny<IList<string>>(),
+                        It.IsAny<ImageReference>(),
                         It.IsAny<LinuxScannerScope>(),
+                        It.IsAny<ISyftRunner>(),
                         It.IsAny<CancellationToken>()
                     )
                 )
@@ -766,10 +790,12 @@ public class LinuxContainerDetectorTests
                 .Returns(ociLayerMappedComponents);
 
             var linuxContainerDetector = new LinuxContainerDetector(
-                this.mockSyftLinuxScanner.Object,
-                this.mockDockerService.Object,
-                this.mockLinuxContainerDetectorLogger.Object
-            );
+            this.mockSyftLinuxScanner.Object,
+            this.mockDockerSyftRunner.Object,
+            this.mockBinarySyftRunnerFactory.Object,
+            this.mockDockerService.Object,
+            this.mockLinuxContainerDetectorLogger.Object
+        );
 
             var scanResult = await linuxContainerDetector.ExecuteDetectorAsync(scanRequest);
 
@@ -824,9 +850,9 @@ public class LinuxContainerDetectorTests
 
             this.mockSyftLinuxScanner.Setup(scanner =>
                     scanner.GetSyftOutputAsync(
-                        It.IsAny<string>(),
-                        It.IsAny<IList<string>>(),
+                        It.IsAny<ImageReference>(),
                         It.IsAny<LinuxScannerScope>(),
+                        It.IsAny<ISyftRunner>(),
                         It.IsAny<CancellationToken>()
                     )
                 )
@@ -851,10 +877,12 @@ public class LinuxContainerDetectorTests
                 .Returns(layerMappedComponents);
 
             var linuxContainerDetector = new LinuxContainerDetector(
-                this.mockSyftLinuxScanner.Object,
-                this.mockDockerService.Object,
-                this.mockLinuxContainerDetectorLogger.Object
-            );
+            this.mockSyftLinuxScanner.Object,
+            this.mockDockerSyftRunner.Object,
+            this.mockBinarySyftRunnerFactory.Object,
+            this.mockDockerService.Object,
+            this.mockLinuxContainerDetectorLogger.Object
+        );
 
             var scanResult = await linuxContainerDetector.ExecuteDetectorAsync(scanRequest);
 
@@ -937,9 +965,9 @@ public class LinuxContainerDetectorTests
 
             this.mockSyftLinuxScanner.Setup(scanner =>
                     scanner.GetSyftOutputAsync(
-                        It.IsAny<string>(),
-                        It.IsAny<IList<string>>(),
+                        It.IsAny<ImageReference>(),
                         It.IsAny<LinuxScannerScope>(),
+                        It.IsAny<ISyftRunner>(),
                         It.IsAny<CancellationToken>()
                     )
                 )
@@ -964,10 +992,12 @@ public class LinuxContainerDetectorTests
                 .Returns(layerMappedComponents);
 
             var linuxContainerDetector = new LinuxContainerDetector(
-                this.mockSyftLinuxScanner.Object,
-                this.mockDockerService.Object,
-                this.mockLinuxContainerDetectorLogger.Object
-            );
+            this.mockSyftLinuxScanner.Object,
+            this.mockDockerSyftRunner.Object,
+            this.mockBinarySyftRunnerFactory.Object,
+            this.mockDockerService.Object,
+            this.mockLinuxContainerDetectorLogger.Object
+        );
 
             var scanResult = await linuxContainerDetector.ExecuteDetectorAsync(scanRequest);
 
@@ -1045,9 +1075,9 @@ public class LinuxContainerDetectorTests
 
             this.mockSyftLinuxScanner.Setup(scanner =>
                     scanner.GetSyftOutputAsync(
-                        It.IsAny<string>(),
-                        It.IsAny<IList<string>>(),
+                        It.IsAny<ImageReference>(),
                         It.IsAny<LinuxScannerScope>(),
+                        It.IsAny<ISyftRunner>(),
                         It.IsAny<CancellationToken>()
                     )
                 )
@@ -1072,10 +1102,12 @@ public class LinuxContainerDetectorTests
                 .Returns(layerMappedComponents);
 
             var linuxContainerDetector = new LinuxContainerDetector(
-                this.mockSyftLinuxScanner.Object,
-                this.mockDockerService.Object,
-                this.mockLinuxContainerDetectorLogger.Object
-            );
+            this.mockSyftLinuxScanner.Object,
+            this.mockDockerSyftRunner.Object,
+            this.mockBinarySyftRunnerFactory.Object,
+            this.mockDockerService.Object,
+            this.mockLinuxContainerDetectorLogger.Object
+        );
 
             var scanResult = await linuxContainerDetector.ExecuteDetectorAsync(scanRequest);
 
@@ -1098,10 +1130,9 @@ public class LinuxContainerDetectorTests
             this.mockSyftLinuxScanner.Verify(
                 scanner =>
                     scanner.GetSyftOutputAsync(
-                        It.Is<string>(s => s.StartsWith("oci-archive:") && s.Contains(ociArchiveName)),
-                        It.Is<IList<string>>(binds =>
-                            binds.Count == 1 && binds[0].Contains(ociArchiveDir)),
+                        It.Is<ImageReference>(r => r.Kind == ImageReferenceKind.OciArchive && r.Reference == ociArchive),
                         It.IsAny<LinuxScannerScope>(),
+                        It.IsAny<ISyftRunner>(),
                         It.IsAny<CancellationToken>()
                     ),
                 Times.Once
@@ -1177,9 +1208,9 @@ public class LinuxContainerDetectorTests
 
             this.mockSyftLinuxScanner.Setup(scanner =>
                     scanner.GetSyftOutputAsync(
-                        It.IsAny<string>(),
-                        It.IsAny<IList<string>>(),
+                        It.IsAny<ImageReference>(),
                         It.IsAny<LinuxScannerScope>(),
+                        It.IsAny<ISyftRunner>(),
                         It.IsAny<CancellationToken>()
                     )
                 )
@@ -1204,10 +1235,12 @@ public class LinuxContainerDetectorTests
                 .Returns(layerMappedComponents);
 
             var linuxContainerDetector = new LinuxContainerDetector(
-                this.mockSyftLinuxScanner.Object,
-                this.mockDockerService.Object,
-                this.mockLinuxContainerDetectorLogger.Object
-            );
+            this.mockSyftLinuxScanner.Object,
+            this.mockDockerSyftRunner.Object,
+            this.mockBinarySyftRunnerFactory.Object,
+            this.mockDockerService.Object,
+            this.mockLinuxContainerDetectorLogger.Object
+        );
 
             var scanResult = await linuxContainerDetector.ExecuteDetectorAsync(scanRequest);
 
@@ -1230,10 +1263,9 @@ public class LinuxContainerDetectorTests
             this.mockSyftLinuxScanner.Verify(
                 scanner =>
                     scanner.GetSyftOutputAsync(
-                        It.Is<string>(s => s.StartsWith("docker-archive:") && s.Contains(dockerArchiveName)),
-                        It.Is<IList<string>>(binds =>
-                            binds.Count == 1 && binds[0].Contains(dockerArchiveDir)),
+                        It.Is<ImageReference>(r => r.Kind == ImageReferenceKind.DockerArchive && r.Reference == dockerArchive),
                         It.IsAny<LinuxScannerScope>(),
+                        It.IsAny<ISyftRunner>(),
                         It.IsAny<CancellationToken>()
                     ),
                 Times.Once
@@ -1262,6 +1294,8 @@ public class LinuxContainerDetectorTests
 
         var linuxContainerDetector = new LinuxContainerDetector(
             this.mockSyftLinuxScanner.Object,
+            this.mockDockerSyftRunner.Object,
+            this.mockBinarySyftRunnerFactory.Object,
             this.mockDockerService.Object,
             this.mockLinuxContainerDetectorLogger.Object
         );

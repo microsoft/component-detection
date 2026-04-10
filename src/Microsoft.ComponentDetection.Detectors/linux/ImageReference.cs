@@ -5,7 +5,7 @@ using System;
 /// <summary>
 /// Specifies the type of image reference.
 /// </summary>
-internal enum ImageReferenceKind
+public enum ImageReferenceKind
 {
     /// <summary>
     /// A Docker image reference (e.g., "node:latest", "sha256:abc123").
@@ -31,7 +31,7 @@ internal enum ImageReferenceKind
 /// <summary>
 /// Represents a parsed image reference from the scan input, with its type and cleaned reference string.
 /// </summary>
-internal class ImageReference
+public class ImageReference
 {
     private const string OciDirPrefix = "oci-dir:";
     private const string OciArchivePrefix = "oci-archive:";
@@ -116,5 +116,25 @@ internal class ImageReference
             Kind = ImageReferenceKind.DockerImage,
         };
 #pragma warning restore CA1308
+    }
+
+    /// <summary>
+    /// Gets the Syft source kind string corresponding to this image reference, which is used in Syft's --from argument.
+    /// See https://oss.anchore.com/docs/guides/sbom/scan-targets/ for details.
+    /// </summary>
+    /// <returns>The Syft source kind string.</returns>
+    /// <exception cref="ArgumentOutOfRangeException">If an unsupported image reference kind is encountered.</exception>
+    public string GetSyftSourceKind()
+    {
+        return this.Kind switch
+        {
+            ImageReferenceKind.DockerImage => "docker",
+            ImageReferenceKind.OciLayout => "oci-dir",
+            ImageReferenceKind.OciArchive => "oci-archive",
+            ImageReferenceKind.DockerArchive => "docker-archive",
+            _ => throw new ArgumentOutOfRangeException(
+                nameof(this.Kind),
+                $"Unsupported image reference kind '{this.Kind}'."),
+        };
     }
 }

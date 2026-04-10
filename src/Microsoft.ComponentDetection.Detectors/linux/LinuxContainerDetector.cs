@@ -5,7 +5,6 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Common.Exceptions;
@@ -22,6 +21,8 @@ using Microsoft.Extensions.Logging;
 /// </summary>
 public class LinuxContainerDetector(
     ILinuxScanner linuxScanner,
+    IDockerSyftRunner dockerSyftRunner,
+    IBinarySyftRunnerFactory binarySyftRunnerFactory,
     IDockerService dockerService,
     ILogger<LinuxContainerDetector> logger
 ) : IComponentDetector
@@ -31,13 +32,15 @@ public class LinuxContainerDetector(
     private const string ScanScopeConfigKey = "Linux.ImageScanScope";
     private const LinuxScannerScope DefaultScanScope = LinuxScannerScope.AllLayers;
 
-    private const string LocalImageMountPoint = "/image";
+    private const string SyftBinaryPathConfigKey = "Linux.SyftBinaryPath";
 
     // Base image annotations from ADO dockerTask
     private const string BaseImageRefAnnotation = "image.base.ref.name";
     private const string BaseImageDigestAnnotation = "image.base.digest";
 
     private readonly ILinuxScanner linuxScanner = linuxScanner;
+    private readonly IDockerSyftRunner dockerSyftRunner = dockerSyftRunner;
+    private readonly IBinarySyftRunnerFactory binarySyftRunnerFactory = binarySyftRunnerFactory;
     private readonly IDockerService dockerService = dockerService;
     private readonly ILogger<LinuxContainerDetector> logger = logger;
 
@@ -95,17 +98,14 @@ public class LinuxContainerDetector(
         }
 
         var scannerScope = GetScanScope(request.DetectorArgs);
+        var syftRunner = this.GetSyftRunner(request.DetectorArgs);
 
         using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         timeoutCts.CancelAfter(GetTimeout(request.DetectorArgs));
 
-        if (!await this.dockerService.CanRunLinuxContainersAsync(timeoutCts.Token))
+        if (!await syftRunner.CanRunAsync(timeoutCts.Token))
         {
-            using var record = new LinuxContainerDetectorUnsupportedOs
-            {
-                Os = RuntimeInformation.OSDescription,
-            };
-            this.logger.LogInformation("Linux containers are not available on this host.");
+            this.logger.LogInformation("Syft scanner is not available. Skipping Linux container scanning.");
             return EmptySuccessfulScan();
         }
 
@@ -116,6 +116,7 @@ public class LinuxContainerDetector(
                 allImages,
                 request.ComponentRecorder,
                 scannerScope,
+                syftRunner,
                 timeoutCts.Token
             );
         }
@@ -143,7 +144,7 @@ public class LinuxContainerDetector(
     /// </summary>
     /// <param name="detectorArgs">The arguments provided by the user.</param>
     /// <returns> Time interval <see cref="TimeSpan"/> representing the timeout defined by the user, or a default value if one is not provided. </returns>
-    private static TimeSpan GetTimeout(IDictionary<string, string> detectorArgs)
+    private static TimeSpan GetTimeout(IDictionary<string, string>? detectorArgs)
     {
         var defaultTimeout = TimeSpan.FromMinutes(DefaultTimeoutMinutes);
 
@@ -219,10 +220,35 @@ public class LinuxContainerDetector(
         };
     }
 
+    /// <summary>
+    /// Gets the appropriate Syft runner based on detector arguments.
+    /// When <c>Linux.SyftBinaryPath</c> is provided, returns a binary runner via the factory;
+    /// otherwise returns the default Docker-based runner.
+    /// </summary>
+    /// <param name="detectorArgs">The arguments provided by the user.</param>
+    /// <returns>An <see cref="ISyftRunner"/> to use for scanning.</returns>
+    private ISyftRunner GetSyftRunner(IDictionary<string, string> detectorArgs)
+    {
+        if (
+            detectorArgs != null
+            && detectorArgs.TryGetValue(SyftBinaryPathConfigKey, out var syftBinaryPath)
+            && !string.IsNullOrWhiteSpace(syftBinaryPath)
+        )
+        {
+            this.logger.LogInformation(
+                "Using Syft binary at {SyftBinaryPath} for Linux container scanning",
+                syftBinaryPath);
+            return this.binarySyftRunnerFactory.Create(syftBinaryPath);
+        }
+
+        return this.dockerSyftRunner;
+    }
+
     private async Task<IEnumerable<ImageScanningResult>> ProcessImagesAsync(
         IEnumerable<ImageReference> imageReferences,
         IComponentRecorder componentRecorder,
         LinuxScannerScope scannerScope,
+        ISyftRunner syftRunner,
         CancellationToken cancellationToken = default
     )
     {
@@ -232,7 +258,7 @@ public class LinuxContainerDetector(
         var processedDockerImages = new ConcurrentDictionary<string, ContainerDetails>();
 
         // Local images will be validated for existence and tracked by their file path.
-        var localImages = new ConcurrentDictionary<string, ImageReferenceKind>();
+        var localImages = new ConcurrentDictionary<string, ImageReference>();
 
         var resolveTasks = imageReferences.Select(imageRef =>
             this.ResolveImageAsync(imageRef, processedDockerImages, localImages, componentRecorder, cancellationToken));
@@ -243,11 +269,11 @@ public class LinuxContainerDetector(
         var scanTasks = new List<Task<ImageScanningResult>>();
 
         scanTasks.AddRange(processedDockerImages.Select(kvp =>
-            this.ScanDockerImageAsync(kvp.Key, kvp.Value, scannerScope, componentRecorder, cancellationToken)));
+            this.ScanDockerImageAsync(kvp.Key, kvp.Value, scannerScope, syftRunner, componentRecorder, cancellationToken)));
 
         scanTasks.AddRange(localImages
             .Select(kvp =>
-                this.ScanLocalImageAsync(kvp.Key, kvp.Value, scannerScope, componentRecorder, cancellationToken)));
+                this.ScanLocalImageAsync(kvp.Value, scannerScope, syftRunner, componentRecorder, cancellationToken)));
 
         return await Task.WhenAll(scanTasks);
     }
@@ -262,7 +288,7 @@ public class LinuxContainerDetector(
     private async Task ResolveImageAsync(
         ImageReference imageRef,
         ConcurrentDictionary<string, ContainerDetails> resolvedDockerImages,
-        ConcurrentDictionary<string, ImageReferenceKind> localImages,
+        ConcurrentDictionary<string, ImageReference> localImages,
         IComponentRecorder componentRecorder,
         CancellationToken cancellationToken)
     {
@@ -277,7 +303,13 @@ public class LinuxContainerDetector(
                 case ImageReferenceKind.OciArchive:
                 case ImageReferenceKind.DockerArchive:
                     var fullPath = this.ValidateLocalImagePath(imageRef);
-                    localImages.TryAdd(fullPath, imageRef.Kind);
+                    var resolvedRef = new ImageReference
+                    {
+                        OriginalInput = imageRef.OriginalInput,
+                        Reference = fullPath,
+                        Kind = imageRef.Kind,
+                    };
+                    localImages.TryAdd(fullPath, resolvedRef);
                     break;
                 default:
                     throw new InvalidUserInputException(
@@ -355,6 +387,7 @@ public class LinuxContainerDetector(
         string imageId,
         ContainerDetails containerDetails,
         LinuxScannerScope scannerScope,
+        ISyftRunner syftRunner,
         IComponentRecorder componentRecorder,
         CancellationToken cancellationToken)
     {
@@ -377,14 +410,21 @@ public class LinuxContainerDetector(
             ).ToList();
 
             var enabledComponentTypes = this.GetEnabledComponentTypes();
+            var dockerImageRef = new ImageReference
+            {
+                OriginalInput = containerDetails.ImageId,
+                Reference = containerDetails.ImageId,
+                Kind = ImageReferenceKind.DockerImage,
+            };
             var layers = await this.linuxScanner.ScanLinuxAsync(
-                containerDetails.ImageId,
+                dockerImageRef,
                 containerDetails.Layers,
                 baseImageLayerCount,
                 enabledComponentTypes,
                 scannerScope,
-                cancellationToken
-            ) ?? throw new InvalidOperationException($"Failed to scan image layers for image {containerDetails.ImageId}");
+                syftRunner,
+                cancellationToken)
+                ?? throw new InvalidOperationException($"Failed to scan image layers for image {containerDetails.ImageId}");
 
             return this.RecordComponents(containerDetails, layers, componentRecorder);
         }
@@ -402,54 +442,25 @@ public class LinuxContainerDetector(
     }
 
     /// <summary>
-    /// Scans a local image (OCI layout directory or archive file) by invoking Syft with a volume
-    /// mount, extracting metadata from the Syft output to build ContainerDetails, and processing
+    /// Scans a local image (OCI layout directory or archive file) by invoking Syft,
+    /// extracting metadata from the Syft output to build ContainerDetails, and processing
     /// detected components.
     /// </summary>
     private async Task<ImageScanningResult> ScanLocalImageAsync(
-        string localImagePath,
-        ImageReferenceKind imageRefKind,
+        ImageReference imageReference,
         LinuxScannerScope scannerScope,
+        ISyftRunner syftRunner,
         IComponentRecorder componentRecorder,
         CancellationToken cancellationToken)
     {
-        string hostPathToBind;
-        string syftContainerPath;
-        switch (imageRefKind)
-        {
-            case ImageReferenceKind.OciLayout:
-                hostPathToBind = localImagePath;
-                syftContainerPath = $"oci-dir:{LocalImageMountPoint}";
-                break;
-            case ImageReferenceKind.OciArchive:
-                hostPathToBind = Path.GetDirectoryName(localImagePath)
-                    ?? throw new InvalidOperationException($"Could not determine parent directory for OCI archive path '{localImagePath}'.");
-                syftContainerPath = $"oci-archive:{LocalImageMountPoint}/{Path.GetFileName(localImagePath)}";
-                break;
-            case ImageReferenceKind.DockerArchive:
-                hostPathToBind = Path.GetDirectoryName(localImagePath)
-                    ?? throw new InvalidOperationException($"Could not determine parent directory for Docker archive path '{localImagePath}'.");
-                syftContainerPath = $"docker-archive:{LocalImageMountPoint}/{Path.GetFileName(localImagePath)}";
-                break;
-            case ImageReferenceKind.DockerImage:
-            default:
-                throw new InvalidUserInputException(
-                    $"Unsupported image reference kind '{imageRefKind}' for local image at path '{localImagePath}'."
-                );
-        }
+        var localImagePath = imageReference.Reference;
 
         try
         {
-            var additionalBinds = new List<string>
-            {
-                // Bind the local image path into the Syft container as read-only
-                $"{hostPathToBind}:{LocalImageMountPoint}:ro",
-            };
-
             var syftOutput = await this.linuxScanner.GetSyftOutputAsync(
-                syftContainerPath,
-                additionalBinds,
+                imageReference,
                 scannerScope,
+                syftRunner,
                 cancellationToken
             );
 

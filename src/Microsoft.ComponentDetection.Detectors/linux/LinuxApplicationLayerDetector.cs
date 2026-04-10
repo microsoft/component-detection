@@ -12,13 +12,17 @@ using Microsoft.Extensions.Logging;
 /// Linux detector (which only scans system packages).
 /// </summary>
 /// <param name="linuxScanner">The Linux scanner service.</param>
+/// <param name="dockerSyftRunner">The Docker-based Syft runner.</param>
+/// <param name="binarySyftRunnerFactory">The factory for creating binary Syft runners.</param>
 /// <param name="dockerService">The Docker service.</param>
 /// <param name="logger">The logger.</param>
 public class LinuxApplicationLayerDetector(
     ILinuxScanner linuxScanner,
+    IDockerSyftRunner dockerSyftRunner,
+    IBinarySyftRunnerFactory binarySyftRunnerFactory,
     IDockerService dockerService,
     ILogger<LinuxApplicationLayerDetector> logger
-) : LinuxContainerDetector(linuxScanner, dockerService, logger), IExperimentalDetector
+) : LinuxContainerDetector(linuxScanner, dockerSyftRunner, binarySyftRunnerFactory, dockerService, logger), IExperimentalDetector
 {
     /// <inheritdoc/>
     public new string Id => "LinuxApplicationLayer";

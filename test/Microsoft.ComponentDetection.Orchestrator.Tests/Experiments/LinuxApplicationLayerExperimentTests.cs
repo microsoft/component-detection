@@ -16,7 +16,7 @@ public class LinuxApplicationLayerExperimentTests
     [TestMethod]
     public void IsInControlGroup_LinuxContainerDetector_ReturnsTrue()
     {
-        var linuxDetector = new LinuxContainerDetector(null!, null!, null!);
+        var linuxDetector = new LinuxContainerDetector(null!, null!, null!, null!, null!);
         this.experiment.IsInControlGroup(linuxDetector).Should().BeTrue();
     }
 
@@ -63,21 +63,21 @@ public class LinuxApplicationLayerExperimentTests
     [TestMethod]
     public void IsInControlGroup_LinuxApplicationLayerDetector_ReturnsFalse()
     {
-        var experimentalDetector = new LinuxApplicationLayerDetector(null!, null!, null!);
+        var experimentalDetector = new LinuxApplicationLayerDetector(null!, null!, null!, null!, null!);
         this.experiment.IsInControlGroup(experimentalDetector).Should().BeFalse();
     }
 
     [TestMethod]
     public void IsInExperimentGroup_LinuxApplicationLayerDetector_ReturnsTrue()
     {
-        var experimentalDetector = new LinuxApplicationLayerDetector(null!, null!, null!);
+        var experimentalDetector = new LinuxApplicationLayerDetector(null!, null!, null!, null!, null!);
         this.experiment.IsInExperimentGroup(experimentalDetector).Should().BeTrue();
     }
 
     [TestMethod]
     public void IsInExperimentGroup_LinuxContainerDetector_ReturnsFalse()
     {
-        var linuxDetector = new LinuxContainerDetector(null!, null!, null!);
+        var linuxDetector = new LinuxContainerDetector(null!, null!, null!, null!, null!);
         this.experiment.IsInExperimentGroup(linuxDetector).Should().BeFalse();
     }
 
@@ -124,28 +124,28 @@ public class LinuxApplicationLayerExperimentTests
     [TestMethod]
     public void ShouldRecord_ExperimentGroup_ReturnsTrue_WhenNumComponentsGreaterThanZero()
     {
-        var experimentalDetector = new LinuxApplicationLayerDetector(null!, null!, null!);
+        var experimentalDetector = new LinuxApplicationLayerDetector(null!, null!, null!, null!, null!);
         this.experiment.ShouldRecord(experimentalDetector, 1).Should().BeTrue();
     }
 
     [TestMethod]
     public void ShouldRecord_ExperimentGroup_ReturnsFalse_WhenNumComponentsIsZero()
     {
-        var experimentalDetector = new LinuxApplicationLayerDetector(null!, null!, null!);
+        var experimentalDetector = new LinuxApplicationLayerDetector(null!, null!, null!, null!, null!);
         this.experiment.ShouldRecord(experimentalDetector, 0).Should().BeFalse();
     }
 
     [TestMethod]
     public void ShouldRecord_ControlGroup_ReturnsTrue_WhenNumComponentsGreaterThanZero()
     {
-        var linuxDetector = new LinuxContainerDetector(null!, null!, null!);
+        var linuxDetector = new LinuxContainerDetector(null!, null!, null!, null!, null!);
         this.experiment.ShouldRecord(linuxDetector, 1).Should().BeTrue();
     }
 
     [TestMethod]
     public void ShouldRecord_ControlGroup_ReturnsFalse_WhenNumComponentsIsZero()
     {
-        var linuxDetector = new LinuxContainerDetector(null!, null!, null!);
+        var linuxDetector = new LinuxContainerDetector(null!, null!, null!, null!, null!);
         this.experiment.ShouldRecord(linuxDetector, 0).Should().BeFalse();
     }
 

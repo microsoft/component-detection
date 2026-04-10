@@ -6,7 +6,6 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using AwesomeAssertions;
-using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.BcdeModels;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.ComponentDetection.Detectors.Linux;
@@ -221,21 +220,14 @@ public class LinuxScannerTests
         """;
 
     private readonly LinuxScanner linuxScanner;
-    private readonly Mock<IDockerService> mockDockerService;
+    private readonly Mock<ISyftRunner> mockSyftRunner;
     private readonly Mock<ILogger<LinuxScanner>> mockLogger;
     private readonly List<IArtifactComponentFactory> componentFactories;
     private readonly List<IArtifactFilter> artifactFilters;
 
     public LinuxScannerTests()
     {
-        this.mockDockerService = new Mock<IDockerService>();
-        this.mockDockerService.Setup(service =>
-                service.CanPingDockerAsync(It.IsAny<CancellationToken>())
-            )
-            .ReturnsAsync(true);
-        this.mockDockerService.Setup(service =>
-            service.TryPullImageAsync(It.IsAny<string>(), It.IsAny<CancellationToken>())
-        );
+        this.mockSyftRunner = new Mock<ISyftRunner>();
 
         this.mockLogger = new Mock<ILogger<LinuxScanner>>();
 
@@ -250,7 +242,6 @@ public class LinuxScannerTests
         this.artifactFilters = [new Mariner2ArtifactFilter()];
 
         this.linuxScanner = new LinuxScanner(
-            this.mockDockerService.Object,
             this.mockLogger.Object,
             this.componentFactories,
             this.artifactFilters
@@ -262,10 +253,9 @@ public class LinuxScannerTests
     [DataRow(SyftOutputLicenseFieldAndMaintainer)]
     public async Task TestLinuxScannerAsync(string syftOutput)
     {
-        this.mockDockerService.Setup(service =>
-                service.CreateAndRunContainerAsync(
-                    It.IsAny<string>(),
-                    It.IsAny<List<string>>(),
+        this.mockSyftRunner.Setup(runner =>
+                runner.RunSyftAsync(
+                    It.IsAny<ImageReference>(),
                     It.IsAny<IList<string>>(),
                     It.IsAny<CancellationToken>()
                 )
@@ -280,7 +270,7 @@ public class LinuxScannerTests
         };
         var result = (
             await this.linuxScanner.ScanLinuxAsync(
-                "fake_hash",
+                new ImageReference { OriginalInput = "fake_hash", Reference = "fake_hash", Kind = ImageReferenceKind.DockerImage },
                 [
                     new DockerLayer
                     {
@@ -291,7 +281,8 @@ public class LinuxScannerTests
                 ],
                 0,
                 enabledTypes,
-                LinuxScannerScope.AllLayers
+                LinuxScannerScope.AllLayers,
+                this.mockSyftRunner.Object
             )
         )
             .First()
@@ -313,10 +304,9 @@ public class LinuxScannerTests
     [DataRow(SyftOutputNoAuthorOrLicense)]
     public async Task TestLinuxScanner_ReturnsNullAuthorAndLicense_Async(string syftOutput)
     {
-        this.mockDockerService.Setup(service =>
-                service.CreateAndRunContainerAsync(
-                    It.IsAny<string>(),
-                    It.IsAny<List<string>>(),
+        this.mockSyftRunner.Setup(runner =>
+                runner.RunSyftAsync(
+                    It.IsAny<ImageReference>(),
                     It.IsAny<IList<string>>(),
                     It.IsAny<CancellationToken>()
                 )
@@ -331,7 +321,7 @@ public class LinuxScannerTests
         };
         var result = (
             await this.linuxScanner.ScanLinuxAsync(
-                "fake_hash",
+                new ImageReference { OriginalInput = "fake_hash", Reference = "fake_hash", Kind = ImageReferenceKind.DockerImage },
                 [
                     new DockerLayer
                     {
@@ -342,7 +332,8 @@ public class LinuxScannerTests
                 ],
                 0,
                 enabledTypes,
-                LinuxScannerScope.AllLayers
+                LinuxScannerScope.AllLayers,
+                this.mockSyftRunner.Object
             )
         )
             .First()
@@ -366,10 +357,9 @@ public class LinuxScannerTests
         string syftOutput
     )
     {
-        this.mockDockerService.Setup(service =>
-                service.CreateAndRunContainerAsync(
-                    It.IsAny<string>(),
-                    It.IsAny<List<string>>(),
+        this.mockSyftRunner.Setup(runner =>
+                runner.RunSyftAsync(
+                    It.IsAny<ImageReference>(),
                     It.IsAny<IList<string>>(),
                     It.IsAny<CancellationToken>()
                 )
@@ -384,7 +374,7 @@ public class LinuxScannerTests
         };
         var result = (
             await this.linuxScanner.ScanLinuxAsync(
-                "fake_hash",
+                new ImageReference { OriginalInput = "fake_hash", Reference = "fake_hash", Kind = ImageReferenceKind.DockerImage },
                 [
                     new DockerLayer
                     {
@@ -395,7 +385,8 @@ public class LinuxScannerTests
                 ],
                 0,
                 enabledTypes,
-                LinuxScannerScope.AllLayers
+                LinuxScannerScope.AllLayers,
+                this.mockSyftRunner.Object
             )
         )
             .First()
@@ -419,10 +410,9 @@ public class LinuxScannerTests
         string syftOutput
     )
     {
-        this.mockDockerService.Setup(service =>
-                service.CreateAndRunContainerAsync(
-                    It.IsAny<string>(),
-                    It.IsAny<List<string>>(),
+        this.mockSyftRunner.Setup(runner =>
+                runner.RunSyftAsync(
+                    It.IsAny<ImageReference>(),
                     It.IsAny<IList<string>>(),
                     It.IsAny<CancellationToken>()
                 )
@@ -437,7 +427,7 @@ public class LinuxScannerTests
         };
         var result = (
             await this.linuxScanner.ScanLinuxAsync(
-                "fake_hash",
+                new ImageReference { OriginalInput = "fake_hash", Reference = "fake_hash", Kind = ImageReferenceKind.DockerImage },
                 [
                     new DockerLayer
                     {
@@ -448,7 +438,8 @@ public class LinuxScannerTests
                 ],
                 0,
                 enabledTypes,
-                LinuxScannerScope.AllLayers
+                LinuxScannerScope.AllLayers,
+                this.mockSyftRunner.Object
             )
         )
             .First()
@@ -515,10 +506,9 @@ public class LinuxScannerTests
             }
             """;
 
-        this.mockDockerService.Setup(service =>
-                service.CreateAndRunContainerAsync(
-                    It.IsAny<string>(),
-                    It.IsAny<List<string>>(),
+        this.mockSyftRunner.Setup(runner =>
+                runner.RunSyftAsync(
+                    It.IsAny<ImageReference>(),
                     It.IsAny<IList<string>>(),
                     It.IsAny<CancellationToken>()
                 )
@@ -532,14 +522,15 @@ public class LinuxScannerTests
             ComponentType.Pip,
         };
         var layers = await this.linuxScanner.ScanLinuxAsync(
-            "fake_hash",
+            new ImageReference { OriginalInput = "fake_hash", Reference = "fake_hash", Kind = ImageReferenceKind.DockerImage },
             [
                 new DockerLayer { LayerIndex = 0, DiffId = "sha256:layer1" },
                 new DockerLayer { LayerIndex = 1, DiffId = "sha256:layer2" },
             ],
             0,
             enabledTypes,
-            LinuxScannerScope.AllLayers
+            LinuxScannerScope.AllLayers,
+            this.mockSyftRunner.Object
         );
 
         var allComponents = layers.SelectMany(l => l.Components).ToList();
@@ -621,10 +612,9 @@ public class LinuxScannerTests
             }
             """;
 
-        this.mockDockerService.Setup(service =>
-                service.CreateAndRunContainerAsync(
-                    It.IsAny<string>(),
-                    It.IsAny<List<string>>(),
+        this.mockSyftRunner.Setup(runner =>
+                runner.RunSyftAsync(
+                    It.IsAny<ImageReference>(),
                     It.IsAny<IList<string>>(),
                     It.IsAny<CancellationToken>()
                 )
@@ -634,14 +624,15 @@ public class LinuxScannerTests
         // Only enable Linux component type
         var enabledTypes = new HashSet<ComponentType> { ComponentType.Linux };
         var layers = await this.linuxScanner.ScanLinuxAsync(
-            "fake_hash",
+            new ImageReference { OriginalInput = "fake_hash", Reference = "fake_hash", Kind = ImageReferenceKind.DockerImage },
             [
                 new DockerLayer { LayerIndex = 0, DiffId = "sha256:layer1" },
                 new DockerLayer { LayerIndex = 1, DiffId = "sha256:layer2" },
             ],
             0,
             enabledTypes,
-            LinuxScannerScope.AllLayers
+            LinuxScannerScope.AllLayers,
+            this.mockSyftRunner.Object
         );
 
         var allComponents = layers.SelectMany(l => l.Components).ToList();
@@ -708,10 +699,9 @@ public class LinuxScannerTests
             }
             """;
 
-        this.mockDockerService.Setup(service =>
-                service.CreateAndRunContainerAsync(
-                    It.IsAny<string>(),
-                    It.IsAny<List<string>>(),
+        this.mockSyftRunner.Setup(runner =>
+                runner.RunSyftAsync(
+                    It.IsAny<ImageReference>(),
                     It.IsAny<IList<string>>(),
                     It.IsAny<CancellationToken>()
                 )
@@ -721,14 +711,15 @@ public class LinuxScannerTests
         // Only enable Npm and Pip component types (exclude Linux)
         var enabledTypes = new HashSet<ComponentType> { ComponentType.Npm, ComponentType.Pip };
         var layers = await this.linuxScanner.ScanLinuxAsync(
-            "fake_hash",
+            new ImageReference { OriginalInput = "fake_hash", Reference = "fake_hash", Kind = ImageReferenceKind.DockerImage },
             [
                 new DockerLayer { LayerIndex = 0, DiffId = "sha256:layer1" },
                 new DockerLayer { LayerIndex = 1, DiffId = "sha256:layer2" },
             ],
             0,
             enabledTypes,
-            LinuxScannerScope.AllLayers
+            LinuxScannerScope.AllLayers,
+            this.mockSyftRunner.Object
         );
 
         var allComponents = layers.SelectMany(l => l.Components).ToList();
@@ -752,10 +743,9 @@ public class LinuxScannerTests
         string expectedFlag
     )
     {
-        this.mockDockerService.Setup(service =>
-                service.CreateAndRunContainerAsync(
-                    It.IsAny<string>(),
-                    It.IsAny<List<string>>(),
+        this.mockSyftRunner.Setup(runner =>
+                runner.RunSyftAsync(
+                    It.IsAny<ImageReference>(),
                     It.IsAny<IList<string>>(),
                     It.IsAny<CancellationToken>()
                 )
@@ -764,21 +754,21 @@ public class LinuxScannerTests
 
         var enabledTypes = new HashSet<ComponentType> { ComponentType.Linux };
         await this.linuxScanner.ScanLinuxAsync(
-            "fake_hash",
+            new ImageReference { OriginalInput = "fake_hash", Reference = "fake_hash", Kind = ImageReferenceKind.DockerImage },
             [new DockerLayer { LayerIndex = 0, DiffId = "sha256:layer1" }],
             0,
             enabledTypes,
-            scope
+            scope,
+            this.mockSyftRunner.Object
         );
 
-        this.mockDockerService.Verify(
-            service =>
-                service.CreateAndRunContainerAsync(
-                    It.IsAny<string>(),
-                    It.Is<List<string>>(cmd =>
-                        cmd.Contains("--scope") && cmd.Contains(expectedFlag)
+        this.mockSyftRunner.Verify(
+            runner =>
+                runner.RunSyftAsync(
+                    It.IsAny<ImageReference>(),
+                    It.Is<IList<string>>(args =>
+                        args.Contains("--scope") && args.Contains(expectedFlag)
                     ),
-                    It.IsAny<IList<string>>(),
                     It.IsAny<CancellationToken>()
                 ),
             Times.Once
@@ -793,11 +783,12 @@ public class LinuxScannerTests
 
         Func<Task> action = async () =>
             await this.linuxScanner.ScanLinuxAsync(
-                "fake_hash",
+                new ImageReference { OriginalInput = "fake_hash", Reference = "fake_hash", Kind = ImageReferenceKind.DockerImage },
                 [new DockerLayer { LayerIndex = 0, DiffId = "sha256:layer1" }],
                 0,
                 enabledTypes,
-                invalidScope
+                invalidScope,
+                this.mockSyftRunner.Object
             );
 
         await action.Should().ThrowAsync<ArgumentOutOfRangeException>();
@@ -865,21 +856,20 @@ public class LinuxScannerTests
             }
             """;
 
-        this.mockDockerService.Setup(service =>
-                service.CreateAndRunContainerAsync(
-                    It.IsAny<string>(),
-                    It.IsAny<List<string>>(),
+        this.mockSyftRunner.Setup(runner =>
+                runner.RunSyftAsync(
+                    It.IsAny<ImageReference>(),
                     It.IsAny<IList<string>>(),
                     It.IsAny<CancellationToken>()
                 )
             )
             .ReturnsAsync((syftOutputWithSource, string.Empty));
 
-        var additionalBinds = new List<string> { "/some/oci/path:/oci-image:ro" };
+        var ociRef = new ImageReference { OriginalInput = "oci-dir:/oci-image", Reference = "/host/path/to/oci", Kind = ImageReferenceKind.OciLayout };
         var syftOutput = await this.linuxScanner.GetSyftOutputAsync(
-            "oci-dir:/oci-image",
-            additionalBinds,
-            LinuxScannerScope.AllLayers
+            ociRef,
+            LinuxScannerScope.AllLayers,
+            this.mockSyftRunner.Object
         );
 
         syftOutput.Should().NotBeNull();
@@ -936,10 +926,9 @@ public class LinuxScannerTests
             }
             """;
 
-        this.mockDockerService.Setup(service =>
-                service.CreateAndRunContainerAsync(
-                    It.IsAny<string>(),
-                    It.IsAny<List<string>>(),
+        this.mockSyftRunner.Setup(runner =>
+                runner.RunSyftAsync(
+                    It.IsAny<ImageReference>(),
                     It.IsAny<IList<string>>(),
                     It.IsAny<CancellationToken>()
                 )
@@ -947,21 +936,19 @@ public class LinuxScannerTests
             .ReturnsAsync((syftOutput, string.Empty));
 
         var additionalBinds = new List<string> { "/host/path/to/oci:/oci-image:ro" };
+        var ociRef = new ImageReference { OriginalInput = "oci-dir:/oci-image", Reference = "/host/path/to/oci", Kind = ImageReferenceKind.OciLayout };
         await this.linuxScanner.GetSyftOutputAsync(
-            "oci-dir:/oci-image",
-            additionalBinds,
-            LinuxScannerScope.AllLayers
+            ociRef,
+            LinuxScannerScope.AllLayers,
+            this.mockSyftRunner.Object
         );
 
         // Verify the Syft command uses oci-dir: scheme and passes binds
-        this.mockDockerService.Verify(
-            service =>
-                service.CreateAndRunContainerAsync(
-                    It.IsAny<string>(),
-                    It.Is<List<string>>(cmd => cmd[0] == "oci-dir:/oci-image"),
-                    It.Is<IList<string>>(binds =>
-                        binds.Count == 1 && binds[0] == "/host/path/to/oci:/oci-image:ro"
-                    ),
+        this.mockSyftRunner.Verify(
+            runner =>
+                runner.RunSyftAsync(
+                    It.Is<ImageReference>(r => r.Kind == ImageReferenceKind.OciLayout && r.Reference == "/host/path/to/oci"),
+                    It.IsAny<IList<string>>(),
                     It.IsAny<CancellationToken>()
                 ),
             Times.Once
