@@ -228,6 +228,7 @@ internal class DockerService : IDockerService
             catch (Exception ex) when (ex is OperationCanceledException or TimeoutException)
             {
                 this.logger.LogWarning(
+                    ex,
                     "Timed out removing container {ContainerId} after 30s; abandoning cleanup",
                     container.ID);
             }
