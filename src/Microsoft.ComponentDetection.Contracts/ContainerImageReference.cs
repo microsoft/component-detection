@@ -1,7 +1,7 @@
 #nullable disable
 namespace Microsoft.ComponentDetection.Contracts;
 
-public enum DockerReferenceKind
+public enum ContainerImageReferenceKind
 {
     Canonical = 0,
     Repository = 1,
@@ -11,11 +11,11 @@ public enum DockerReferenceKind
 }
 
 #pragma warning disable SA1402
-public class DockerReference
+public class ContainerImageReference
 {
-    public virtual DockerReferenceKind Kind { get; }
+    public virtual ContainerImageReferenceKind Kind { get; }
 
-    public static DockerReference CreateDockerReference(string repository, string domain, string digest, string tag)
+    public static ContainerImageReference CreateContainerImageReference(string repository, string domain, string digest, string tag)
     {
         if (!string.IsNullOrEmpty(repository) && string.IsNullOrEmpty(domain))
         {
@@ -72,7 +72,7 @@ public class DockerReference
         }
     }
 
-    public virtual TypedComponent.DockerReferenceComponent ToTypedDockerReferenceComponent()
+    public virtual TypedComponent.ContainerImageReferenceComponent ToTypedContainerImageReferenceComponent()
     {
         throw new System.NotImplementedException();
     }
@@ -90,20 +90,20 @@ public class Reference
 }
 
 // sha256:abc123...
-public class DigestReference : DockerReference
+public class DigestReference : ContainerImageReference
 {
     public string Digest { get; set; }
 
-    public override DockerReferenceKind Kind { get; } = DockerReferenceKind.Digest;
+    public override ContainerImageReferenceKind Kind { get; } = ContainerImageReferenceKind.Digest;
 
     public override string ToString()
     {
         return $"{this.Digest}";
     }
 
-    public override TypedComponent.DockerReferenceComponent ToTypedDockerReferenceComponent()
+    public override TypedComponent.ContainerImageReferenceComponent ToTypedContainerImageReferenceComponent()
     {
-        return new TypedComponent.DockerReferenceComponent(this)
+        return new TypedComponent.ContainerImageReferenceComponent(this)
         {
             Digest = this.Digest,
         };
@@ -111,7 +111,7 @@ public class DigestReference : DockerReference
 }
 
 // docker.io/library/ubuntu@sha256:abc123...
-public class CanonicalReference : DockerReference
+public class CanonicalReference : ContainerImageReference
 {
     public string Domain { get; set; }
 
@@ -119,16 +119,16 @@ public class CanonicalReference : DockerReference
 
     public string Digest { get; set; }
 
-    public override DockerReferenceKind Kind { get; } = DockerReferenceKind.Canonical;
+    public override ContainerImageReferenceKind Kind { get; } = ContainerImageReferenceKind.Canonical;
 
     public override string ToString()
     {
         return $"{this.Domain}/{this.Repository}@${this.Digest}";
     }
 
-    public override TypedComponent.DockerReferenceComponent ToTypedDockerReferenceComponent()
+    public override TypedComponent.ContainerImageReferenceComponent ToTypedContainerImageReferenceComponent()
     {
-        return new TypedComponent.DockerReferenceComponent(this)
+        return new TypedComponent.ContainerImageReferenceComponent(this)
         {
             Domain = this.Domain,
             Digest = this.Digest,
@@ -138,22 +138,22 @@ public class CanonicalReference : DockerReference
 }
 
 // docker.io/library/ubuntu
-public class RepositoryReference : DockerReference
+public class RepositoryReference : ContainerImageReference
 {
     public string Domain { get; set; }
 
     public string Repository { get; set; }
 
-    public override DockerReferenceKind Kind { get; } = DockerReferenceKind.Repository;
+    public override ContainerImageReferenceKind Kind { get; } = ContainerImageReferenceKind.Repository;
 
     public override string ToString()
     {
         return $"{this.Repository}";
     }
 
-    public override TypedComponent.DockerReferenceComponent ToTypedDockerReferenceComponent()
+    public override TypedComponent.ContainerImageReferenceComponent ToTypedContainerImageReferenceComponent()
     {
-        return new TypedComponent.DockerReferenceComponent(this)
+        return new TypedComponent.ContainerImageReferenceComponent(this)
         {
             Domain = this.Domain,
             Repository = this.Repository,
@@ -162,7 +162,7 @@ public class RepositoryReference : DockerReference
 }
 
 // docker.io/library/ubuntu:latest
-public class TaggedReference : DockerReference
+public class TaggedReference : ContainerImageReference
 {
     public string Domain { get; set; }
 
@@ -170,16 +170,16 @@ public class TaggedReference : DockerReference
 
     public string Tag { get; set; }
 
-    public override DockerReferenceKind Kind { get; } = DockerReferenceKind.Tagged;
+    public override ContainerImageReferenceKind Kind { get; } = ContainerImageReferenceKind.Tagged;
 
     public override string ToString()
     {
         return $"{this.Domain}/{this.Repository}:${this.Tag}";
     }
 
-    public override TypedComponent.DockerReferenceComponent ToTypedDockerReferenceComponent()
+    public override TypedComponent.ContainerImageReferenceComponent ToTypedContainerImageReferenceComponent()
     {
-        return new TypedComponent.DockerReferenceComponent(this)
+        return new TypedComponent.ContainerImageReferenceComponent(this)
         {
             Domain = this.Domain,
             Tag = this.Tag,
@@ -189,7 +189,7 @@ public class TaggedReference : DockerReference
 }
 
 // docker.io/library/ubuntu:latest@sha256:abc123...
-public class DualReference : DockerReference
+public class DualReference : ContainerImageReference
 {
     public string Domain { get; set; }
 
@@ -199,16 +199,16 @@ public class DualReference : DockerReference
 
     public string Digest { get; set; }
 
-    public override DockerReferenceKind Kind { get; } = DockerReferenceKind.Dual;
+    public override ContainerImageReferenceKind Kind { get; } = ContainerImageReferenceKind.Dual;
 
     public override string ToString()
     {
         return $"{this.Domain}/{this.Repository}:${this.Tag}@${this.Digest}";
     }
 
-    public override TypedComponent.DockerReferenceComponent ToTypedDockerReferenceComponent()
+    public override TypedComponent.ContainerImageReferenceComponent ToTypedContainerImageReferenceComponent()
     {
-        return new TypedComponent.DockerReferenceComponent(this)
+        return new TypedComponent.ContainerImageReferenceComponent(this)
         {
             Domain = this.Domain,
             Digest = this.Digest,
