@@ -439,4 +439,129 @@ public class DefaultGraphTranslationServiceTests
         actualNpmComponent.Should().BeEquivalentTo(expectedNpmComponent);
         actualNugetComponent.Should().BeEquivalentTo(expectedNugetComponent);
     }
+
+    [TestMethod]
+    public void GenerateScanResult_RichComponentPicksUpGraphDataFromBareIdGraph()
+    {
+        // A rich component (with DownloadUrl) should pick up roots, ancestors, devDep, and file paths
+        // from a graph that registered the same package under the bare Id.
+        var file1Path = Path.Join(this.sourceDirectory.FullName, "package.json");
+        var file2Path = Path.Join(this.sourceDirectory.FullName, "package-lock.json");
+
+        var recorder1 = this.componentRecorder.CreateSingleFileComponentRecorder(file1Path);
+        var recorder2 = this.componentRecorder.CreateSingleFileComponentRecorder(file2Path);
+
+        var root = new NpmComponent("app", "1.0.0");
+        var bareComponent = new NpmComponent("lodash", "4.17.23");
+        var richComponent = new NpmComponent("lodash", "4.17.23") { DownloadUrl = new System.Uri("https://registry.npmjs.org/lodash/-/lodash-4.17.23.tgz") };
+
+        // File 1 (package.json): root → bare lodash, marked as explicit reference
+        recorder1.RegisterUsage(new DetectedComponent(root), isExplicitReferencedDependency: true);
+        recorder1.RegisterUsage(new DetectedComponent(bareComponent), parentComponentId: root.Id, isDevelopmentDependency: true);
+
+        // File 2 (lockfile): root → rich lodash
+        recorder2.RegisterUsage(new DetectedComponent(root), isExplicitReferencedDependency: true);
+        recorder2.RegisterUsage(new DetectedComponent(richComponent), parentComponentId: root.Id, isDevelopmentDependency: false);
+
+        var processingResult = new DetectorProcessingResult
+        {
+            ResultCode = ProcessingResultCode.Success,
+            ContainersDetailsMap = [],
+            ComponentRecorders = [(this.componentDetectorMock.Object, this.componentRecorder)],
+        };
+
+        var result = this.serviceUnderTest.GenerateScanResultFromProcessingResult(
+            processingResult, new ScanSettings { SourceDirectory = this.sourceDirectory });
+
+        // After reconciliation: bare is subsumed into rich. Only root + rich lodash should remain.
+        var lodashResult = result.ComponentsFound.Single(c => ((NpmComponent)c.Component).Name == "lodash");
+        lodashResult.Component.Id.Should().Be(richComponent.Id);
+
+        // Rich component should have graph data from BOTH graphs (file1 bare-Id graph + file2 rich-Id graph)
+        lodashResult.LocationsFoundAt.Should().Contain(l => l.Contains("package.json"));
+        lodashResult.LocationsFoundAt.Should().Contain(l => l.Contains("package-lock.json"));
+
+        // DevDep: bare graph said true, rich graph said false → AND logic = false
+        lodashResult.IsDevelopmentDependency.Should().BeFalse();
+
+        // Should have roots (app is the root referrer)
+        lodashResult.TopLevelReferrers.Should().NotBeEmpty();
+    }
+
+    [TestMethod]
+    public void GenerateScanResult_BareOnlyComponent_GraphDataPreserved()
+    {
+        // When no rich entry exists, the bare component keeps its graph data.
+        var filePath = Path.Join(this.sourceDirectory.FullName, "package.json");
+        var recorder = this.componentRecorder.CreateSingleFileComponentRecorder(filePath);
+
+        var root = new NpmComponent("app", "1.0.0");
+        var bareComponent = new NpmComponent("lodash", "4.17.23");
+
+        recorder.RegisterUsage(new DetectedComponent(root), isExplicitReferencedDependency: true);
+        recorder.RegisterUsage(new DetectedComponent(bareComponent), parentComponentId: root.Id, isDevelopmentDependency: true);
+
+        var processingResult = new DetectorProcessingResult
+        {
+            ResultCode = ProcessingResultCode.Success,
+            ContainersDetailsMap = [],
+            ComponentRecorders = [(this.componentDetectorMock.Object, this.componentRecorder)],
+        };
+
+        var result = this.serviceUnderTest.GenerateScanResultFromProcessingResult(
+            processingResult, new ScanSettings { SourceDirectory = this.sourceDirectory });
+
+        var lodashResult = result.ComponentsFound.Single(c => ((NpmComponent)c.Component).Name == "lodash");
+        lodashResult.Component.Id.Should().Be(bareComponent.Id);
+        lodashResult.IsDevelopmentDependency.Should().BeTrue();
+        lodashResult.TopLevelReferrers.Should().NotBeEmpty();
+        lodashResult.LocationsFoundAt.Should().Contain(l => l.Contains("package.json"));
+    }
+
+    [TestMethod]
+    public void GenerateScanResult_MultipleRichAndBare_BareGraphDataAbsorbedByAllRich()
+    {
+        // Two rich entries + one bare. The bare's graph data should be absorbed by both rich entries.
+        var file1Path = Path.Join(this.sourceDirectory.FullName, "package.json");
+        var file2Path = Path.Join(this.sourceDirectory.FullName, "lockfile-a.json");
+        var file3Path = Path.Join(this.sourceDirectory.FullName, "lockfile-b.json");
+
+        var recorder1 = this.componentRecorder.CreateSingleFileComponentRecorder(file1Path);
+        var recorder2 = this.componentRecorder.CreateSingleFileComponentRecorder(file2Path);
+        var recorder3 = this.componentRecorder.CreateSingleFileComponentRecorder(file3Path);
+
+        var root = new NpmComponent("app", "1.0.0");
+        var bareComponent = new NpmComponent("lodash", "4.17.23");
+        var richA = new NpmComponent("lodash", "4.17.23") { DownloadUrl = new System.Uri("https://registry-a.example.com/lodash-4.17.23.tgz") };
+        var richB = new NpmComponent("lodash", "4.17.23") { DownloadUrl = new System.Uri("https://registry-b.example.com/lodash-4.17.23.tgz") };
+
+        // File 1 (package.json): root → bare lodash
+        recorder1.RegisterUsage(new DetectedComponent(root), isExplicitReferencedDependency: true);
+        recorder1.RegisterUsage(new DetectedComponent(bareComponent), parentComponentId: root.Id);
+
+        // File 2 (lockfile A): root → rich A
+        recorder2.RegisterUsage(new DetectedComponent(root), isExplicitReferencedDependency: true);
+        recorder2.RegisterUsage(new DetectedComponent(richA), parentComponentId: root.Id);
+
+        // File 3 (lockfile B): root → rich B
+        recorder3.RegisterUsage(new DetectedComponent(root), isExplicitReferencedDependency: true);
+        recorder3.RegisterUsage(new DetectedComponent(richB), parentComponentId: root.Id);
+
+        var processingResult = new DetectorProcessingResult
+        {
+            ResultCode = ProcessingResultCode.Success,
+            ContainersDetailsMap = [],
+            ComponentRecorders = [(this.componentDetectorMock.Object, this.componentRecorder)],
+        };
+
+        var result = this.serviceUnderTest.GenerateScanResultFromProcessingResult(
+            processingResult, new ScanSettings { SourceDirectory = this.sourceDirectory });
+
+        // Two rich entries, bare dropped
+        var lodashResults = result.ComponentsFound.Where(c => ((NpmComponent)c.Component).Name == "lodash").ToList();
+        lodashResults.Should().HaveCount(2);
+
+        // Both rich entries should have the bare graph's file path (package.json)
+        lodashResults.Should().OnlyContain(c => c.LocationsFoundAt.Any(l => l.Contains("package.json")));
+    }
 }
