@@ -10,6 +10,7 @@ using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.BcdeModels;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.ComponentDetection.Detectors.Linux;
+using Microsoft.ComponentDetection.Detectors.Linux.Contracts;
 using Microsoft.ComponentDetection.Detectors.Linux.Factories;
 using Microsoft.ComponentDetection.Detectors.Linux.Filters;
 using Microsoft.Extensions.Logging;
@@ -265,6 +266,7 @@ public class LinuxScannerTests
                 service.CreateAndRunContainerAsync(
                     It.IsAny<string>(),
                     It.IsAny<List<string>>(),
+                    It.IsAny<IList<string>>(),
                     It.IsAny<CancellationToken>()
                 )
             )
@@ -315,6 +317,7 @@ public class LinuxScannerTests
                 service.CreateAndRunContainerAsync(
                     It.IsAny<string>(),
                     It.IsAny<List<string>>(),
+                    It.IsAny<IList<string>>(),
                     It.IsAny<CancellationToken>()
                 )
             )
@@ -367,6 +370,7 @@ public class LinuxScannerTests
                 service.CreateAndRunContainerAsync(
                     It.IsAny<string>(),
                     It.IsAny<List<string>>(),
+                    It.IsAny<IList<string>>(),
                     It.IsAny<CancellationToken>()
                 )
             )
@@ -419,6 +423,7 @@ public class LinuxScannerTests
                 service.CreateAndRunContainerAsync(
                     It.IsAny<string>(),
                     It.IsAny<List<string>>(),
+                    It.IsAny<IList<string>>(),
                     It.IsAny<CancellationToken>()
                 )
             )
@@ -514,6 +519,7 @@ public class LinuxScannerTests
                 service.CreateAndRunContainerAsync(
                     It.IsAny<string>(),
                     It.IsAny<List<string>>(),
+                    It.IsAny<IList<string>>(),
                     It.IsAny<CancellationToken>()
                 )
             )
@@ -619,6 +625,7 @@ public class LinuxScannerTests
                 service.CreateAndRunContainerAsync(
                     It.IsAny<string>(),
                     It.IsAny<List<string>>(),
+                    It.IsAny<IList<string>>(),
                     It.IsAny<CancellationToken>()
                 )
             )
@@ -705,6 +712,7 @@ public class LinuxScannerTests
                 service.CreateAndRunContainerAsync(
                     It.IsAny<string>(),
                     It.IsAny<List<string>>(),
+                    It.IsAny<IList<string>>(),
                     It.IsAny<CancellationToken>()
                 )
             )
@@ -748,6 +756,7 @@ public class LinuxScannerTests
                 service.CreateAndRunContainerAsync(
                     It.IsAny<string>(),
                     It.IsAny<List<string>>(),
+                    It.IsAny<IList<string>>(),
                     It.IsAny<CancellationToken>()
                 )
             )
@@ -769,6 +778,7 @@ public class LinuxScannerTests
                     It.Is<List<string>>(cmd =>
                         cmd.Contains("--scope") && cmd.Contains(expectedFlag)
                     ),
+                    It.IsAny<IList<string>>(),
                     It.IsAny<CancellationToken>()
                 ),
             Times.Once
@@ -791,5 +801,230 @@ public class LinuxScannerTests
             );
 
         await action.Should().ThrowAsync<ArgumentOutOfRangeException>();
+    }
+
+    [TestMethod]
+    public async Task TestLinuxScanner_ScanLinuxSyftOutputAsync_ReturnsParsedSyftOutputAsync()
+    {
+        const string syftOutputWithSource = """
+            {
+                "distro": {
+                    "id": "azurelinux",
+                    "versionID": "3.0"
+                },
+                "artifacts": [
+                    {
+                        "name": "bash",
+                        "version": "5.2.15-3.azl3",
+                        "type": "rpm",
+                        "locations": [
+                            {
+                                "path": "/var/lib/rpm/Packages",
+                                "layerID": "sha256:aaa111"
+                            }
+                        ],
+                        "metadata": {},
+                        "licenses": [
+                            { "value": "GPL-3.0-or-later" }
+                        ]
+                    }
+                ],
+                "source": {
+                    "id": "sha256:abc123",
+                    "name": "/oci-image",
+                    "type": "image",
+                    "version": "sha256:abc123",
+                    "metadata": {
+                        "userInput": "/oci-image",
+                        "imageID": "sha256:image123",
+                        "manifestDigest": "sha256:abc123",
+                        "mediaType": "application/vnd.docker.distribution.manifest.v2+json",
+                        "tags": ["myregistry.io/myimage:latest"],
+                        "imageSize": 100000,
+                        "layers": [
+                            {
+                                "mediaType": "application/vnd.docker.image.rootfs.diff.tar.gzip",
+                                "digest": "sha256:aaa111",
+                                "size": 50000
+                            },
+                            {
+                                "mediaType": "application/vnd.docker.image.rootfs.diff.tar.gzip",
+                                "digest": "sha256:bbb222",
+                                "size": 50000
+                            }
+                        ],
+                        "repoDigests": [],
+                        "architecture": "amd64",
+                        "os": "linux",
+                        "labels": {
+                            "image.base.ref.name": "mcr.microsoft.com/azurelinux/base/core:3.0",
+                            "image.base.digest": "sha256:basedigest123"
+                        }
+                    }
+                }
+            }
+            """;
+
+        this.mockDockerService.Setup(service =>
+                service.CreateAndRunContainerAsync(
+                    It.IsAny<string>(),
+                    It.IsAny<List<string>>(),
+                    It.IsAny<IList<string>>(),
+                    It.IsAny<CancellationToken>()
+                )
+            )
+            .ReturnsAsync((syftOutputWithSource, string.Empty));
+
+        var additionalBinds = new List<string> { "/some/oci/path:/oci-image:ro" };
+        var syftOutput = await this.linuxScanner.GetSyftOutputAsync(
+            "oci-dir:/oci-image",
+            additionalBinds,
+            LinuxScannerScope.AllLayers
+        );
+
+        syftOutput.Should().NotBeNull();
+        syftOutput.Artifacts.Should().ContainSingle();
+        syftOutput.Artifacts[0].Name.Should().Be("bash");
+
+        // Verify source metadata can be extracted
+        var sourceMetadata = syftOutput.Source?.GetSyftSourceMetadata();
+        sourceMetadata.Should().NotBeNull();
+        sourceMetadata.ImageId.Should().Be("sha256:image123");
+        sourceMetadata.Tags.Should().ContainSingle().Which.Should().Be("myregistry.io/myimage:latest");
+        sourceMetadata.Layers.Should().HaveCount(2);
+        sourceMetadata.Labels.Should().ContainKey("image.base.ref.name");
+
+        // Verify ProcessSyftOutput works with the returned output
+        var containerLayers = sourceMetadata.Layers
+            .Select((layer, index) => new DockerLayer { DiffId = layer.Digest, LayerIndex = index })
+            .ToList();
+        var enabledTypes = new HashSet<ComponentType> { ComponentType.Linux };
+        var layerMappedComponents = this.linuxScanner.ProcessSyftOutput(
+            syftOutput, containerLayers, enabledTypes);
+
+        layerMappedComponents.Should().HaveCount(2);
+        var layerWithComponents = layerMappedComponents
+            .First(l => l.DockerLayer.DiffId == "sha256:aaa111");
+        layerWithComponents.Components.Should().ContainSingle();
+        layerWithComponents.Components.First().Should().BeOfType<LinuxComponent>();
+        var bashComponent = layerWithComponents.Components.First() as LinuxComponent;
+        bashComponent.Should().NotBeNull();
+        bashComponent.Name.Should().Be("bash");
+        bashComponent.Version.Should().Be("5.2.15-3.azl3");
+        bashComponent.Distribution.Should().Be("azurelinux");
+    }
+
+    [TestMethod]
+    public async Task TestLinuxScanner_ScanLinuxSyftOutputAsync_PassesAdditionalBindsAndCommandAsync()
+    {
+        const string syftOutput = """
+            {
+                "distro": { "id": "test", "versionID": "1.0" },
+                "artifacts": [],
+                "source": {
+                    "id": "sha256:abc",
+                    "name": "/oci-image",
+                    "type": "image",
+                    "version": "sha256:abc",
+                    "metadata": {
+                        "userInput": "/oci-image",
+                        "imageID": "sha256:img",
+                        "layers": [],
+                        "labels": {}
+                    }
+                }
+            }
+            """;
+
+        this.mockDockerService.Setup(service =>
+                service.CreateAndRunContainerAsync(
+                    It.IsAny<string>(),
+                    It.IsAny<List<string>>(),
+                    It.IsAny<IList<string>>(),
+                    It.IsAny<CancellationToken>()
+                )
+            )
+            .ReturnsAsync((syftOutput, string.Empty));
+
+        var additionalBinds = new List<string> { "/host/path/to/oci:/oci-image:ro" };
+        await this.linuxScanner.GetSyftOutputAsync(
+            "oci-dir:/oci-image",
+            additionalBinds,
+            LinuxScannerScope.AllLayers
+        );
+
+        // Verify the Syft command uses oci-dir: scheme and passes binds
+        this.mockDockerService.Verify(
+            service =>
+                service.CreateAndRunContainerAsync(
+                    It.IsAny<string>(),
+                    It.Is<List<string>>(cmd => cmd[0] == "oci-dir:/oci-image"),
+                    It.Is<IList<string>>(binds =>
+                        binds.Count == 1 && binds[0] == "/host/path/to/oci:/oci-image:ro"
+                    ),
+                    It.IsAny<CancellationToken>()
+                ),
+            Times.Once
+        );
+    }
+
+    [TestMethod]
+    public void TestLinuxScanner_ProcessSyftOutput_ReturnsComponentsWithoutLayerInfoWhenNoContainerLayers()
+    {
+        var syftOutputJson = """
+            {
+                "distro": { "id": "azurelinux", "versionID": "3.0" },
+                "artifacts": [
+                    {
+                        "name": "bash",
+                        "version": "5.2.15",
+                        "type": "rpm",
+                        "locations": [
+                            {
+                                "path": "/var/lib/rpm/rpmdb.sqlite",
+                                "layerID": "sha256:layer1"
+                            }
+                        ]
+                    },
+                    {
+                        "name": "openssl",
+                        "version": "3.1.0",
+                        "type": "rpm",
+                        "locations": [
+                            {
+                                "path": "/var/lib/rpm/rpmdb.sqlite",
+                                "layerID": "sha256:layer2"
+                            }
+                        ]
+                    }
+                ],
+                "source": {
+                    "id": "sha256:abc",
+                    "name": "/oci-image",
+                    "type": "image",
+                    "version": "sha256:abc"
+                }
+            }
+            """;
+        var syftOutput = SyftOutput.FromJson(syftOutputJson);
+        var enabledTypes = new HashSet<ComponentType> { ComponentType.Linux };
+
+        // Pass empty container layers — components should still be returned
+        var result = this.linuxScanner.ProcessSyftOutput(
+            syftOutput, [], enabledTypes).ToList();
+
+        // All components should be grouped under a single entry with no layer info
+        result.Should().ContainSingle();
+
+        var entry = result.First();
+        entry.DockerLayer.Should().NotBeNull();
+        entry.DockerLayer.DiffId.Should().Be(string.Empty);
+        entry.DockerLayer.LayerIndex.Should().Be(0);
+        entry.DockerLayer.IsBaseImage.Should().BeFalse();
+
+        entry.Components.Should().HaveCount(2);
+        entry.Components.Should().AllBeOfType<LinuxComponent>();
+        entry.Components.Select(c => (c as LinuxComponent)!.Name)
+            .Should().Contain("bash").And.Contain("openssl");
     }
 }

@@ -1,11 +1,8 @@
-#nullable disable
 namespace Microsoft.ComponentDetection.Common;
 
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Linq.Expressions;
-using System.Reflection;
 
 public static class PatternMatchingUtility
 {
@@ -13,44 +10,30 @@ public static class PatternMatchingUtility
 
     public static FilePatternMatcher GetFilePatternMatcher(IEnumerable<string> patterns)
     {
-        var ordinalComparison = Expression.Constant(StringComparison.Ordinal, typeof(StringComparison));
-        var asSpan = typeof(MemoryExtensions).GetMethod("AsSpan", BindingFlags.Public | BindingFlags.Static, null, CallingConventions.Standard, [typeof(string)], []);
-        var equals = typeof(MemoryExtensions).GetMethod("Equals", BindingFlags.Public | BindingFlags.Static, null, CallingConventions.Standard, [typeof(ReadOnlySpan<char>), typeof(ReadOnlySpan<char>), typeof(StringComparison)], []);
-        var startsWith = typeof(MemoryExtensions).GetMethod("StartsWith", BindingFlags.Public | BindingFlags.Static, null, CallingConventions.Standard, [typeof(ReadOnlySpan<char>), typeof(ReadOnlySpan<char>), typeof(StringComparison)], []);
-        var endsWith = typeof(MemoryExtensions).GetMethod("EndsWith", BindingFlags.Public | BindingFlags.Static, null, CallingConventions.Standard, [typeof(ReadOnlySpan<char>), typeof(ReadOnlySpan<char>), typeof(StringComparison)], []);
-
-        var predicates = new List<Expression>();
-        var left = Expression.Parameter(typeof(ReadOnlySpan<char>), "fileName");
-
-        foreach (var pattern in patterns)
+        var matchers = patterns.Select<string, FilePatternMatcher>(pattern => pattern switch
         {
-            if (pattern.StartsWith('*'))
-            {
-                var match = Expression.Constant(pattern[1..], typeof(string));
-                var right = Expression.Call(null, asSpan, match);
-                var combine = Expression.Call(null, endsWith, left, right, ordinalComparison);
-                predicates.Add(combine);
-            }
-            else if (pattern.EndsWith('*'))
-            {
-                var match = Expression.Constant(pattern[..^1], typeof(string));
-                var right = Expression.Call(null, asSpan, match);
-                var combine = Expression.Call(null, startsWith, left, right, ordinalComparison);
-                predicates.Add(combine);
-            }
-            else
-            {
-                var match = Expression.Constant(pattern, typeof(string));
-                var right = Expression.Call(null, asSpan, match);
-                var combine = Expression.Call(null, equals, left, right, ordinalComparison);
-                predicates.Add(combine);
-            }
-        }
+            _ when pattern.StartsWith('*') && pattern.EndsWith('*') =>
+                pattern.Length <= 2
+                    ? _ => true
+                    : span => span.Contains(pattern.AsSpan(1, pattern.Length - 2), StringComparison.Ordinal),
+            _ when pattern.StartsWith('*') =>
+                span => span.EndsWith(pattern.AsSpan(1), StringComparison.Ordinal),
+            _ when pattern.EndsWith('*') =>
+                span => span.StartsWith(pattern.AsSpan(0, pattern.Length - 1), StringComparison.Ordinal),
+            _ => span => span.Equals(pattern.AsSpan(), StringComparison.Ordinal),
+        }).ToList();
 
-        var aggregateExpression = predicates.Aggregate(Expression.OrElse);
+        return span =>
+        {
+            foreach (var matcher in matchers)
+            {
+                if (matcher(span))
+                {
+                    return true;
+                }
+            }
 
-        var func = Expression.Lambda<FilePatternMatcher>(aggregateExpression, left).Compile();
-
-        return func;
+            return false;
+        };
     }
 }

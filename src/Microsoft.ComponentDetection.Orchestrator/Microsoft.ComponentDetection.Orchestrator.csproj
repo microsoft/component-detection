@@ -9,7 +9,7 @@
 
     <ItemGroup>
         <PackageReference Include="CommandLineParser" />
-        <PackageReference Include="DotNet.Glob" />
+        <PackageReference Include="Microsoft.Extensions.FileSystemGlobbing" />
         <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
         <PackageReference Include="Microsoft.Extensions.Logging" />
         <PackageReference Include="Newtonsoft.Json" />
