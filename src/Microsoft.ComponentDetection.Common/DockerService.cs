@@ -184,6 +184,11 @@ internal class DockerService : IDockerService
 
     public async Task<(string Stdout, string Stderr)> CreateAndRunContainerAsync(string image, IList<string> command, CancellationToken cancellationToken = default)
     {
+        return await this.CreateAndRunContainerAsync(image, command, additionalBinds: null, cancellationToken);
+    }
+
+    public async Task<(string Stdout, string Stderr)> CreateAndRunContainerAsync(string image, IList<string> command, IList<string> additionalBinds, CancellationToken cancellationToken = default)
+    {
         var commandJson = JsonSerializer.Serialize(command);
 
         // Summary record captures overall operation including stdout/stderr
@@ -194,7 +199,7 @@ internal class DockerService : IDockerService
         };
 
         await this.TryPullImageAsync(image, cancellationToken);
-        var container = await CreateContainerAsync(image, command, cancellationToken);
+        var container = await CreateContainerAsync(image, command, additionalBinds, cancellationToken);
         record.Container = JsonSerializer.Serialize(container);
 
         try
@@ -211,8 +216,22 @@ internal class DockerService : IDockerService
         }
         finally
         {
-            // Best-effort container cleanup; RemoveContainerAsync already handles not-found.
-            await RemoveContainerAsync(container.ID, CancellationToken.None);
+            // Best-effort container cleanup with a bounded timeout.
+            // RemoveContainerAsync already handles not-found, but we must guard against
+            // the Docker daemon hanging on container removal (e.g. when the container
+            // process is stuck), which would block the detector indefinitely.
+            using var removeCts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+            try
+            {
+                await RemoveContainerAsync(container.ID, removeCts.Token);
+            }
+            catch (Exception ex)
+            {
+                this.logger.LogWarning(
+                    ex,
+                    "Failed to remove container {ContainerId}; abandoning cleanup",
+                    container.ID);
+            }
         }
     }
 
@@ -272,6 +291,7 @@ internal class DockerService : IDockerService
     private static async Task<CreateContainerResponse> CreateContainerAsync(
         string image,
         IList<string> command,
+        IList<string> additionalBinds,
         CancellationToken cancellationToken = default)
     {
         using var record = new DockerServiceStepTelemetryRecord
@@ -283,6 +303,17 @@ internal class DockerService : IDockerService
 
         try
         {
+            var binds = new List<string>
+            {
+                $"{Path.GetTempPath()}:/tmp",
+                "/var/run/docker.sock:/var/run/docker.sock",
+            };
+
+            if (additionalBinds != null)
+            {
+                binds.AddRange(additionalBinds);
+            }
+
             var parameters = new CreateContainerParameters
             {
                 Image = image,
@@ -298,11 +329,7 @@ internal class DockerService : IDockerService
                     [
                         "no-new-privileges",
                     ],
-                    Binds =
-                    [
-                        $"{Path.GetTempPath()}:/tmp",
-                        "/var/run/docker.sock:/var/run/docker.sock",
-                    ],
+                    Binds = binds,
                 },
             };
 
@@ -393,5 +420,11 @@ internal class DockerService : IDockerService
     private static int GetContainerId()
     {
         return Interlocked.Increment(ref incrementingContainerId);
+    }
+
+    /// <inheritdoc/>
+    public ContainerDetails GetEmptyContainerDetails()
+    {
+        return new ContainerDetails { Id = GetContainerId() };
     }
 }

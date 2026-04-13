@@ -101,13 +101,6 @@ public class MvnCliComponentDetector : FileComponentDetector
         @"https?://[^\s\]\)>]+",
         RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
-    /// <summary>
-    /// Maximum time allowed for the OnPrepareDetectionAsync phase.
-    /// This is a safety guardrail to prevent hangs.
-    /// Most repos should complete the full Maven CLI scan within this window.
-    /// </summary>
-    private static readonly TimeSpan PrepareDetectionTimeout = TimeSpan.FromMinutes(5);
-
     private readonly IMavenCommandService mavenCommandService;
     private readonly IEnvironmentVariableService envVarService;
     private readonly IFileUtilityService fileUtilityService;
@@ -298,20 +291,13 @@ public class MvnCliComponentDetector : FileComponentDetector
         // This is critical because detectors are registered as singletons
         this.ResetScanState();
 
-        // Wrap the entire method in a try-catch with timeout to protect against hangs.
-        // OnPrepareDetectionAsync doesn't have the same guardrails as OnFileFoundAsync,
-        // so we need to be extra careful here.
         try
         {
-            using var timeoutCts = new CancellationTokenSource(PrepareDetectionTimeout);
-            using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, timeoutCts.Token);
-
-            return await this.OnPrepareDetectionCoreAsync(processRequests, linkedCts.Token);
+            return await this.OnPrepareDetectionCoreAsync(processRequests, cancellationToken);
         }
-        catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
+        catch (OperationCanceledException)
         {
-            // Timeout occurred (not user cancellation)
-            this.LogWarning($"OnPrepareDetectionAsync timed out after {PrepareDetectionTimeout.TotalMinutes} minutes. Falling back to static pom.xml parsing.");
+            this.LogWarning("OnPrepareDetectionAsync was cancelled. Falling back to static pom.xml parsing.");
             this.Telemetry["TimedOut"] = "true";
             this.fallbackReason = MavenFallbackReason.OtherMvnCliFailure;
             this.usedDetectionMethod = MavenDetectionMethod.Mixed;

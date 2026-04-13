@@ -1,56 +1,92 @@
-#nullable disable
 namespace Microsoft.ComponentDetection.Common;
 
 using System;
 using System.Collections.Generic;
+using System.IO.Enumeration;
 using System.Linq;
-using System.Linq.Expressions;
-using System.Reflection;
 
 public static class PatternMatchingUtility
 {
-    public delegate bool FilePatternMatcher(ReadOnlySpan<char> span);
-
-    public static FilePatternMatcher GetFilePatternMatcher(IEnumerable<string> patterns)
+    public static bool MatchesPattern(string pattern, string fileName)
     {
-        var ordinalComparison = Expression.Constant(StringComparison.Ordinal, typeof(StringComparison));
-        var asSpan = typeof(MemoryExtensions).GetMethod("AsSpan", BindingFlags.Public | BindingFlags.Static, null, CallingConventions.Standard, [typeof(string)], []);
-        var equals = typeof(MemoryExtensions).GetMethod("Equals", BindingFlags.Public | BindingFlags.Static, null, CallingConventions.Standard, [typeof(ReadOnlySpan<char>), typeof(ReadOnlySpan<char>), typeof(StringComparison)], []);
-        var startsWith = typeof(MemoryExtensions).GetMethod("StartsWith", BindingFlags.Public | BindingFlags.Static, null, CallingConventions.Standard, [typeof(ReadOnlySpan<char>), typeof(ReadOnlySpan<char>), typeof(StringComparison)], []);
-        var endsWith = typeof(MemoryExtensions).GetMethod("EndsWith", BindingFlags.Public | BindingFlags.Static, null, CallingConventions.Standard, [typeof(ReadOnlySpan<char>), typeof(ReadOnlySpan<char>), typeof(StringComparison)], []);
+        ArgumentNullException.ThrowIfNull(pattern);
+        ArgumentNullException.ThrowIfNull(fileName);
 
-        var predicates = new List<Expression>();
-        var left = Expression.Parameter(typeof(ReadOnlySpan<char>), "fileName");
+        return IsPatternMatch(pattern, fileName.AsSpan());
+    }
 
+    /// <summary>
+    /// Returns the first matching pattern for <paramref name="fileName"/>.
+    /// Earlier patterns in <paramref name="patterns"/> have higher priority when multiple match.
+    /// </summary>
+    /// <returns>The first matching pattern, or <see langword="null"/> if no patterns match.</returns>
+    public static string? GetMatchingPattern(string fileName, IEnumerable<string> patterns)
+    {
+        ArgumentNullException.ThrowIfNull(fileName);
+        ArgumentNullException.ThrowIfNull(patterns);
+
+        return Compile(patterns).GetMatchingPattern(fileName.AsSpan());
+    }
+
+    public static CompiledMatcher Compile(IEnumerable<string> patterns)
+    {
+        ArgumentNullException.ThrowIfNull(patterns);
+        return patterns is string[] array ? Compile(array) : new(patterns.ToArray());
+    }
+
+    public static CompiledMatcher Compile(string[] patterns)
+    {
+        ArgumentNullException.ThrowIfNull(patterns);
+        return new(patterns);
+    }
+
+    private static string? GetFirstMatchingPattern(ReadOnlySpan<char> fileName, string[] patterns)
+    {
         foreach (var pattern in patterns)
         {
-            if (pattern.StartsWith('*'))
+            if (IsPatternMatch(pattern, fileName))
             {
-                var match = Expression.Constant(pattern[1..], typeof(string));
-                var right = Expression.Call(null, asSpan, match);
-                var combine = Expression.Call(null, endsWith, left, right, ordinalComparison);
-                predicates.Add(combine);
-            }
-            else if (pattern.EndsWith('*'))
-            {
-                var match = Expression.Constant(pattern[..^1], typeof(string));
-                var right = Expression.Call(null, asSpan, match);
-                var combine = Expression.Call(null, startsWith, left, right, ordinalComparison);
-                predicates.Add(combine);
-            }
-            else
-            {
-                var match = Expression.Constant(pattern, typeof(string));
-                var right = Expression.Call(null, asSpan, match);
-                var combine = Expression.Call(null, equals, left, right, ordinalComparison);
-                predicates.Add(combine);
+                return pattern;
             }
         }
 
-        var aggregateExpression = predicates.Aggregate(Expression.OrElse);
+        return null;
+    }
 
-        var func = Expression.Lambda<FilePatternMatcher>(aggregateExpression, left).Compile();
+    private static bool IsPatternMatch(string pattern, ReadOnlySpan<char> fileName) =>
+        FileSystemName.MatchesSimpleExpression(pattern, fileName, ignoreCase: true);
 
-        return func;
+    public sealed class CompiledMatcher
+    {
+        private readonly string[] patterns;
+
+        public CompiledMatcher(IEnumerable<string> patterns)
+            : this(patterns is string[] arr ? arr : (patterns ?? throw new ArgumentNullException(nameof(patterns))).ToArray())
+        {
+        }
+
+        internal CompiledMatcher(string[] patterns)
+        {
+            ArgumentNullException.ThrowIfNull(patterns);
+            this.patterns = (string[])patterns.Clone();
+            ValidatePatternElements(this.patterns);
+        }
+
+        public bool IsMatch(ReadOnlySpan<char> fileName) => GetFirstMatchingPattern(fileName, this.patterns) is not null;
+
+        /// <summary>
+        /// Returns the first matching pattern for <paramref name="fileName"/>.
+        /// Earlier patterns in the compiled set have higher priority when multiple match.
+        /// </summary>
+        /// <returns>The first matching pattern, or <see langword="null"/> if no patterns match.</returns>
+        public string? GetMatchingPattern(ReadOnlySpan<char> fileName) => GetFirstMatchingPattern(fileName, this.patterns);
+
+        private static void ValidatePatternElements(string[] patterns)
+        {
+            foreach (var pattern in patterns)
+            {
+                ArgumentNullException.ThrowIfNull(pattern);
+            }
+        }
     }
 }
