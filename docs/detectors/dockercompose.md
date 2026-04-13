@@ -38,7 +38,7 @@ services:
 
 ### Variable Resolution
 
-Images containing unresolved variables (e.g., `${TAG}` or `{{ .Values.tag }}`) are skipped to avoid reporting incomplete or incorrect references. The detector checks for `$`, `{`, or `}` characters in image references.
+Images containing unresolved variables (e.g., `${TAG}` or `${REGISTRY:-docker.io}`) are skipped to avoid reporting incomplete or incorrect references. The detector checks for `$`, `{`, or `}` characters in image references.
 
 ## Known limitations
 

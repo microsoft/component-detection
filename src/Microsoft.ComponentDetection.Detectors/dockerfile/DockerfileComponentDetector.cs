@@ -1,4 +1,4 @@
-#nullable disable
+#nullable enable
 namespace Microsoft.ComponentDetection.Detectors.Dockerfile;
 
 using System;
@@ -35,7 +35,7 @@ public class DockerfileComponentDetector : FileComponentDetector, IDefaultOffCom
 
     public override string Id { get; } = "DockerReference";
 
-    public override IEnumerable<string> Categories => [Enum.GetName(typeof(DetectorClass), DetectorClass.DockerReference)];
+    public override IEnumerable<string> Categories => [nameof(DetectorClass.DockerReference)];
 
     public override IList<string> SearchPatterns { get; } = ["dockerfile", "dockerfile.*", "*.dockerfile"];
 
@@ -83,12 +83,12 @@ public class DockerfileComponentDetector : FileComponentDetector, IDefaultOffCom
         return Task.CompletedTask;
     }
 
-    private DockerReference ProcessDockerfileConstruct(DockerfileConstruct construct, char escapeChar, Dictionary<string, string> stageNameMap)
+    private DockerReference? ProcessDockerfileConstruct(DockerfileConstruct construct, char escapeChar, Dictionary<string, string> stageNameMap)
     {
         try
         {
             var instructionKeyword = construct.Type;
-            DockerReference baseImage = null;
+            DockerReference? baseImage = null;
             if (instructionKeyword == ConstructType.Instruction)
             {
                 var constructType = construct.GetType().Name;
@@ -114,10 +114,10 @@ public class DockerfileComponentDetector : FileComponentDetector, IDefaultOffCom
         }
     }
 
-    private DockerReference ParseFromInstruction(DockerfileConstruct construct, char escapeChar, Dictionary<string, string> stageNameMap)
+    private DockerReference? ParseFromInstruction(DockerfileConstruct construct, char escapeChar, Dictionary<string, string> stageNameMap)
     {
         var tokens = construct.Tokens.ToArray();
-        var resolvedFromStatement = construct.ResolveVariables(escapeChar).TrimEnd();
+        var resolvedFromStatement = construct.ResolveVariables(escapeChar)?.TrimEnd();
         var fromInstruction = (FromInstruction)construct;
         var reference = fromInstruction.ImageName;
         if (string.IsNullOrWhiteSpace(resolvedFromStatement) || string.IsNullOrEmpty(reference))
@@ -148,9 +148,9 @@ public class DockerfileComponentDetector : FileComponentDetector, IDefaultOffCom
         return DockerReferenceUtility.TryParseImageReference(reference);
     }
 
-    private DockerReference ParseCopyInstruction(DockerfileConstruct construct, char escapeChar, Dictionary<string, string> stageNameMap)
+    private DockerReference? ParseCopyInstruction(DockerfileConstruct construct, char escapeChar, Dictionary<string, string> stageNameMap)
     {
-        var resolvedCopyStatement = construct.ResolveVariables(escapeChar).TrimEnd();
+        var resolvedCopyStatement = construct.ResolveVariables(escapeChar)?.TrimEnd();
         var copyInstruction = (CopyInstruction)construct;
         var reference = copyInstruction.FromStageName;
         if (string.IsNullOrWhiteSpace(resolvedCopyStatement) || string.IsNullOrWhiteSpace(reference))
