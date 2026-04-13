@@ -84,7 +84,7 @@ public class KubernetesComponentDetector : FileComponentDetector, IDefaultOffCom
                 }
 
                 this.Logger.LogInformation("Discovered Kubernetes manifest: {Location}", file.Location);
-                this.ExtractImageReferences(rootMapping, singleFileComponentRecorder, file.Location);
+                this.ExtractImageReferences(rootMapping, singleFileComponentRecorder);
             }
         }
         catch (YamlException e)
@@ -208,7 +208,7 @@ public class KubernetesComponentDetector : FileComponentDetector, IDefaultOffCom
         return !string.IsNullOrEmpty(apiVersion) && !string.IsNullOrEmpty(kind) && KubernetesKinds.Contains(kind);
     }
 
-    private void ExtractImageReferences(YamlMappingNode rootMapping, ISingleFileComponentRecorder recorder, string fileLocation)
+    private void ExtractImageReferences(YamlMappingNode rootMapping, ISingleFileComponentRecorder recorder)
     {
         // PodTemplate has pod spec at root.template.spec.
         var rootTemplate = GetMappingChild(rootMapping, "template");
@@ -217,7 +217,7 @@ public class KubernetesComponentDetector : FileComponentDetector, IDefaultOffCom
             var rootTemplateSpec = GetMappingChild(rootTemplate, "spec");
             if (rootTemplateSpec != null)
             {
-                this.ExtractContainerImages(rootTemplateSpec, recorder, fileLocation);
+                this.ExtractContainerImages(rootTemplateSpec, recorder);
             }
         }
 
@@ -230,7 +230,7 @@ public class KubernetesComponentDetector : FileComponentDetector, IDefaultOffCom
         }
 
         // Direct pod spec (kind: Pod)
-        this.ExtractContainerImages(spec, recorder, fileLocation);
+        this.ExtractContainerImages(spec, recorder);
 
         // Templated pod spec (kind: Deployment, StatefulSet, etc.)
         var template = GetMappingChild(spec, "template");
@@ -239,7 +239,7 @@ public class KubernetesComponentDetector : FileComponentDetector, IDefaultOffCom
             var templateSpec = GetMappingChild(template, "spec");
             if (templateSpec != null)
             {
-                this.ExtractContainerImages(templateSpec, recorder, fileLocation);
+                this.ExtractContainerImages(templateSpec, recorder);
             }
         }
 
@@ -256,21 +256,21 @@ public class KubernetesComponentDetector : FileComponentDetector, IDefaultOffCom
                     var jobPodSpec = GetMappingChild(jobPodTemplate, "spec");
                     if (jobPodSpec != null)
                     {
-                        this.ExtractContainerImages(jobPodSpec, recorder, fileLocation);
+                        this.ExtractContainerImages(jobPodSpec, recorder);
                     }
                 }
             }
         }
     }
 
-    private void ExtractContainerImages(YamlMappingNode podSpec, ISingleFileComponentRecorder recorder, string fileLocation)
+    private void ExtractContainerImages(YamlMappingNode podSpec, ISingleFileComponentRecorder recorder)
     {
-        this.ExtractImagesFromContainerList(podSpec, "containers", recorder, fileLocation);
-        this.ExtractImagesFromContainerList(podSpec, "initContainers", recorder, fileLocation);
-        this.ExtractImagesFromContainerList(podSpec, "ephemeralContainers", recorder, fileLocation);
+        this.ExtractImagesFromContainerList(podSpec, "containers", recorder);
+        this.ExtractImagesFromContainerList(podSpec, "initContainers", recorder);
+        this.ExtractImagesFromContainerList(podSpec, "ephemeralContainers", recorder);
     }
 
-    private void ExtractImagesFromContainerList(YamlMappingNode podSpec, string containerKey, ISingleFileComponentRecorder recorder, string fileLocation)
+    private void ExtractImagesFromContainerList(YamlMappingNode podSpec, string containerKey, ISingleFileComponentRecorder recorder)
     {
         var containers = GetSequenceChild(podSpec, containerKey);
         if (containers == null)

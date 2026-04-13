@@ -154,7 +154,7 @@ public class HelmComponentDetector : FileComponentDetector, IDefaultOffComponent
                     //   repository: nginx
                     //   tag: "1.21"
                     case YamlMappingNode imageMapping:
-                        this.TryRegisterStructuredImageReference(imageMapping, recorder, fileLocation);
+                        this.TryRegisterStructuredImageReference(imageMapping, recorder);
                         break;
 
                     default:
@@ -178,7 +178,7 @@ public class HelmComponentDetector : FileComponentDetector, IDefaultOffComponent
         }
     }
 
-    private void TryRegisterStructuredImageReference(YamlMappingNode imageMapping, ISingleFileComponentRecorder recorder, string fileLocation)
+    private void TryRegisterStructuredImageReference(YamlMappingNode imageMapping, ISingleFileComponentRecorder recorder)
     {
         string? repository = null;
         string? tag = null;

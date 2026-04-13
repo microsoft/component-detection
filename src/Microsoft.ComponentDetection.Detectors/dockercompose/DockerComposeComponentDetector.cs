@@ -68,7 +68,7 @@ public class DockerComposeComponentDetector : FileComponentDetector, IDefaultOff
             {
                 if (document.RootNode is YamlMappingNode rootMapping)
                 {
-                    this.ExtractImageReferences(rootMapping, singleFileComponentRecorder, file.Location);
+                    this.ExtractImageReferences(rootMapping, singleFileComponentRecorder);
                 }
             }
         }
@@ -91,7 +91,7 @@ public class DockerComposeComponentDetector : FileComponentDetector, IDefaultOff
         return null;
     }
 
-    private void ExtractImageReferences(YamlMappingNode rootMapping, ISingleFileComponentRecorder recorder, string fileLocation)
+    private void ExtractImageReferences(YamlMappingNode rootMapping, ISingleFileComponentRecorder recorder)
     {
         var services = GetMappingChild(rootMapping, "services");
         if (services == null)
