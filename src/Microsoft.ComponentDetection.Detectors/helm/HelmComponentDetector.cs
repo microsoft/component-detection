@@ -52,13 +52,18 @@ public class HelmComponentDetector : FileComponentDetector, IDefaultOffComponent
     /// <summary>
     /// Pre-filters scan work to values files that are co-located with a Helm chart.
     ///
-    /// This is intentionally implemented as a streaming pipeline (instead of
-    /// materializing all matching files with ToList) to reduce peak memory usage and
-    /// start emitting work earlier on large repositories.
+    /// This is intentionally implemented as a streaming pipeline with per-directory
+    /// buffering (not a two-pass approach that materializes all files first).
+    /// Instead of collecting all matching files upfront, this observable pipeline:
+    ///   1. Streams file matches as they arrive from the file walker
+    ///   2. Buffers values files per directory until a Chart.yaml is observed
+    ///   3. Immediately emits Chart files to mark their directory as a valid Helm chart
+    ///   4. Releases buffered values files for directories that now have charts
     ///
-    /// Enumeration order is not guaranteed, so values files may be seen before the
-    /// corresponding Chart.yaml. To preserve correctness, values files are buffered
-    /// per directory until a chart file for that directory is observed, then released.
+    /// This approach reduces peak memory usage and starts emitting work earlier on
+    /// large repositories compared to a full materialization pass. Enumeration order
+    /// is not guaranteed, so values files may be seen before Chart.yaml; per-directory
+    /// buffering ensures correctness regardless of enumeration order.
     /// </summary>
     /// <returns>
     /// A prepared observable that emits only values-file requests belonging to
@@ -81,7 +86,12 @@ public class HelmComponentDetector : FileComponentDetector, IDefaultOffComponent
                     var fileName = Path.GetFileName(request.ComponentStream.Location);
                     var directory = Path.GetDirectoryName(request.ComponentStream.Location) ?? string.Empty;
 
+                    var requestsToEmit = (List<ProcessRequest>?)null;
+                    var emitCurrentRequest = false;
+
                     // Protect shared state because IObservable callbacks may arrive concurrently.
+                    // Decide what to emit inside the lock, then emit outside to avoid blocking
+                    // other concurrent operations and reduce risk of deadlocks in Rx pipelines.
                     lock (gate)
                     {
                         if (IsChartFile(fileName))
@@ -89,39 +99,46 @@ public class HelmComponentDetector : FileComponentDetector, IDefaultOffComponent
                             // Mark this directory as a Helm chart directory.
                             this.helmChartDirectories.TryAdd(directory, true);
 
-                            // Release any values files that arrived earlier for this directory.
+                            // Capture any values files that arrived earlier for this directory
+                            // to be emitted after releasing the lock.
                             if (pendingValuesByDirectory.Remove(directory, out var pendingRequests))
                             {
-                                foreach (var pendingRequest in pendingRequests)
-                                {
-                                    observer.OnNext(pendingRequest);
-                                }
+                                requestsToEmit = pendingRequests;
                             }
-
-                            return;
                         }
-
-                        if (!IsValuesFile(fileName))
+                        else if (IsValuesFile(fileName))
                         {
-                            // Ignore non-values files (Chart files are handled above).
-                            return;
-                        }
+                            if (this.helmChartDirectories.ContainsKey(directory))
+                            {
+                                // Directory is already known to be a chart; mark for immediate emission.
+                                emitCurrentRequest = true;
+                            }
+                            else
+                            {
+                                // Chart file not seen yet for this directory; queue for later release.
+                                if (!pendingValuesByDirectory.TryGetValue(directory, out var pendingRequestsForDirectory))
+                                {
+                                    pendingRequestsForDirectory = [];
+                                    pendingValuesByDirectory[directory] = pendingRequestsForDirectory;
+                                }
 
-                        if (this.helmChartDirectories.ContainsKey(directory))
+                                pendingRequestsForDirectory.Add(request);
+                            }
+                        }
+                    }
+
+                    // Emit outside the lock to avoid blocking other concurrent operations.
+                    if (requestsToEmit != null)
+                    {
+                        foreach (var pendingRequest in requestsToEmit)
                         {
-                            // Directory is already known to be a chart; emit immediately.
-                            observer.OnNext(request);
-                            return;
+                            observer.OnNext(pendingRequest);
                         }
+                    }
 
-                        // Chart file not seen yet for this directory; queue for later release.
-                        if (!pendingValuesByDirectory.TryGetValue(directory, out var pendingRequestsForDirectory))
-                        {
-                            pendingRequestsForDirectory = [];
-                            pendingValuesByDirectory[directory] = pendingRequestsForDirectory;
-                        }
-
-                        pendingRequestsForDirectory.Add(request);
+                    if (emitCurrentRequest)
+                    {
+                        observer.OnNext(request);
                     }
                 },
                 observer.OnError,
