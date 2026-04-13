@@ -296,7 +296,7 @@ internal class LinuxScanner : ILinuxScanner
                 }
                 catch (Exception e)
                 {
-                    syftTelemetryRecord.Exception = JsonSerializer.Serialize(e);
+                    syftTelemetryRecord.Exception = e.ToString();
                     this.logger.LogError(e, "Failed to run syft");
                     throw;
                 }
