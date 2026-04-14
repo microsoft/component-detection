@@ -39,7 +39,7 @@ public class CppSdkComponent : TypedComponent
     public override ComponentType Type => ComponentType.CppSdk;
 
     [JsonPropertyName("packageUrl")]
-    public override PackageURL PackageUrl
+    public override PackageUrl PackageUrl
     {
         get
         {
@@ -47,7 +47,7 @@ public class CppSdkComponent : TypedComponent
             {
                 { "type", "cppsdk" },
             };
-            return new PackageURL("generic", null, this.Name, this.Version, qualifiers, null);
+            return new PackageUrl("generic", null, this.Name, this.Version, qualifiers, null);
         }
     }
 
