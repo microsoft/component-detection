@@ -134,7 +134,7 @@ public class KubernetesComponentDetector : FileComponentDetector, IDefaultOffCom
         var span = contents.AsSpan();
 
         // Must contain apiVersion to be any kind of K8s manifest.
-        if (span.IndexOf("apiVersion".AsSpan(), StringComparison.Ordinal) < 0)
+        if (span.IndexOf("apiVersion".AsSpan(), StringComparison.OrdinalIgnoreCase) < 0)
         {
             return false;
         }

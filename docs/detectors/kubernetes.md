@@ -55,5 +55,5 @@ Images containing unresolved variables (e.g., `${TAG}`) are skipped to avoid rep
 - **DefaultOff Status**: This detector must be explicitly enabled using `--DetectorArgs Kubernetes=EnableIfDefaultOff`
 - **Broad File Matching**: The `*.yaml` and `*.yml` search patterns match all YAML files, so the detector relies on content-based filtering (`apiVersion` and `kind` fields) to identify Kubernetes manifests
 - **Variable Resolution**: Image references containing unresolved template variables are not reported
-- **Limited Resource Kinds**: Only the eight resource kinds listed above are supported. Custom resources (CRDs) or other workload types are not detected
+- **Limited Resource Kinds**: Only the nine resource kinds listed above are supported. Custom resources (CRDs) or other workload types are not detected
 - **No Dependency Graph**: All detected images are registered as independent components without parent-child relationships
