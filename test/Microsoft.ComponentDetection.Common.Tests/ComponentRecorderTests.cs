@@ -428,4 +428,136 @@ public class ComponentRecorderTests
         Action attemptedAdd = () => asCollection.Add("should't work");
         attemptedAdd.Should().Throw<NotSupportedException>();
     }
+
+    [TestMethod]
+    public void GetDetectedComponents_BareAndRichAcrossFiles_BareSubsumedIntoRich()
+    {
+        var recorder1 = this.componentRecorder.CreateSingleFileComponentRecorder("package.json");
+        var recorder2 = this.componentRecorder.CreateSingleFileComponentRecorder("package-lock.json");
+
+        var bareComponent = new DetectedComponent(new NpmComponent("lodash", "4.17.23"));
+        var richComponent = new DetectedComponent(new NpmComponent("lodash", "4.17.23") { DownloadUrl = new Uri("https://registry.npmjs.org/lodash/-/lodash-4.17.23.tgz") });
+
+        recorder1.RegisterUsage(bareComponent);
+        recorder2.RegisterUsage(richComponent);
+
+        var results = this.componentRecorder.GetDetectedComponents().ToList();
+
+        // Only the rich entry should remain
+        results.Should().ContainSingle();
+        results[0].Component.Id.Should().Be(richComponent.Component.Id);
+        results[0].Component.Id.Should().NotBe(bareComponent.Component.Id);
+    }
+
+    [TestMethod]
+    public void GetDetectedComponents_BareAndMultipleRichAcrossFiles_BareMergesIntoAllRich()
+    {
+        var recorder1 = this.componentRecorder.CreateSingleFileComponentRecorder("package.json");
+        var recorder2 = this.componentRecorder.CreateSingleFileComponentRecorder("lockfile-a.json");
+        var recorder3 = this.componentRecorder.CreateSingleFileComponentRecorder("lockfile-b.json");
+
+        var bareComponent = new DetectedComponent(new NpmComponent("lodash", "4.17.23"))
+        {
+            LicensesConcluded = ["MIT"],
+        };
+
+        var richA = new DetectedComponent(new NpmComponent("lodash", "4.17.23") { DownloadUrl = new Uri("https://registry-a.example.com/lodash-4.17.23.tgz") });
+        var richB = new DetectedComponent(new NpmComponent("lodash", "4.17.23") { DownloadUrl = new Uri("https://registry-b.example.com/lodash-4.17.23.tgz") });
+
+        recorder1.RegisterUsage(bareComponent);
+        recorder2.RegisterUsage(richA);
+        recorder3.RegisterUsage(richB);
+
+        var results = this.componentRecorder.GetDetectedComponents().ToList();
+
+        // Two rich entries, bare dropped
+        results.Should().HaveCount(2);
+        results.Should().NotContain(c => c.Component.Id == bareComponent.Component.Id);
+
+        // Bare's license merged into both rich entries
+        results.Should().OnlyContain(c => c.LicensesConcluded != null && c.LicensesConcluded.Contains("MIT"));
+    }
+
+    [TestMethod]
+    public void GetDetectedComponents_TwoRichDifferentUrls_BothKeptSeparate()
+    {
+        var recorder1 = this.componentRecorder.CreateSingleFileComponentRecorder("lockfile-a.json");
+        var recorder2 = this.componentRecorder.CreateSingleFileComponentRecorder("lockfile-b.json");
+
+        var richA = new DetectedComponent(new NpmComponent("lodash", "4.17.23") { DownloadUrl = new Uri("https://registry-a.example.com/lodash-4.17.23.tgz") });
+        var richB = new DetectedComponent(new NpmComponent("lodash", "4.17.23") { DownloadUrl = new Uri("https://registry-b.example.com/lodash-4.17.23.tgz") });
+
+        recorder1.RegisterUsage(richA);
+        recorder2.RegisterUsage(richB);
+
+        var results = this.componentRecorder.GetDetectedComponents().ToList();
+
+        results.Should().HaveCount(2);
+        results.Should().Contain(c => c.Component.Id == richA.Component.Id);
+        results.Should().Contain(c => c.Component.Id == richB.Component.Id);
+    }
+
+    [TestMethod]
+    public void GetDetectedComponents_BareOnlyAcrossFiles_MergesIntoSingleBare()
+    {
+        var recorder1 = this.componentRecorder.CreateSingleFileComponentRecorder("package.json");
+        var recorder2 = this.componentRecorder.CreateSingleFileComponentRecorder("other-package.json");
+
+        var bare1 = new DetectedComponent(new NpmComponent("lodash", "4.17.23"))
+        {
+            LicensesConcluded = ["MIT"],
+        };
+
+        var bare2 = new DetectedComponent(new NpmComponent("lodash", "4.17.23"))
+        {
+            LicensesConcluded = ["Apache-2.0"],
+        };
+
+        recorder1.RegisterUsage(bare1);
+        recorder2.RegisterUsage(bare2);
+
+        var results = this.componentRecorder.GetDetectedComponents().ToList();
+
+        // Same Id → merged into one
+        results.Should().ContainSingle();
+        results[0].LicensesConcluded.Should().Contain("MIT");
+        results[0].LicensesConcluded.Should().Contain("Apache-2.0");
+    }
+
+    [TestMethod]
+    public void GetDetectedComponents_BareAndRich_MetadataMergedCorrectly()
+    {
+        var recorder1 = this.componentRecorder.CreateSingleFileComponentRecorder("package.json");
+        var recorder2 = this.componentRecorder.CreateSingleFileComponentRecorder("package-lock.json");
+
+        var bareComponent = new DetectedComponent(new NpmComponent("lodash", "4.17.23"))
+        {
+            LicensesConcluded = ["MIT"],
+            Suppliers = [new ActorInfo { Name = "Lodash Team", Type = "Organization" }],
+        };
+
+        var richComponent = new DetectedComponent(new NpmComponent("lodash", "4.17.23") { DownloadUrl = new Uri("https://registry.npmjs.org/lodash/-/lodash-4.17.23.tgz") })
+        {
+            LicensesConcluded = ["Apache-2.0"],
+            Suppliers = [new ActorInfo { Name = "Contoso", Type = "Organization" }],
+        };
+
+        recorder1.RegisterUsage(bareComponent);
+        recorder2.RegisterUsage(richComponent);
+
+        var results = this.componentRecorder.GetDetectedComponents().ToList();
+
+        results.Should().ContainSingle();
+        var result = results[0];
+
+        // Licenses from both bare and rich should be merged
+        result.LicensesConcluded.Should().HaveCount(2);
+        result.LicensesConcluded.Should().Contain("Apache-2.0");
+        result.LicensesConcluded.Should().Contain("MIT");
+
+        // Suppliers from both should be merged
+        result.Suppliers.Should().HaveCount(2);
+        result.Suppliers.Should().Contain(s => s.Name == "Lodash Team");
+        result.Suppliers.Should().Contain(s => s.Name == "Contoso");
+    }
 }
