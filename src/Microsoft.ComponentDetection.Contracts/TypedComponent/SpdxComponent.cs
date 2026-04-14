@@ -42,5 +42,13 @@ public class SpdxComponent : TypedComponent
     [JsonPropertyName("path")]
     public string Path { get; set; }
 
+    [JsonPropertyName("creatorTool")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string CreatorTool { get; set; }
+
+    [JsonPropertyName("creatorOrganization")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string CreatorOrganization { get; set; }
+
     protected override string ComputeBaseId() => $"{this.Name}-{this.SpdxVersion}-{this.Checksum}";
 }

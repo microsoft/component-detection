@@ -121,6 +121,37 @@ public class Spdx22ComponentDetector : FileComponentDetector, IDefaultOffCompone
         var path = processRequest.ComponentStream.Location;
         var component = new SpdxComponent(spdxVersion, new Uri(sbomNamespace), name, fileHash, rootElementId, path);
 
+        if (document.TryGetProperty("creationInfo", out var creationInfoElement)
+            && creationInfoElement.TryGetProperty("creators", out var creatorsElement)
+            && creatorsElement.ValueKind == JsonValueKind.Array)
+        {
+            foreach (var creator in creatorsElement.EnumerateArray())
+            {
+                var creatorString = creator.GetString();
+                if (creatorString == null)
+                {
+                    continue;
+                }
+
+                if (component.CreatorTool == null && creatorString.StartsWith("Tool: ", StringComparison.Ordinal))
+                {
+                    var tool = creatorString["Tool: ".Length..];
+                    if (!string.IsNullOrEmpty(tool))
+                    {
+                        component.CreatorTool = tool;
+                    }
+                }
+                else if (component.CreatorOrganization == null && creatorString.StartsWith("Organization: ", StringComparison.Ordinal))
+                {
+                    var org = creatorString["Organization: ".Length..];
+                    if (!string.IsNullOrEmpty(org))
+                    {
+                        component.CreatorOrganization = org;
+                    }
+                }
+            }
+        }
+
         return component;
     }
 
