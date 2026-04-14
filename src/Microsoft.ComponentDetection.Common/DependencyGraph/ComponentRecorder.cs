@@ -100,7 +100,7 @@ public class ComponentRecorder : IComponentRecorder
         {
             if (target.ContainerLayerIds.TryGetValue(kvp.Key, out var existingLayers))
             {
-                target.ContainerLayerIds[kvp.Key] = existingLayers.Union(kvp.Value).Distinct().ToList();
+                target.ContainerLayerIds[kvp.Key] = existingLayers.Union(kvp.Value).ToList();
             }
             else
             {
