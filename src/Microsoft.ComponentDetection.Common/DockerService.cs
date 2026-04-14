@@ -216,8 +216,22 @@ internal class DockerService : IDockerService
         }
         finally
         {
-            // Best-effort container cleanup; RemoveContainerAsync already handles not-found.
-            await RemoveContainerAsync(container.ID, CancellationToken.None);
+            // Best-effort container cleanup with a bounded timeout.
+            // RemoveContainerAsync already handles not-found, but we must guard against
+            // the Docker daemon hanging on container removal (e.g. when the container
+            // process is stuck), which would block the detector indefinitely.
+            using var removeCts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+            try
+            {
+                await RemoveContainerAsync(container.ID, removeCts.Token);
+            }
+            catch (Exception ex)
+            {
+                this.logger.LogWarning(
+                    ex,
+                    "Failed to remove container {ContainerId}; abandoning cleanup",
+                    container.ID);
+            }
         }
     }
 
