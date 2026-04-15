@@ -2,9 +2,9 @@
 namespace Microsoft.ComponentDetection.Detectors.Helm;
 
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Reactive.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -17,8 +17,6 @@ using YamlDotNet.RepresentationModel;
 
 public class HelmComponentDetector : FileComponentDetector, IDefaultOffComponentDetector
 {
-    private readonly ConcurrentDictionary<string, bool> helmChartDirectories = new(StringComparer.OrdinalIgnoreCase);
-
     public HelmComponentDetector(
         IComponentStreamEnumerableFactory componentStreamEnumerableFactory,
         IObservableDirectoryWalkerFactory walkerFactory,
@@ -43,120 +41,28 @@ public class HelmComponentDetector : FileComponentDetector, IDefaultOffComponent
 
     public override IEnumerable<string> Categories => [nameof(DetectorClass.Helm)];
 
-    public override async Task<IndividualDetectorScanResult> ExecuteDetectorAsync(ScanRequest request, CancellationToken cancellationToken = default)
-    {
-        this.helmChartDirectories.Clear();
-        return await base.ExecuteDetectorAsync(request, cancellationToken);
-    }
-
     /// <summary>
-    /// Pre-filters scan work to values files that are co-located with a Helm chart.
-    ///
-    /// This is intentionally implemented as a streaming pipeline with per-directory
-    /// buffering (not a two-pass approach that materializes all files first).
-    /// Instead of collecting all matching files upfront, this observable pipeline:
-    ///   1. Streams file matches as they arrive from the file walker
-    ///   2. Buffers values files per directory until a Chart.yaml is observed
-    ///   3. Immediately emits Chart files to mark their directory as a valid Helm chart
-    ///   4. Releases buffered values files for directories that now have charts
-    ///
-    /// This approach reduces peak memory usage and starts emitting work earlier on
-    /// large repositories compared to a full materialization pass. Enumeration order
-    /// is not guaranteed, so values files may be seen before Chart.yaml; per-directory
-    /// buffering ensures correctness regardless of enumeration order.
+    /// Pre-filters scan work to only values files co-located with a Chart.yaml/Chart.yml.
+    /// Materializes all matched files, identifies Helm chart directories, then filters.
     /// </summary>
-    /// <returns>
-    /// A prepared observable that emits only values-file requests belonging to
-    /// directories that contain a Chart.yaml/Chart.yml.
-    /// </returns>
-    protected override Task<IObservable<ProcessRequest>> OnPrepareDetectionAsync(
+    /// <returns>An observable of only the values-file requests in Helm chart directories.</returns>
+    protected override async Task<IObservable<ProcessRequest>> OnPrepareDetectionAsync(
         IObservable<ProcessRequest> processRequests,
         IDictionary<string, string> detectorArgs,
         CancellationToken cancellationToken = default)
     {
-        return Task.FromResult(Observable.Create<ProcessRequest>(observer =>
-        {
-            // Buffer only values files whose directory has not yet produced a Chart file.
-            var pendingValuesByDirectory = new Dictionary<string, List<ProcessRequest>>(StringComparer.OrdinalIgnoreCase);
-            var gate = new object();
+        var allRequests = await processRequests.ToList();
 
-            var subscription = processRequests.Subscribe(
-                request =>
-                {
-                    var fileName = Path.GetFileName(request.ComponentStream.Location);
-                    var directory = Path.GetDirectoryName(request.ComponentStream.Location) ?? string.Empty;
+        var chartDirectories = new HashSet<string>(
+            allRequests
+                .Where(r => IsChartFile(Path.GetFileName(r.ComponentStream.Location)))
+                .Select(r => Path.GetDirectoryName(r.ComponentStream.Location) ?? string.Empty),
+            StringComparer.OrdinalIgnoreCase);
 
-                    var requestsToEmit = (List<ProcessRequest>?)null;
-                    var emitCurrentRequest = false;
-
-                    // Protect shared state because IObservable callbacks may arrive concurrently.
-                    // Decide what to emit inside the lock, then emit outside to avoid blocking
-                    // other concurrent operations and reduce risk of deadlocks in Rx pipelines.
-                    lock (gate)
-                    {
-                        if (IsChartFile(fileName))
-                        {
-                            // Mark this directory as a Helm chart directory.
-                            this.helmChartDirectories.TryAdd(directory, true);
-
-                            // Capture any values files that arrived earlier for this directory
-                            // to be emitted after releasing the lock.
-                            if (pendingValuesByDirectory.Remove(directory, out var pendingRequests))
-                            {
-                                requestsToEmit = pendingRequests;
-                            }
-                        }
-                        else if (IsValuesFile(fileName))
-                        {
-                            if (this.helmChartDirectories.ContainsKey(directory))
-                            {
-                                // Directory is already known to be a chart; mark for immediate emission.
-                                emitCurrentRequest = true;
-                            }
-                            else
-                            {
-                                // Chart file not seen yet for this directory; queue for later release.
-                                if (!pendingValuesByDirectory.TryGetValue(directory, out var pendingRequestsForDirectory))
-                                {
-                                    pendingRequestsForDirectory = [];
-                                    pendingValuesByDirectory[directory] = pendingRequestsForDirectory;
-                                }
-
-                                pendingRequestsForDirectory.Add(request);
-                            }
-                        }
-                    }
-
-                    // Emit outside the lock to avoid blocking other concurrent operations.
-                    if (requestsToEmit != null)
-                    {
-                        foreach (var pendingRequest in requestsToEmit)
-                        {
-                            observer.OnNext(pendingRequest);
-                        }
-                    }
-
-                    if (emitCurrentRequest)
-                    {
-                        observer.OnNext(request);
-                    }
-                },
-                observer.OnError,
-                observer.OnCompleted);
-
-            var cancellationRegistration = cancellationToken.Register(() =>
-            {
-                // Stop forwarding events if detection is cancelled.
-                subscription.Dispose();
-                observer.OnCompleted();
-            });
-
-            return () =>
-            {
-                cancellationRegistration.Dispose();
-                subscription.Dispose();
-            };
-        }));
+        return allRequests
+            .Where(r => IsValuesFile(Path.GetFileName(r.ComponentStream.Location))
+                        && chartDirectories.Contains(Path.GetDirectoryName(r.ComponentStream.Location) ?? string.Empty))
+            .ToObservable();
     }
 
     protected override async Task OnFileFoundAsync(ProcessRequest processRequest, IDictionary<string, string> detectorArgs, CancellationToken cancellationToken = default)
