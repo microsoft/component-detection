@@ -38,7 +38,7 @@ internal class PnpmComponentDetectorFactory : FileComponentDetector
 
     public override IEnumerable<string> Categories => [Enum.GetName(typeof(DetectorClass), DetectorClass.Npm)];
 
-    public override IList<string> SearchPatterns { get; } = ["shrinkwrap.yaml", "pnpm-lock.yaml"];
+    public override IList<string> SearchPatterns { get; } = ["pnpm-lock.yaml", "shrinkwrap.yaml"];
 
     public override IEnumerable<ComponentType> SupportedComponentTypes { get; } = [ComponentType.Npm];
 
