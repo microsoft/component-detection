@@ -83,7 +83,7 @@ public class KubernetesComponentDetector : FileComponentDetector, IDefaultOffCom
                     continue;
                 }
 
-                this.Logger.LogInformation("Discovered Kubernetes manifest: {Location}", file.Location);
+                this.Logger.LogDebug("Discovered Kubernetes manifest: {Location}", file.Location);
                 this.ExtractImageReferences(rootMapping, singleFileComponentRecorder);
             }
         }
