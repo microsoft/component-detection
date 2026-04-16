@@ -39,15 +39,12 @@ internal class FastDirectoryWalkerFactory : IObservableDirectoryWalkerFactory
                 return Task.CompletedTask;
             }
 
-            PatternMatchingUtility.FilePatternMatcher fileIsMatch = null;
+            PatternMatchingUtility.CompiledMatcher fileIsMatch = null;
+            var patternsArray = filePatterns?.ToArray();
 
-            if (filePatterns == null || !filePatterns.Any())
+            if (patternsArray is { Length: > 0 })
             {
-                fileIsMatch = span => true;
-            }
-            else
-            {
-                fileIsMatch = PatternMatchingUtility.GetFilePatternMatcher(filePatterns);
+                fileIsMatch = PatternMatchingUtility.Compile(patternsArray);
             }
 
             var sw = Stopwatch.StartNew();
@@ -100,7 +97,7 @@ internal class FastDirectoryWalkerFactory : IObservableDirectoryWalkerFactory
             {
                 ShouldIncludePredicate = (ref FileSystemEntry entry) =>
                 {
-                    if (!entry.IsDirectory && fileIsMatch(entry.FileName))
+                    if (!entry.IsDirectory && (fileIsMatch == null || fileIsMatch.IsMatch(entry.FileName)))
                     {
                         return true;
                     }
@@ -210,46 +207,26 @@ internal class FastDirectoryWalkerFactory : IObservableDirectoryWalkerFactory
 
     public IObservable<FileSystemInfo> Subscribe(DirectoryInfo root, IEnumerable<string> patterns)
     {
-        var patternArray = patterns.ToArray();
-
-        if (this.pendingScans.TryGetValue(root, out var scannerObservable))
-        {
-            this.logger.LogDebug("Logging patterns {Patterns} for {Root}", string.Join(":", patterns), root.FullName);
-
-            var inner = scannerObservable.Value.Where(fsi =>
-            {
-                if (fsi is FileInfo fi)
-                {
-                    return this.MatchesAnyPattern(fi, patternArray);
-                }
-                else
-                {
-                    return true;
-                }
-            });
-
-            return inner;
-        }
-
-        throw new InvalidOperationException("Subscribe called without initializing scanner");
+        var patternsArray = patterns as string[] ?? patterns.ToArray();
+        var compiled = PatternMatchingUtility.Compile(patternsArray);
+        return this.Subscribe(root, patternsArray, compiled);
     }
 
     public IObservable<ProcessRequest> GetFilteredComponentStreamObservable(DirectoryInfo root, IEnumerable<string> patterns, IComponentRecorder componentRecorder)
     {
-        var observable = this.Subscribe(root, patterns).OfType<FileInfo>().SelectMany(f => patterns.Select(sp => new
-        {
-            SearchPattern = sp,
-            File = f,
-        })).Where(x =>
-            {
-                var searchPattern = x.SearchPattern;
-                var fileName = x.File.Name;
+        var patternsArray = patterns as string[] ?? patterns.ToArray();
+        var compiled = PatternMatchingUtility.Compile(patternsArray);
 
-                return this.pathUtilityService.MatchesPattern(searchPattern, fileName);
-            }).Where(x => x.File.Exists)
+        var observable = this.Subscribe(root, patternsArray, compiled).OfType<FileInfo>()
+            .Select(f => new
+            {
+                File = f,
+                MatchedPattern = compiled.GetMatchingPattern(f.Name),
+            })
+            .Where(x => x.MatchedPattern != null && x.File.Exists)
             .Select(x =>
             {
-                var lazyComponentStream = new LazyComponentStream(x.File, x.SearchPattern, this.logger);
+                var lazyComponentStream = new LazyComponentStream(x.File, x.MatchedPattern, this.logger);
                 return new ProcessRequest
                 {
                     ComponentStream = lazyComponentStream,
@@ -280,14 +257,31 @@ internal class FastDirectoryWalkerFactory : IObservableDirectoryWalkerFactory
         return entry.ToFileSystemInfo();
     }
 
+    private IObservable<FileSystemInfo> Subscribe(DirectoryInfo root, string[] patterns, PatternMatchingUtility.CompiledMatcher compiled)
+    {
+        if (this.pendingScans.TryGetValue(root, out var scannerObservable))
+        {
+            this.logger.LogDebug("Logging patterns {Patterns} for {Root}", string.Join(":", patterns), root.FullName);
+
+            var inner = scannerObservable.Value.Where(fsi =>
+            {
+                if (fsi is FileInfo fi)
+                {
+                    return compiled.IsMatch(fi.Name.AsSpan());
+                }
+
+                return true;
+            });
+
+            return inner;
+        }
+
+        throw new InvalidOperationException("Subscribe called without initializing scanner");
+    }
+
     private IObservable<FileSystemInfo> CreateDirectoryWalker(DirectoryInfo di, ExcludeDirectoryPredicate directoryExclusionPredicate, int minimumConnectionCount, IEnumerable<string> filePatterns)
     {
         return this.GetDirectoryScanner(di, new ConcurrentDictionary<string, bool>(), directoryExclusionPredicate, filePatterns, true).Replay() // Returns a replay subject which will republish anything found to new subscribers.
             .AutoConnect(minimumConnectionCount); // Specifies that this connectable observable should start when minimumConnectionCount subscribe.
-    }
-
-    private bool MatchesAnyPattern(FileInfo fi, params string[] searchPatterns)
-    {
-        return searchPatterns != null && searchPatterns.Any(sp => this.pathUtilityService.MatchesPattern(sp, fi.Name));
     }
 }

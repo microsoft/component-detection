@@ -50,7 +50,6 @@ public class SafeFileEnumerableTests
         IEnumerable<string> searchPatterns = [name];
 
         this.pathUtilityServiceMock.Setup(x => x.ResolvePhysicalPath(It.IsAny<string>())).Returns<string>((s) => s);
-        this.pathUtilityServiceMock.Setup(x => x.MatchesPattern(name, name)).Returns(true);
 
         var enumerable = new SafeFileEnumerable(new DirectoryInfo(this.temporaryDirectory), searchPatterns, this.loggerMock.Object, this.pathUtilityServiceMock.Object, (directoryName, span) => false, true);
 
@@ -76,8 +75,6 @@ public class SafeFileEnumerableTests
         File.Create(Path.Combine(this.temporaryDirectory, "SubDir", name)).Close();
 
         IEnumerable<string> searchPatterns = [name];
-
-        this.pathUtilityServiceMock.Setup(x => x.MatchesPattern(name, name)).Returns(true);
 
         var enumerable = new SafeFileEnumerable(new DirectoryInfo(this.temporaryDirectory), searchPatterns, this.loggerMock.Object, this.pathUtilityServiceMock.Object, (directoryName, span) => false, false);
 
