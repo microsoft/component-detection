@@ -87,9 +87,14 @@ internal class BinLogProcessor : IBinLogProcessor
                 {
                     projectInstanceToEvaluationMap[e.BuildEventContext.ProjectInstanceId] = e.BuildEventContext.EvaluationId;
 
-                    if (!string.IsNullOrEmpty(e.ProjectFile) &&
-                        projectInfoByEvaluationId.TryGetValue(e.BuildEventContext.EvaluationId, out var projectInfo))
+                    if (!string.IsNullOrEmpty(e.ProjectFile))
                     {
+                        if (!projectInfoByEvaluationId.TryGetValue(e.BuildEventContext.EvaluationId, out var projectInfo))
+                        {
+                            projectInfo = new MSBuildProjectInfo();
+                            projectInfoByEvaluationId[e.BuildEventContext.EvaluationId] = projectInfo;
+                        }
+
                         projectInfo.ProjectPath = rebasePath != null ? rebasePath(e.ProjectFile) : e.ProjectFile;
                     }
                 }

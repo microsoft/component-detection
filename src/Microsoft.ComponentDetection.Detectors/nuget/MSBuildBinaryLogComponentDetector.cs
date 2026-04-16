@@ -610,8 +610,7 @@ public class MSBuildBinaryLogComponentDetector : FileComponentDetector, IDefault
     /// </remarks>
     private async Task ProcessLockFileFallbackAsync(LockFile lockFile, string location, CancellationToken cancellationToken)
     {
-        var projectPath = lockFile.PackageSpec?.RestoreMetadata?.ProjectPath ?? location;
-        var singleFileComponentRecorder = this.ComponentRecorder.CreateSingleFileComponentRecorder(projectPath);
+        var singleFileComponentRecorder = this.ComponentRecorder.CreateSingleFileComponentRecorder(location);
         LockFileUtilities.ProcessLockFile(lockFile, singleFileComponentRecorder, this.Logger);
 
         // Register DotNet components (SDK version, target framework, project type)

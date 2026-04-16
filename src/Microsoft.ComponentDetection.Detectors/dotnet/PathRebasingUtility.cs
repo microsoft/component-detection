@@ -69,6 +69,17 @@ internal static class PathRebasingUtility
         // Find the relative path under sourceDirectory.
         var sourceDirectoryRelativePath = NormalizeDirectory(Path.GetRelativePath(sourceDirectory, sourceDirectoryBasedPath))!;
 
+        // Path.GetRelativePath returns "." when both are the same directory, meaning
+        // there is no relative suffix to verify against the artifact path.
+        // Without a common suffix we cannot confirm the paths correspond, so return null.
+        // If sourceDirectoryBasedPath is not under sourceDirectory, the relative path
+        // will start with ".." — we also cannot derive a rebase root in that case.
+        if (sourceDirectoryRelativePath == "." ||
+            sourceDirectoryRelativePath.StartsWith("..", StringComparison.Ordinal))
+        {
+            return null;
+        }
+
         // If the artifact path has the same relative portion, extract the root prefix.
         // Use case-insensitive comparison: Windows paths are case-insensitive, and on
         // Linux the paths will naturally have consistent casing.

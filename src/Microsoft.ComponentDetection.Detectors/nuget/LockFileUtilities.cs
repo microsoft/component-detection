@@ -208,7 +208,15 @@ internal static class LockFileUtilities
 
         visited ??= [];
 
-        var libraryComponent = new DetectedComponent(new NuGetComponent(library.Name, library.Version?.ToNormalizedString() ?? "0.0.0"));
+        var versionString = library.Version?.ToNormalizedString();
+        if (string.IsNullOrEmpty(versionString))
+        {
+            // Skip libraries with no version — registering a synthetic version would
+            // create incorrect component IDs and could collapse distinct dependencies.
+            return;
+        }
+
+        var libraryComponent = new DetectedComponent(new NuGetComponent(library.Name, versionString));
 
         singleFileComponentRecorder.RegisterUsage(
             libraryComponent,

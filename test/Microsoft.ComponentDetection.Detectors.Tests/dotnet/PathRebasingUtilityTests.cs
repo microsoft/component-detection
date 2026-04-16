@@ -315,4 +315,32 @@ public class PathRebasingUtilityTests
         result.Should().Be("correct");
         rebaseRoot.Should().Be($"{AltRootDir}/agent/");
     }
+
+    [TestMethod]
+    public void GetRebaseRoot_SourceBasedPathEqualsSourceDirectory_ReturnsNull()
+    {
+        // When sourceDirectoryBasedPath == sourceDirectory, Path.GetRelativePath returns ".".
+        // Without a common relative suffix to verify, we cannot confirm the paths correspond.
+        var sourceDir = $"{RootDir}/src/repo";
+        var sourceBasedPath = $"{RootDir}/src/repo";
+        var artifactPath = $"{AltRootDir}/a/_work/1/s";
+
+        var result = PathRebasingUtility.GetRebaseRoot(sourceDir, sourceBasedPath, artifactPath);
+
+        result.Should().BeNull();
+    }
+
+    [TestMethod]
+    public void GetRebaseRoot_SourceBasedPathOutsideSourceDirectory_ReturnsNull()
+    {
+        // When sourceDirectoryBasedPath is NOT under sourceDirectory, GetRelativePath
+        // returns a ".." relative path. The method should safely return null.
+        var sourceDir = $"{RootDir}/src/repo";
+        var sourceBasedPath = $"{RootDir}/somewhere/else";
+        var artifactPath = $"{AltRootDir}/a/_work/1/s/somewhere/else";
+
+        var result = PathRebasingUtility.GetRebaseRoot(sourceDir, sourceBasedPath, artifactPath);
+
+        result.Should().BeNull();
+    }
 }

@@ -254,13 +254,13 @@ internal class MSBuildProjectInfo
         this.PublishAot = MergeBool(this.PublishAot, other.PublishAot);
         this.SelfContained = MergeBool(this.SelfContained, other.SelfContained);
 
-        // Merge string properties: fill in unset values only.
+        // Merge string properties: fill in unset (null or empty) values only.
         // These are not expected to differ across passes for the same project/TFM.
-        this.OutputType ??= other.OutputType;
-        this.NETCoreSdkVersion ??= other.NETCoreSdkVersion;
-        this.ProjectAssetsFile ??= other.ProjectAssetsFile;
-        this.TargetFramework ??= other.TargetFramework;
-        this.TargetFrameworks ??= other.TargetFrameworks;
+        this.OutputType = MergeString(this.OutputType, other.OutputType);
+        this.NETCoreSdkVersion = MergeString(this.NETCoreSdkVersion, other.NETCoreSdkVersion);
+        this.ProjectAssetsFile = MergeString(this.ProjectAssetsFile, other.ProjectAssetsFile);
+        this.TargetFramework = MergeString(this.TargetFramework, other.TargetFramework);
+        this.TargetFrameworks = MergeString(this.TargetFrameworks, other.TargetFrameworks);
 
         // Merge items: add items from other that are not already present
         MergeItems(this.PackageReference, other.PackageReference);
@@ -278,6 +278,9 @@ internal class MSBuildProjectInfo
 
         return existing ?? incoming;
     }
+
+    private static string? MergeString(string? existing, string? incoming) =>
+        string.IsNullOrEmpty(existing) ? incoming : existing;
 
     private static void MergeItems(IDictionary<string, ITaskItem> target, IDictionary<string, ITaskItem> source)
     {

@@ -100,12 +100,14 @@ public class MSBuildBinaryLogComponentDetectorTests : BaseDetectorTest<MSBuildBi
         var components = recorder.GetDetectedComponents().Where(c => c.Component is NuGetComponent).ToList();
         components.Should().HaveCount(2);
 
-        var graphs = recorder.GetDependencyGraphsByLocation();
-        graphs.Should().NotBeEmpty();
-        var graph = graphs.Values.First();
-
         var logging = components.First(c => ((NuGetComponent)c.Component).Name == "Microsoft.Extensions.Logging");
         var abstractions = components.First(c => ((NuGetComponent)c.Component).Name == "Microsoft.Extensions.Logging.Abstractions");
+
+        var graphs = recorder.GetDependencyGraphsByLocation();
+        graphs.Should().NotBeEmpty();
+
+        // Find the graph that contains NuGet components (not the DotNet component graph).
+        var graph = graphs.Values.First(g => g.GetComponents().Contains(logging.Component.Id));
 
         graph.IsComponentExplicitlyReferenced(logging.Component.Id).Should().BeTrue();
         graph.IsComponentExplicitlyReferenced(abstractions.Component.Id).Should().BeFalse();

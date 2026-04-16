@@ -74,7 +74,7 @@ dotnet test -- --filter "TestCategory=Integration"
 
 To run everything (same as CI):
 ```bash
-dotnet test -p:TestingPlatformCommandLineArguments=""
+dotnet test -p:ExcludeIntegrationTests=false
 ```
 
 **Verification tests** are run on the sample projects defined in [microsoft/componentdetection-verification](https://github.com/microsoft/componentdetection-verification).
