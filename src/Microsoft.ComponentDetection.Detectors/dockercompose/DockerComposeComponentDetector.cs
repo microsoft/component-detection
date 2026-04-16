@@ -13,7 +13,7 @@ using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.Extensions.Logging;
 using YamlDotNet.RepresentationModel;
 
-public class DockerComposeComponentDetector : FileComponentDetector, IDefaultOffComponentDetector, IExperimentalDetector
+public class DockerComposeComponentDetector : FileComponentDetector, IDefaultOffComponentDetector
 {
     public DockerComposeComponentDetector(
         IComponentStreamEnumerableFactory componentStreamEnumerableFactory,
