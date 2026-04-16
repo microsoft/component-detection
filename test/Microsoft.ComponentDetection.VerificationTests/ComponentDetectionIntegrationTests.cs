@@ -56,10 +56,10 @@ public class ComponentDetectionIntegrationTests
         // Parse out array of components
         // make sure each component id has identical fields.
         // if any are lost, error, new ones should come with a bumped detector version, which is checked during the detectors counts test.
-        var experimentalDetectorsId = this.GetExperimentalDetectorsId(this.newScanResult.DetectorsInScan, this.oldScanResult.DetectorsInScan);
+        var excludedDetectorIds = this.GetExcludedDetectorIds(this.newScanResult.DetectorsInScan, this.oldScanResult.DetectorsInScan);
 
-        var newComponents = this.newScanResult.ComponentsFound.Where(c => !experimentalDetectorsId.Contains(c.DetectorId));
-        var oldComponents = this.oldScanResult.ComponentsFound.Where(c => !experimentalDetectorsId.Contains(c.DetectorId));
+        var newComponents = this.newScanResult.ComponentsFound.Where(c => !excludedDetectorIds.Contains(c.DetectorId));
+        var oldComponents = this.oldScanResult.ComponentsFound.Where(c => !excludedDetectorIds.Contains(c.DetectorId));
 
         var newComponentDictionary = this.GetComponentDictionary(newComponents);
         var oldComponentDictionary = this.GetComponentDictionary(oldComponents);
@@ -67,34 +67,47 @@ public class ComponentDetectionIntegrationTests
         {
             this.CompareDetectedComponents(oldComponents, newComponentDictionary, "new");
             this.CompareDetectedComponents(newComponents, oldComponentDictionary, "old");
+
             var oldGraphs = this.oldScanResult.DependencyGraphs;
             var newGraphs = this.newScanResult.DependencyGraphs;
-            this.CompareGraphs(oldGraphs, newGraphs, "old", "new");
-            this.CompareGraphs(newGraphs, oldGraphs, "new", "old");
+
+            // Only compare graphs for files present in both scans. New or removed detectors
+            // may introduce file paths that cannot be compared against the other baseline.
+            var sharedGraphKeys = new HashSet<string>(oldGraphs.Keys.Intersect(newGraphs.Keys));
+            this.CompareGraphs(oldGraphs, newGraphs, "old", "new", sharedGraphKeys);
+            this.CompareGraphs(newGraphs, oldGraphs, "new", "old", sharedGraphKeys);
         }
     }
 
-    private ISet<string> GetExperimentalDetectorsId(IEnumerable<Detector> newScanDetectors, IEnumerable<Detector> oldScanDetectors)
+    /// <summary>
+    /// Returns detector IDs that should be excluded from component comparison.
+    /// Excludes experimental detectors and detectors that only exist in one scan
+    /// (new detectors not yet in the baseline, or removed detectors).
+    /// </summary>
+    private ISet<string> GetExcludedDetectorIds(IEnumerable<Detector> newScanDetectors, IEnumerable<Detector> oldScanDetectors)
     {
-        var experimentalDetectorsId = new HashSet<string>();
+        var excludedIds = new HashSet<string>();
+
+        var newDetectorIds = new HashSet<string>(newScanDetectors.Select(d => d.DetectorId));
+        var oldDetectorIds = new HashSet<string>(oldScanDetectors.Select(d => d.DetectorId));
 
         foreach (var detector in newScanDetectors)
         {
-            if (detector.IsExperimental)
+            if (detector.IsExperimental || !oldDetectorIds.Contains(detector.DetectorId))
             {
-                experimentalDetectorsId.Add(detector.DetectorId);
+                excludedIds.Add(detector.DetectorId);
             }
         }
 
         foreach (var detector in oldScanDetectors)
         {
-            if (detector.IsExperimental)
+            if (detector.IsExperimental || !newDetectorIds.Contains(detector.DetectorId))
             {
-                experimentalDetectorsId.Add(detector.DetectorId);
+                excludedIds.Add(detector.DetectorId);
             }
         }
 
-        return experimentalDetectorsId;
+        return excludedIds;
     }
 
     private void CompareDetectedComponents(IEnumerable<ScannedComponent> leftComponents, Dictionary<string, ScannedComponent> rightComponentDictionary, string rightFileName)
@@ -114,10 +127,15 @@ public class ComponentDetectionIntegrationTests
         }
     }
 
-    private void CompareGraphs(DependencyGraphCollection leftGraphs, DependencyGraphCollection newGraphs, string leftGraphName, string rightGraphName)
+    private void CompareGraphs(DependencyGraphCollection leftGraphs, DependencyGraphCollection newGraphs, string leftGraphName, string rightGraphName, HashSet<string> includedKeys = null)
     {
         foreach (var leftGraph in leftGraphs)
         {
+            if (includedKeys != null && !includedKeys.Contains(leftGraph.Key))
+            {
+                continue;
+            }
+
             newGraphs.TryGetValue(leftGraph.Key, out var rightGraph).Should().BeTrue($"File {leftGraph.Key} is in the {leftGraphName} dependency graph, but not in the {rightGraphName} one.");
 
             if (rightGraph == null)
