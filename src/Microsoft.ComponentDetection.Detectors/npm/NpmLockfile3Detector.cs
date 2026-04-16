@@ -38,7 +38,7 @@ public class NpmLockfile3Detector : NpmLockfileDetectorBase
 
     public override string Id => "NpmLockfile3";
 
-    public override int Version => 3;
+    public override int Version => 4;
 
     protected override bool IsSupportedLockfileVersion(int lockfileVersion) => lockfileVersion == 3;
 
@@ -83,7 +83,7 @@ public class NpmLockfile3Detector : NpmLockfileDetectorBase
         while (topLevelDependencies.Count > 0)
         {
             var (path, lockPackage, _) = topLevelDependencies.Dequeue();
-            var name = NpmComponentUtilities.GetModuleName(path);
+            var name = lockPackage.Name ?? NpmComponentUtilities.GetModuleName(path);
 
             var component = this.CreateComponent(name, lockPackage.Version, lockPackage.Integrity);
             if (component is null)
@@ -108,7 +108,7 @@ public class NpmLockfile3Detector : NpmLockfileDetectorBase
             while (subQueue.Count > 0)
             {
                 var (subPath, subPackage, parentComponent) = subQueue.Dequeue();
-                var subName = NpmComponentUtilities.GetModuleName(subPath);
+                var subName = subPackage.Name ?? NpmComponentUtilities.GetModuleName(subPath);
 
                 var subComponent = this.CreateComponent(subName, subPackage.Version, subPackage.Integrity);
                 if (subComponent is null)

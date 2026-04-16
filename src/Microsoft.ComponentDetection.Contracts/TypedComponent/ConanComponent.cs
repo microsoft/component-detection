@@ -38,7 +38,7 @@ public class ConanComponent : TypedComponent
     public override ComponentType Type => ComponentType.Conan;
 
     [JsonPropertyName("packageUrl")]
-    public override PackageURL PackageUrl => new PackageURL("conan", string.Empty, this.Name, this.Version, null, string.Empty);
+    public override PackageUrl PackageUrl => new PackageUrl("conan", string.Empty, this.Name, this.Version, null, string.Empty);
 
     protected override string ComputeBaseId() => $"{this.Name} {this.Version} - {this.Type}";
 }

@@ -10,8 +10,8 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="DotNet.Glob" />
         <PackageReference Include="MSBuild.StructuredLogger" />
+        <PackageReference Include="Microsoft.Extensions.FileSystemGlobbing" />
         <PackageReference Include="Microsoft.Extensions.Logging" />
         <PackageReference Include="morelinq" />
         <PackageReference Include="NuGet.ProjectModel" />

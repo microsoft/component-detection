@@ -127,6 +127,41 @@ public static class NpmComponentUtilities
     }
 
     /// <summary>
+    /// Tries to parse an npm alias specifier of the form <c>npm:@scope/name@version</c> or <c>npm:name@version</c>.
+    /// This format appears in the <c>version</c> field of v1/v2 lockfile <c>dependencies</c> entries when a package is aliased.
+    /// </summary>
+    /// <param name="versionField">The version field value from the lockfile dependency entry.</param>
+    /// <param name="packageName">When this method returns <c>true</c>, contains the real package name (e.g. <c>@zkochan/js-yaml</c>).</param>
+    /// <param name="version">When this method returns <c>true</c>, contains the version string (e.g. <c>0.0.9</c>).</param>
+    /// <returns><c>true</c> if the value was a valid npm alias specifier; otherwise <c>false</c>.</returns>
+    public static bool TryParseNpmAlias(string? versionField, out string packageName, out string version)
+    {
+        packageName = string.Empty;
+        version = string.Empty;
+
+        if (versionField is null || !versionField.StartsWith("npm:", StringComparison.Ordinal))
+        {
+            return false;
+        }
+
+        // Remove "npm:" prefix → e.g. "@zkochan/js-yaml@0.0.9" or "ramda@0.28.1"
+        var specifier = versionField[4..];
+
+        // Find the last '@' that separates name from version.
+        // For scoped packages like "@scope/name@version", the first '@' is part of the scope.
+        var lastAtIndex = specifier.LastIndexOf('@');
+        if (lastAtIndex <= 0)
+        {
+            return false;
+        }
+
+        packageName = specifier[..lastAtIndex];
+        version = specifier[(lastAtIndex + 1)..];
+
+        return packageName.Length > 0 && version.Length > 0;
+    }
+
+    /// <summary>
     /// Gets the module name, stripping off the "node_modules/" prefix if it exists.
     /// </summary>
     /// <param name="name">The name of the module.</param>

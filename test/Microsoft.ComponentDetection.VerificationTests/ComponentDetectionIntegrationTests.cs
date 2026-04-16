@@ -15,6 +15,9 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 [TestClass]
 public class ComponentDetectionIntegrationTests
 {
+    // Detectors intentionally removed (e.g., promoted/merged into another detector). MavenWithFallback was promoted into MvnCli.
+    private static readonly HashSet<string> IntentionallyRemovedDetectors = ["MavenWithFallback"];
+
     private string oldLogFileContents;
     private string newLogFileContents;
     private DefaultGraphScanResult oldScanResult;
@@ -183,7 +186,12 @@ public class ComponentDetectionIntegrationTests
             var oldMatches = Regex.Matches(this.oldLogFileContents, regexPattern);
             var newMatches = Regex.Matches(this.newLogFileContents, regexPattern);
 
-            newMatches.Should().HaveCountGreaterThanOrEqualTo(oldMatches.Count, "A detector was lost, make sure this was intentional.");
+            var removedDetectorsPresentInOldLog = oldMatches.Cast<Match>()
+                .Where(m => m.Groups[2].Success && IntentionallyRemovedDetectors.Contains(m.Groups[2].Value))
+                .Select(m => m.Groups[2].Value)
+                .Distinct()
+                .Count();
+            newMatches.Should().HaveCountGreaterThanOrEqualTo(oldMatches.Count - removedDetectorsPresentInOldLog, "A detector was lost, make sure this was intentional.");
 
             var detectorTimes = new Dictionary<string, float>();
             var detectorCounts = new Dictionary<string, int>();
@@ -236,6 +244,11 @@ public class ComponentDetectionIntegrationTests
         this.bumpedDetectorVersions = [];
         foreach (var cd in oldDetectors)
         {
+            if (IntentionallyRemovedDetectors.Contains(cd.DetectorId))
+            {
+                continue;
+            }
+
             var newDetector = newDetectors.FirstOrDefault(det => det.DetectorId == cd.DetectorId);
 
             if (newDetector == null)
