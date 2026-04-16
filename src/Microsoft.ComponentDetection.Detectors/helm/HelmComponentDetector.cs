@@ -89,7 +89,7 @@ public class HelmComponentDetector : FileComponentDetector, IDefaultOffComponent
                 return;
             }
 
-            this.ExtractImageReferencesFromValues(yaml, processRequest.SingleFileComponentRecorder, file.Location);
+            this.ExtractImageReferencesFromValues(yaml, processRequest.SingleFileComponentRecorder);
         }
         catch (Exception e)
         {
@@ -112,13 +112,13 @@ public class HelmComponentDetector : FileComponentDetector, IDefaultOffComponent
         (fileName.EndsWith(".yaml", StringComparison.OrdinalIgnoreCase) ||
          fileName.EndsWith(".yml", StringComparison.OrdinalIgnoreCase));
 
-    private void ExtractImageReferencesFromValues(YamlStream yaml, ISingleFileComponentRecorder recorder, string fileLocation)
+    private void ExtractImageReferencesFromValues(YamlStream yaml, ISingleFileComponentRecorder recorder)
     {
         foreach (var document in yaml.Documents)
         {
             if (document.RootNode is YamlMappingNode rootMapping)
             {
-                this.WalkYamlForImages(rootMapping, recorder, fileLocation);
+                this.WalkYamlForImages(rootMapping, recorder);
             }
         }
     }
@@ -128,7 +128,7 @@ public class HelmComponentDetector : FileComponentDetector, IDefaultOffComponent
     /// 1. Direct image string: `image: nginx:1.21`
     /// 2. Structured image object: `image: { repository: nginx, tag: "1.21" }`.
     /// </summary>
-    private void WalkYamlForImages(YamlMappingNode mapping, ISingleFileComponentRecorder recorder, string fileLocation)
+    private void WalkYamlForImages(YamlMappingNode mapping, ISingleFileComponentRecorder recorder)
     {
         foreach (var entry in mapping.Children)
         {
@@ -156,7 +156,7 @@ public class HelmComponentDetector : FileComponentDetector, IDefaultOffComponent
             }
             else if (entry.Value is YamlMappingNode childMapping)
             {
-                this.WalkYamlForImages(childMapping, recorder, fileLocation);
+                this.WalkYamlForImages(childMapping, recorder);
             }
             else if (entry.Value is YamlSequenceNode sequenceNode)
             {
@@ -164,7 +164,7 @@ public class HelmComponentDetector : FileComponentDetector, IDefaultOffComponent
                 {
                     if (item is YamlMappingNode sequenceMapping)
                     {
-                        this.WalkYamlForImages(sequenceMapping, recorder, fileLocation);
+                        this.WalkYamlForImages(sequenceMapping, recorder);
                     }
                 }
             }
