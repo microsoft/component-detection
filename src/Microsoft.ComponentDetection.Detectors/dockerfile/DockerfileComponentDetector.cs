@@ -4,7 +4,6 @@ namespace Microsoft.ComponentDetection.Detectors.Dockerfile;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Common;
@@ -116,7 +115,6 @@ public class DockerfileComponentDetector : FileComponentDetector, IDefaultOffCom
 
     private DockerReference? ParseFromInstruction(DockerfileConstruct construct, char escapeChar, Dictionary<string, string> stageNameMap)
     {
-        var tokens = construct.Tokens.ToArray();
         var resolvedFromStatement = construct.ResolveVariables(escapeChar)?.TrimEnd();
         var fromInstruction = (FromInstruction)construct;
         var reference = fromInstruction.ImageName;

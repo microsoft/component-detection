@@ -405,6 +405,7 @@ name: my-chart
 version: 0.1.0
 ";
 
+        // Helm's Chart.yml file has to be named with an uppercase 'C'. Verify that files not matching this pattern are ignored.
         var (scanResult, componentRecorder) = await this.DetectorTestUtility
             .WithFile("chart.yaml", chartYaml)
             .ExecuteDetectorAsync();

@@ -97,9 +97,15 @@ public class HelmComponentDetector : FileComponentDetector, IDefaultOffComponent
         }
     }
 
+    /// <summary>
+    /// Checks if the given file name matches Helm chart file patterns (Chart.yaml or Chart.yml).
+    /// </summary>
+    /// <param name="fileName">The file name to check.</param>
+    /// <returns>True if the file name matches Helm chart file patterns; otherwise, false.</returns>
+    /// <remarks> The <c>C</c> in <c>Chart.yaml</c> is case-sensitive <see href="https://helm.sh/docs/chart_best_practices/conventions/#usage-of-the-words-helm-and-chart"/>.</remarks>
     private static bool IsChartFile(string fileName) =>
-        fileName.Equals("Chart.yaml", StringComparison.OrdinalIgnoreCase) ||
-        fileName.Equals("Chart.yml", StringComparison.OrdinalIgnoreCase);
+        fileName.Equals("Chart.yaml", StringComparison.Ordinal) ||
+        fileName.Equals("Chart.yml", StringComparison.Ordinal);
 
     private static bool IsValuesFile(string fileName) =>
         fileName.Contains("values", StringComparison.OrdinalIgnoreCase) &&
