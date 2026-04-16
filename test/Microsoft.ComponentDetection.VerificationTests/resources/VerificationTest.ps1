@@ -41,7 +41,7 @@ function main()
     Set-Location ((Get-Item  $repoPath).FullName + "\src\Microsoft.ComponentDetection")
     dotnet run scan --SourceDirectory $verificationTestRepo --Output $output `
                     --DockerImagesToScan $dockerImagesToScan `
-                    --DetectorArgs DockerReference=EnableIfDefaultOff,SPDX22SBOM=EnableIfDefaultOff,CondaLock=EnableIfDefaultOff,ConanLock=EnableIfDefaultOff,DockerCompose=EnableIfDefaultOff,Helm=EnableIfDefaultOff,Kubernetes=EnableIfDefaultOff `
+                    --DetectorArgs DockerReference=EnableIfDefaultOff,SPDX22SBOM=EnableIfDefaultOff,CondaLock=EnableIfDefaultOff,ConanLock=EnableIfDefaultOff `
                     --MaxDetectionThreads 5 --DebugTelemetry `
                     --DirectoryExclusionList "**/pip/parallel/**;**/pip/roots/**;**/pip/pre-generated/**"
 
@@ -50,7 +50,7 @@ function main()
     Set-Location ($CDRelease + "\src\Microsoft.ComponentDetection")
     dotnet run scan --SourceDirectory $verificationTestRepo --Output $releaseOutput `
                     --DockerImagesToScan $dockerImagesToScan `
-                    --DetectorArgs DockerReference=EnableIfDefaultOff,SPDX22SBOM=EnableIfDefaultOff,CondaLock=EnableIfDefaultOff,ConanLock=EnableIfDefaultOff,DockerCompose=EnableIfDefaultOff,Helm=EnableIfDefaultOff,Kubernetes=EnableIfDefaultOff `
+                    --DetectorArgs DockerReference=EnableIfDefaultOff,SPDX22SBOM=EnableIfDefaultOff,CondaLock=EnableIfDefaultOff,ConanLock=EnableIfDefaultOff `
                     --MaxDetectionThreads 5 --DebugTelemetry `
                     --DirectoryExclusionList "**/pip/parallel/**;**/pip/roots/**;**/pip/pre-generated/**"
 
