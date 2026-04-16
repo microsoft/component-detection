@@ -5,7 +5,8 @@
 Helm detection depends on the following to successfully run:
 
 - One or more Helm values files matching the patterns: `*values*.yaml`, `*values*.yml`
-- Chart metadata files (`Chart.yaml`, `Chart.yml`, `chart.yaml`, `chart.yml`) are matched for file discovery but only values files are parsed for image references
+- Chart metadata files (`Chart.yaml`, `Chart.yml`) are matched for file discovery but only values files are parsed for image references
+  - `chart.yaml` and `chart.yml` aren't supported by Helm, the `c` has to be uppercased.
 
 The `HelmComponentDetector` is a **DefaultOff** detector and must be explicitly enabled via the `--DetectorArgs` parameter.
 
