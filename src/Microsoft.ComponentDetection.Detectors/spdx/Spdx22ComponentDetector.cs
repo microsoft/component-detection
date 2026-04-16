@@ -127,6 +127,11 @@ public class Spdx22ComponentDetector : FileComponentDetector, IDefaultOffCompone
         {
             foreach (var creator in creatorsElement.EnumerateArray())
             {
+                if (creator.ValueKind != JsonValueKind.String)
+                {
+                    continue;
+                }
+
                 var creatorString = creator.GetString();
                 if (creatorString == null)
                 {
@@ -135,16 +140,16 @@ public class Spdx22ComponentDetector : FileComponentDetector, IDefaultOffCompone
 
                 if (component.CreatorTool == null && creatorString.StartsWith("Tool: ", StringComparison.Ordinal))
                 {
-                    var tool = creatorString["Tool: ".Length..];
-                    if (!string.IsNullOrEmpty(tool))
+                    var tool = creatorString["Tool: ".Length..].Trim();
+                    if (!string.IsNullOrWhiteSpace(tool))
                     {
                         component.CreatorTool = tool;
                     }
                 }
                 else if (component.CreatorOrganization == null && creatorString.StartsWith("Organization: ", StringComparison.Ordinal))
                 {
-                    var org = creatorString["Organization: ".Length..];
-                    if (!string.IsNullOrEmpty(org))
+                    var org = creatorString["Organization: ".Length..].Trim();
+                    if (!string.IsNullOrWhiteSpace(org))
                     {
                         component.CreatorOrganization = org;
                     }

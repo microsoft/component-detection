@@ -220,6 +220,37 @@ public class Spdx22ComponentDetectorTests
     }
 
     [TestMethod]
+    public async Task TestSbomDetector_WhitespaceOnlyCreatorsReturnNullAsync()
+    {
+        var spdxFile = /*lang=json,strict*/ @"{
+    ""spdxVersion"": ""SPDX-2.2"",
+    ""SPDXID"": ""SPDXRef-DOCUMENT"",
+    ""name"": ""TestDoc"",
+    ""documentNamespace"": ""https://sbom.microsoft/test/1.0.0/abc"",
+    ""creationInfo"": {
+        ""created"": ""2024-01-01T00:00:00Z"",
+        ""creators"": [
+            ""Tool:   "",
+            ""Organization:   ""
+        ]
+    },
+    ""documentDescribes"": [""SPDXRef-RootPackage""],
+    ""packages"": [],
+    ""relationships"": []
+}";
+
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
+            .WithFile("manifest.spdx.json", spdxFile)
+            .ExecuteDetectorAsync();
+
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+
+        var sbomComponent = (SpdxComponent)componentRecorder.GetDetectedComponents().Single().Component;
+        sbomComponent.CreatorTool.Should().BeNull();
+        sbomComponent.CreatorOrganization.Should().BeNull();
+    }
+
+    [TestMethod]
     public async Task TestSbomDetector_MultipleCreatorsPicksFirstToolAndOrgAsync()
     {
         var spdxFile = /*lang=json,strict*/ @"{

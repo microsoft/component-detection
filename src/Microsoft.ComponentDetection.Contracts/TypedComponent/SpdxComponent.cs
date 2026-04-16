@@ -42,13 +42,15 @@ public class SpdxComponent : TypedComponent
     [JsonPropertyName("path")]
     public string Path { get; set; }
 
+#nullable enable
     [JsonPropertyName("creatorTool")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public string CreatorTool { get; set; }
+    public string? CreatorTool { get; set; }
 
     [JsonPropertyName("creatorOrganization")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public string CreatorOrganization { get; set; }
+    public string? CreatorOrganization { get; set; }
+#nullable disable
 
     protected override string ComputeBaseId() => $"{this.Name}-{this.SpdxVersion}-{this.Checksum}";
 }
