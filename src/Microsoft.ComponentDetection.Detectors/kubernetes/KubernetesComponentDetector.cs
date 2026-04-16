@@ -14,7 +14,7 @@ using Microsoft.Extensions.Logging;
 using YamlDotNet.Core;
 using YamlDotNet.RepresentationModel;
 
-public class KubernetesComponentDetector : FileComponentDetector
+public class KubernetesComponentDetector : FileComponentDetector, IDefaultOffComponentDetector
 {
     private static readonly HashSet<string> KubernetesKinds = new(StringComparer.OrdinalIgnoreCase)
     {
