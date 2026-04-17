@@ -86,23 +86,12 @@ public class DockerfileComponentDetector : FileComponentDetector, IDefaultOffCom
     {
         try
         {
-            var instructionKeyword = construct.Type;
-            DockerReference? baseImage = null;
-            if (instructionKeyword == ConstructType.Instruction)
+            var baseImage = construct switch
             {
-                var constructType = construct.GetType().Name;
-                switch (constructType)
-                {
-                    case "FromInstruction":
-                        baseImage = this.ParseFromInstruction(construct, escapeChar, stageNameMap);
-                        break;
-                    case "CopyInstruction":
-                        baseImage = this.ParseCopyInstruction(construct, escapeChar, stageNameMap);
-                        break;
-                    default:
-                        break;
-                }
-            }
+                FromInstruction => this.ParseFromInstruction(construct, escapeChar, stageNameMap),
+                CopyInstruction => this.ParseCopyInstruction(construct, escapeChar, stageNameMap),
+                _ => null,
+            };
 
             return baseImage;
         }

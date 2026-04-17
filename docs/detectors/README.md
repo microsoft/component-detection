@@ -20,9 +20,9 @@
 
 - [Docker Compose](dockercompose.md)
 
-| Detector                        | Status     |
-| ------------------------------- | ---------- |
-| DockerComposeComponentDetector  | DefaultOff |
+| Detector                       | Status     |
+| ------------------------------ | ---------- |
+| DockerComposeComponentDetector | DefaultOff |
 
 - [Dockerfile](dockerfile.md)
 

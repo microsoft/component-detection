@@ -4,7 +4,9 @@ namespace Microsoft.ComponentDetection.Common.Tests;
 using System;
 using AwesomeAssertions;
 using Microsoft.ComponentDetection.Contracts;
+using Microsoft.ComponentDetection.Contracts.BcdeModels;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Moq;
 
 [TestClass]
 [TestCategory("Governance/All")]
@@ -267,5 +269,98 @@ public class DockerReferenceUtilityTests
 
         result.Should().NotBeNull();
         result.Should().BeAssignableTo<RepositoryReference>();
+    }
+
+    [TestMethod]
+    public void HasUnresolvedVariables_ReturnsTrueForDollarSign()
+    {
+        DockerReferenceUtility.HasUnresolvedVariables("${MY_IMAGE}:latest").Should().BeTrue();
+    }
+
+    [TestMethod]
+    public void HasUnresolvedVariables_ReturnsTrueForBraces()
+    {
+        DockerReferenceUtility.HasUnresolvedVariables("{{ .Values.image }}").Should().BeTrue();
+    }
+
+    [TestMethod]
+    public void HasUnresolvedVariables_ReturnsFalseForPlainReference()
+    {
+        DockerReferenceUtility.HasUnresolvedVariables("docker.io/library/nginx:latest").Should().BeFalse();
+    }
+
+    [TestMethod]
+    public void TryParseImageReference_ReturnsNullForUnresolvedVariables()
+    {
+        DockerReferenceUtility.TryParseImageReference("${IMAGE}:latest").Should().BeNull();
+    }
+
+    [TestMethod]
+    public void TryParseImageReference_ReturnsNullForInvalidReference()
+    {
+        DockerReferenceUtility.TryParseImageReference("docker.io/library/Nginx").Should().BeNull();
+    }
+
+    [TestMethod]
+    public void TryParseImageReference_ReturnsParsedReferenceForValidInput()
+    {
+        var result = DockerReferenceUtility.TryParseImageReference("nginx:latest");
+
+        result.Should().NotBeNull();
+        result.Should().BeAssignableTo<TaggedReference>();
+    }
+
+    [TestMethod]
+    public void TryParseImageReference_ReturnsParsedReferenceForDigest()
+    {
+        var digest = $"sha256:{new string('a', 64)}";
+        var result = DockerReferenceUtility.TryParseImageReference($"nginx@{digest}");
+
+        result.Should().NotBeNull();
+        result.Should().BeAssignableTo<CanonicalReference>();
+        ((CanonicalReference)result).Digest.Should().Be(digest);
+    }
+
+    [TestMethod]
+    public void TryParseImageReference_ReturnsParsedReferenceForTagAndDigest()
+    {
+        var digest = $"sha256:{new string('a', 64)}";
+        var result = DockerReferenceUtility.TryParseImageReference($"nginx:latest@{digest}");
+
+        result.Should().NotBeNull();
+        result.Should().BeAssignableTo<DualReference>();
+        var dualRef = (DualReference)result;
+        dualRef.Tag.Should().Be("latest");
+        dualRef.Digest.Should().Be(digest);
+    }
+
+    [TestMethod]
+    public void TryRegisterImageReference_RegistersValidReference()
+    {
+        var recorder = new Mock<ISingleFileComponentRecorder>();
+
+        DockerReferenceUtility.TryRegisterImageReference("nginx:latest", recorder.Object);
+
+        recorder.Verify(r => r.RegisterUsage(It.IsAny<DetectedComponent>(), It.IsAny<bool>(), It.IsAny<string>(), It.IsAny<bool?>(), It.IsAny<DependencyScope?>(), It.IsAny<string>()), Times.Once);
+    }
+
+    [TestMethod]
+    public void TryRegisterImageReference_SkipsUnresolvedVariables()
+    {
+        var recorder = new Mock<ISingleFileComponentRecorder>();
+
+        DockerReferenceUtility.TryRegisterImageReference("${IMAGE}", recorder.Object);
+
+        recorder.Verify(r => r.RegisterUsage(It.IsAny<DetectedComponent>(), It.IsAny<bool>(), It.IsAny<string>(), It.IsAny<bool?>(), It.IsAny<DependencyScope?>(), It.IsAny<string>()), Times.Never);
+    }
+
+    [TestMethod]
+    public void TryRegisterImageReference_SkipsInvalidReference()
+    {
+        var recorder = new Mock<ISingleFileComponentRecorder>();
+
+        DockerReferenceUtility.TryRegisterImageReference("docker.io/library/Nginx", recorder.Object);
+
+        recorder.Verify(r => r.RegisterUsage(It.IsAny<DetectedComponent>(), It.IsAny<bool>(), It.IsAny<string>(), It.IsAny<bool?>(), It.IsAny<DependencyScope?>(), It.IsAny<string>()), Times.Never);
     }
 }
