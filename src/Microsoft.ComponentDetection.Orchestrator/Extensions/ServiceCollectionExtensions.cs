@@ -65,7 +65,6 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IScanExecutionService, ScanExecutionService>();
         services.AddSingleton<IDetectorProcessingService, DetectorProcessingService>();
         services.AddSingleton<IDetectorRestrictionService, DetectorRestrictionService>();
-        services.AddSingleton<IArgumentHelper, ArgumentHelper>();
 
         // Experiments
         services.AddSingleton<IExperimentService, ExperimentService>();
