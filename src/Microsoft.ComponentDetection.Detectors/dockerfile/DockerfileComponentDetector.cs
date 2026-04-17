@@ -72,10 +72,7 @@ public class DockerfileComponentDetector : FileComponentDetector, IDefaultOffCom
         foreach (var instruction in instructions)
         {
             var imageReference = this.ProcessDockerfileConstruct(instruction, dockerfileModel.EscapeChar, stageNameMap);
-            if (imageReference != null)
-            {
-                singleFileComponentRecorder.RegisterUsage(new DetectedComponent(imageReference.ToTypedDockerReferenceComponent()));
-            }
+            DockerReferenceUtility.TryRegisterImageReference(imageReference, singleFileComponentRecorder);
         }
 
         return Task.CompletedTask;
@@ -85,14 +82,12 @@ public class DockerfileComponentDetector : FileComponentDetector, IDefaultOffCom
     {
         try
         {
-            var baseImage = construct switch
+            return construct switch
             {
                 FromInstruction => this.ParseFromInstruction(construct, escapeChar, stageNameMap),
                 CopyInstruction => this.ParseCopyInstruction(construct, escapeChar, stageNameMap),
                 _ => null,
             };
-
-            return baseImage;
         }
         catch (Exception e)
         {

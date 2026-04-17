@@ -5,6 +5,7 @@ using System;
 using AwesomeAssertions;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.BcdeModels;
+using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 
@@ -296,11 +297,9 @@ public class DockerReferenceUtilityTests
     }
 
     [TestMethod]
-    public void TryParseImageReference_ThrowsForInvalidReference()
+    public void TryParseImageReference_ReturnsNullForInvalidReference()
     {
-        var func = () => DockerReferenceUtility.TryParseImageReference("docker.io/library/Nginx");
-
-        func.Should().Throw<ReferenceNameContainsUppercaseException>();
+        DockerReferenceUtility.TryParseImageReference("docker.io/library/Nginx").Should().BeNull();
     }
 
     [TestMethod]
@@ -357,13 +356,31 @@ public class DockerReferenceUtilityTests
     }
 
     [TestMethod]
-    public void TryRegisterImageReference_ThrowsForInvalidReference()
+    public void TryRegisterImageReference_SkipsInvalidReference()
     {
         var recorder = new Mock<ISingleFileComponentRecorder>();
 
-        var func = () => DockerReferenceUtility.TryRegisterImageReference("docker.io/library/Nginx", recorder.Object);
+        DockerReferenceUtility.TryRegisterImageReference("docker.io/library/Nginx", recorder.Object);
 
-        func.Should().Throw<ReferenceNameContainsUppercaseException>();
         recorder.Verify(r => r.RegisterUsage(It.IsAny<DetectedComponent>(), It.IsAny<bool>(), It.IsAny<string>(), It.IsAny<bool?>(), It.IsAny<DependencyScope?>(), It.IsAny<string>()), Times.Never);
+    }
+
+    [TestMethod]
+    public void TryRegisterImageReference_LogsWarningForInvalidReference()
+    {
+        var recorder = new Mock<ISingleFileComponentRecorder>();
+        var logger = new Mock<ILogger>();
+
+        DockerReferenceUtility.TryRegisterImageReference("docker.io/library/Nginx", recorder.Object, logger.Object);
+
+        recorder.Verify(r => r.RegisterUsage(It.IsAny<DetectedComponent>(), It.IsAny<bool>(), It.IsAny<string>(), It.IsAny<bool?>(), It.IsAny<DependencyScope?>(), It.IsAny<string>()), Times.Never);
+        logger.Verify(
+            l => l.Log(
+                LogLevel.Warning,
+                It.IsAny<EventId>(),
+                It.IsAny<It.IsAnyType>(),
+                It.IsAny<Exception>(),
+                It.IsAny<Func<It.IsAnyType, Exception, string>>()),
+            Times.Once);
     }
 }

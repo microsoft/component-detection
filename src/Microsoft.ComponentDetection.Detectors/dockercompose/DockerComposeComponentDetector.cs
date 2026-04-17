@@ -114,7 +114,7 @@ public class DockerComposeComponentDetector : FileComponentDetector, IDefaultOff
                     var imageRef = (entry.Value as YamlScalarNode)?.Value;
                     if (!string.IsNullOrWhiteSpace(imageRef))
                     {
-                        DockerReferenceUtility.TryRegisterImageReference(imageRef, recorder);
+                        DockerReferenceUtility.TryRegisterImageReference(imageRef, recorder, this.Logger);
                     }
                 }
             }

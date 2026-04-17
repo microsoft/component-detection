@@ -29,6 +29,7 @@ namespace Microsoft.ComponentDetection.Common;
 using System;
 using System.Diagnostics.CodeAnalysis;
 using Microsoft.ComponentDetection.Contracts;
+using Microsoft.Extensions.Logging;
 
 public static class DockerReferenceUtility
 {
@@ -49,32 +50,53 @@ public static class DockerReferenceUtility
 
     /// <summary>
     /// Attempts to parse an image reference string into a <see cref="DockerReference"/>.
-    /// Returns <c>null</c> if the reference contains unresolved variables.
+    /// Returns <c>null</c> if the reference contains unresolved variables or cannot be parsed.
     /// </summary>
     /// <param name="imageReference">The image reference string to parse.</param>
-    /// <returns>A <see cref="DockerReference"/> if parsing succeeds; otherwise <c>null</c> if it has unresolved variables, or an exception is thrown.</returns>
-    public static DockerReference? TryParseImageReference(string imageReference)
+    /// <param name="logger">Optional logger for recording parse failures.</param>
+    /// <returns>A <see cref="DockerReference"/> if parsing succeeds; otherwise <c>null</c>.</returns>
+    public static DockerReference? TryParseImageReference(string imageReference, ILogger? logger = null)
     {
         if (HasUnresolvedVariables(imageReference))
         {
             return null;
         }
 
-        return ParseFamiliarName(imageReference);
+        try
+        {
+            return ParseFamiliarName(imageReference);
+        }
+        catch (DockerReferenceException ex)
+        {
+            logger?.LogWarning(ex, "Failed to parse image reference '{ImageReference}'.", imageReference);
+            return null;
+        }
     }
 
     /// <summary>
     /// Parses an image reference and registers it with the recorder if valid.
-    /// Silently skips references with unresolved variables or that cannot be parsed.
+    /// Skips references with unresolved variables or that cannot be parsed,
+    /// logging a warning for parse failures so that remaining entries continue to be processed.
     /// </summary>
     /// <param name="imageReference">The image reference string to parse.</param>
     /// <param name="recorder">The component recorder to register the image with.</param>
-    public static void TryRegisterImageReference(string imageReference, ISingleFileComponentRecorder recorder)
+    /// <param name="logger">Optional logger for recording parse failures.</param>
+    public static void TryRegisterImageReference(string imageReference, ISingleFileComponentRecorder recorder, ILogger? logger = null)
     {
-        var dockerRef = TryParseImageReference(imageReference);
-        if (dockerRef != null)
+        var dockerRef = TryParseImageReference(imageReference, logger);
+        TryRegisterImageReference(dockerRef, recorder);
+    }
+
+    /// <summary>
+    /// Registers a pre-parsed <see cref="DockerReference"/> with the recorder if non-null.
+    /// </summary>
+    /// <param name="dockerReference">The parsed docker reference, or <c>null</c> to skip.</param>
+    /// <param name="recorder">The component recorder to register the image with.</param>
+    public static void TryRegisterImageReference(DockerReference? dockerReference, ISingleFileComponentRecorder recorder)
+    {
+        if (dockerReference != null)
         {
-            recorder.RegisterUsage(new DetectedComponent(dockerRef.ToTypedDockerReferenceComponent()));
+            recorder.RegisterUsage(new DetectedComponent(dockerReference.ToTypedDockerReferenceComponent()));
         }
     }
 
