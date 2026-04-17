@@ -5,6 +5,7 @@ using Microsoft.ComponentDetection.Common.Telemetry;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Detectors.CocoaPods;
 using Microsoft.ComponentDetection.Detectors.Conan;
+using Microsoft.ComponentDetection.Detectors.DockerCompose;
 using Microsoft.ComponentDetection.Detectors.Dockerfile;
 using Microsoft.ComponentDetection.Detectors.DotNet;
 using Microsoft.ComponentDetection.Detectors.Go;
@@ -83,6 +84,9 @@ public static class ServiceCollectionExtensions
 
         // Conda
         services.AddSingleton<IComponentDetector, CondaLockComponentDetector>();
+
+        // Docker Compose
+        services.AddSingleton<IComponentDetector, DockerComposeComponentDetector>();
 
         // Dockerfile
         services.AddSingleton<IComponentDetector, DockerfileComponentDetector>();
