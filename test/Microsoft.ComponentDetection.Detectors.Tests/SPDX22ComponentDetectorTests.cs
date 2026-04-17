@@ -127,6 +127,9 @@ public class Spdx22ComponentDetectorTests
         sbomComponent.SpdxVersion.Should().Be("SPDX-2.2");
         sbomComponent.Checksum.Should().Be(checksum);
         sbomComponent.Path.Should().Be(Path.Combine(Path.GetTempPath(), spdxFileName));
+
+        sbomComponent.CreatorTool.Should().Be("Microsoft.SBOMTool-1.0.0");
+        sbomComponent.CreatorOrganization.Should().Be("Microsoft");
     }
 
     [TestMethod]
@@ -159,5 +162,214 @@ public class Spdx22ComponentDetectorTests
         var detectedComponents = componentRecorder.GetDetectedComponents();
         var components = detectedComponents.ToList();
         components.Should().BeEmpty();
+    }
+
+    [TestMethod]
+    public async Task TestSbomDetector_ExtractsCreatorToolAndOrganizationAsync()
+    {
+        var spdxFile = /*lang=json,strict*/ @"{
+    ""spdxVersion"": ""SPDX-2.2"",
+    ""SPDXID"": ""SPDXRef-DOCUMENT"",
+    ""name"": ""TestDoc"",
+    ""documentNamespace"": ""https://sbom.microsoft/test/1.0.0/abc"",
+    ""creationInfo"": {
+        ""created"": ""2024-01-01T00:00:00Z"",
+        ""creators"": [
+            ""Tool: microsoft/sbom-tool-2.2.0"",
+            ""Organization: Microsoft""
+        ]
+    },
+    ""documentDescribes"": [""SPDXRef-RootPackage""],
+    ""packages"": [],
+    ""relationships"": []
+}";
+
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
+            .WithFile("manifest.spdx.json", spdxFile)
+            .ExecuteDetectorAsync();
+
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+
+        var sbomComponent = (SpdxComponent)componentRecorder.GetDetectedComponents().Single().Component;
+        sbomComponent.CreatorTool.Should().Be("microsoft/sbom-tool-2.2.0");
+        sbomComponent.CreatorOrganization.Should().Be("Microsoft");
+    }
+
+    [TestMethod]
+    public async Task TestSbomDetector_MissingCreationInfoReturnsNullAsync()
+    {
+        var spdxFile = /*lang=json,strict*/ @"{
+    ""spdxVersion"": ""SPDX-2.2"",
+    ""SPDXID"": ""SPDXRef-DOCUMENT"",
+    ""name"": ""TestDoc"",
+    ""documentNamespace"": ""https://sbom.microsoft/test/1.0.0/abc"",
+    ""documentDescribes"": [""SPDXRef-RootPackage""],
+    ""packages"": [],
+    ""relationships"": []
+}";
+
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
+            .WithFile("manifest.spdx.json", spdxFile)
+            .ExecuteDetectorAsync();
+
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+
+        var sbomComponent = (SpdxComponent)componentRecorder.GetDetectedComponents().Single().Component;
+        sbomComponent.CreatorTool.Should().BeNull();
+        sbomComponent.CreatorOrganization.Should().BeNull();
+    }
+
+    [TestMethod]
+    public async Task TestSbomDetector_WhitespaceOnlyCreatorsReturnNullAsync()
+    {
+        var spdxFile = /*lang=json,strict*/ @"{
+    ""spdxVersion"": ""SPDX-2.2"",
+    ""SPDXID"": ""SPDXRef-DOCUMENT"",
+    ""name"": ""TestDoc"",
+    ""documentNamespace"": ""https://sbom.microsoft/test/1.0.0/abc"",
+    ""creationInfo"": {
+        ""created"": ""2024-01-01T00:00:00Z"",
+        ""creators"": [
+            ""Tool:   "",
+            ""Organization:   ""
+        ]
+    },
+    ""documentDescribes"": [""SPDXRef-RootPackage""],
+    ""packages"": [],
+    ""relationships"": []
+}";
+
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
+            .WithFile("manifest.spdx.json", spdxFile)
+            .ExecuteDetectorAsync();
+
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+
+        var sbomComponent = (SpdxComponent)componentRecorder.GetDetectedComponents().Single().Component;
+        sbomComponent.CreatorTool.Should().BeNull();
+        sbomComponent.CreatorOrganization.Should().BeNull();
+    }
+
+    [TestMethod]
+    public async Task TestSbomDetector_MultipleCreatorsPicksFirstToolAndOrgAsync()
+    {
+        var spdxFile = /*lang=json,strict*/ @"{
+    ""spdxVersion"": ""SPDX-2.2"",
+    ""SPDXID"": ""SPDXRef-DOCUMENT"",
+    ""name"": ""TestDoc"",
+    ""documentNamespace"": ""https://sbom.microsoft/test/1.0.0/abc"",
+    ""creationInfo"": {
+        ""created"": ""2024-01-01T00:00:00Z"",
+        ""creators"": [
+            ""Tool: first-tool-1.0"",
+            ""Tool: second-tool-2.0"",
+            ""Organization: FirstOrg"",
+            ""Organization: SecondOrg""
+        ]
+    },
+    ""documentDescribes"": [""SPDXRef-RootPackage""],
+    ""packages"": [],
+    ""relationships"": []
+}";
+
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
+            .WithFile("manifest.spdx.json", spdxFile)
+            .ExecuteDetectorAsync();
+
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+
+        var sbomComponent = (SpdxComponent)componentRecorder.GetDetectedComponents().Single().Component;
+        sbomComponent.CreatorTool.Should().Be("first-tool-1.0");
+        sbomComponent.CreatorOrganization.Should().Be("FirstOrg");
+    }
+
+    [TestMethod]
+    public async Task TestSbomDetector_OnlyToolNoOrganizationAsync()
+    {
+        var spdxFile = /*lang=json,strict*/ @"{
+    ""spdxVersion"": ""SPDX-2.2"",
+    ""SPDXID"": ""SPDXRef-DOCUMENT"",
+    ""name"": ""TestDoc"",
+    ""documentNamespace"": ""https://sbom.microsoft/test/1.0.0/abc"",
+    ""creationInfo"": {
+        ""created"": ""2024-01-01T00:00:00Z"",
+        ""creators"": [
+            ""Tool: my-tool-3.0""
+        ]
+    },
+    ""documentDescribes"": [""SPDXRef-RootPackage""],
+    ""packages"": [],
+    ""relationships"": []
+}";
+
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
+            .WithFile("manifest.spdx.json", spdxFile)
+            .ExecuteDetectorAsync();
+
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+
+        var sbomComponent = (SpdxComponent)componentRecorder.GetDetectedComponents().Single().Component;
+        sbomComponent.CreatorTool.Should().Be("my-tool-3.0");
+        sbomComponent.CreatorOrganization.Should().BeNull();
+    }
+
+    [TestMethod]
+    public async Task TestSbomDetector_OnlyOrganizationNoToolAsync()
+    {
+        var spdxFile = /*lang=json,strict*/ @"{
+    ""spdxVersion"": ""SPDX-2.2"",
+    ""SPDXID"": ""SPDXRef-DOCUMENT"",
+    ""name"": ""TestDoc"",
+    ""documentNamespace"": ""https://sbom.microsoft/test/1.0.0/abc"",
+    ""creationInfo"": {
+        ""created"": ""2024-01-01T00:00:00Z"",
+        ""creators"": [
+            ""Organization: Contoso""
+        ]
+    },
+    ""documentDescribes"": [""SPDXRef-RootPackage""],
+    ""packages"": [],
+    ""relationships"": []
+}";
+
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
+            .WithFile("manifest.spdx.json", spdxFile)
+            .ExecuteDetectorAsync();
+
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+
+        var sbomComponent = (SpdxComponent)componentRecorder.GetDetectedComponents().Single().Component;
+        sbomComponent.CreatorTool.Should().BeNull();
+        sbomComponent.CreatorOrganization.Should().Be("Contoso");
+    }
+
+    [TestMethod]
+    public async Task TestSbomDetector_CreatorsWithNoToolOrOrgPrefixAsync()
+    {
+        var spdxFile = /*lang=json,strict*/ @"{
+    ""spdxVersion"": ""SPDX-2.2"",
+    ""SPDXID"": ""SPDXRef-DOCUMENT"",
+    ""name"": ""TestDoc"",
+    ""documentNamespace"": ""https://sbom.microsoft/test/1.0.0/abc"",
+    ""creationInfo"": {
+        ""created"": ""2024-01-01T00:00:00Z"",
+        ""creators"": [
+            ""Person: John Doe (john@example.com)""
+        ]
+    },
+    ""documentDescribes"": [""SPDXRef-RootPackage""],
+    ""packages"": [],
+    ""relationships"": []
+}";
+
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
+            .WithFile("manifest.spdx.json", spdxFile)
+            .ExecuteDetectorAsync();
+
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+
+        var sbomComponent = (SpdxComponent)componentRecorder.GetDetectedComponents().Single().Component;
+        sbomComponent.CreatorTool.Should().BeNull();
+        sbomComponent.CreatorOrganization.Should().BeNull();
     }
 }
