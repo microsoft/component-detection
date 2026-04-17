@@ -49,10 +49,10 @@ public static class DockerReferenceUtility
 
     /// <summary>
     /// Attempts to parse an image reference string into a <see cref="DockerReference"/>.
-    /// Returns <c>null</c> if the reference contains unresolved variables or cannot be parsed.
+    /// Returns <c>null</c> if the reference contains unresolved variables.
     /// </summary>
     /// <param name="imageReference">The image reference string to parse.</param>
-    /// <returns>A <see cref="DockerReference"/> if parsing succeeds; otherwise <c>null</c>.</returns>
+    /// <returns>A <see cref="DockerReference"/> if parsing succeeds; otherwise <c>null</c> if it has unresolved variables, or an exception is thrown.</returns>
     public static DockerReference? TryParseImageReference(string imageReference)
     {
         if (HasUnresolvedVariables(imageReference))
@@ -60,14 +60,7 @@ public static class DockerReferenceUtility
             return null;
         }
 
-        try
-        {
-            return ParseFamiliarName(imageReference);
-        }
-        catch
-        {
-            return null;
-        }
+        return ParseFamiliarName(imageReference);
     }
 
     /// <summary>

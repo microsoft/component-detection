@@ -1,4 +1,3 @@
-#nullable enable
 namespace Microsoft.ComponentDetection.Detectors.DockerCompose;
 
 using System;

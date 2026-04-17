@@ -296,9 +296,11 @@ public class DockerReferenceUtilityTests
     }
 
     [TestMethod]
-    public void TryParseImageReference_ReturnsNullForInvalidReference()
+    public void TryParseImageReference_ThrowsForInvalidReference()
     {
-        DockerReferenceUtility.TryParseImageReference("docker.io/library/Nginx").Should().BeNull();
+        var func = () => DockerReferenceUtility.TryParseImageReference("docker.io/library/Nginx");
+
+        func.Should().Throw<ReferenceNameContainsUppercaseException>();
     }
 
     [TestMethod]
@@ -355,12 +357,13 @@ public class DockerReferenceUtilityTests
     }
 
     [TestMethod]
-    public void TryRegisterImageReference_SkipsInvalidReference()
+    public void TryRegisterImageReference_ThrowsForInvalidReference()
     {
         var recorder = new Mock<ISingleFileComponentRecorder>();
 
-        DockerReferenceUtility.TryRegisterImageReference("docker.io/library/Nginx", recorder.Object);
+        var func = () => DockerReferenceUtility.TryRegisterImageReference("docker.io/library/Nginx", recorder.Object);
 
+        func.Should().Throw<ReferenceNameContainsUppercaseException>();
         recorder.Verify(r => r.RegisterUsage(It.IsAny<DetectedComponent>(), It.IsAny<bool>(), It.IsAny<string>(), It.IsAny<bool?>(), It.IsAny<DependencyScope?>(), It.IsAny<string>()), Times.Never);
     }
 }
