@@ -155,8 +155,9 @@ internal class DefaultGraphTranslationService : IGraphTranslationService
         }
 
         // Rewrite a single Id: if it's a bare Id being merged, expand to its rich counterparts.
-        HashSet<string> RewriteId(string id) =>
-            bareToRich.TryGetValue(id, out var richIds) ? richIds : [id];
+        // Returns the existing set for bare ids; yields a single element for non-bare ids to avoid allocation.
+        IEnumerable<string> RewriteId(string id) =>
+            bareToRich.TryGetValue(id, out var richIds) ? richIds : Enumerable.Repeat(id, 1);
 
         // Rebuild graph: skip bare nodes being merged, rewrite edge targets.
         var newGraph = new Contracts.BcdeModels.DependencyGraph();
@@ -186,7 +187,7 @@ internal class DefaultGraphTranslationService : IGraphTranslationService
                     }
                 }
 
-                newGraph[nodeId] = newEdges;
+                newGraph[nodeId] = newEdges.Count > 0 ? newEdges : null;
             }
         }
 
@@ -208,6 +209,12 @@ internal class DefaultGraphTranslationService : IGraphTranslationService
                                 newGraph[richId].Add(rewritten);
                             }
                         }
+                    }
+
+                    // Normalize empty edge sets to null for consistent serialization.
+                    if (newGraph[richId].Count == 0)
+                    {
+                        newGraph[richId] = null;
                     }
                 }
             }
