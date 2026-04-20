@@ -18,6 +18,12 @@
 | -------------------------- | ---------- |
 | CondaLockComponentDetector | DefaultOff |
 
+- [Docker Compose](dockercompose.md)
+
+| Detector                       | Status     |
+| ------------------------------ | ---------- |
+| DockerComposeComponentDetector | DefaultOff |
+
 - [Dockerfile](dockerfile.md)
 
 | Detector                    | Status     |
