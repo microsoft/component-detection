@@ -70,7 +70,8 @@ public class HelmComponentDetector : FileComponentDetector, IDefaultOffComponent
         var file = processRequest.ComponentStream;
 
         // OnPrepareDetectionAsync has already filtered to values files co-located
-        // with a Chart.yaml — no further filename/directory checks are needed.
+        // with a Helm chart file (Chart.yaml or Chart.yml), so no further
+        // filename/directory checks are needed.
         try
         {
             this.Logger.LogInformation("Discovered Helm values file: {Location}", file.Location);
@@ -140,7 +141,7 @@ public class HelmComponentDetector : FileComponentDetector, IDefaultOffComponent
                 {
                     // image: nginx:1.21
                     case YamlScalarNode scalarValue when !string.IsNullOrWhiteSpace(scalarValue.Value):
-                        DockerReferenceUtility.TryRegisterImageReference(scalarValue.Value, recorder);
+                        DockerReferenceUtility.TryRegisterImageReference(scalarValue.Value, recorder, this.Logger);
                         break;
 
                     // image:
@@ -220,6 +221,6 @@ public class HelmComponentDetector : FileComponentDetector, IDefaultOffComponent
             imageRef = $"{imageRef}@{digest}";
         }
 
-        DockerReferenceUtility.TryRegisterImageReference(imageRef, recorder);
+        DockerReferenceUtility.TryRegisterImageReference(imageRef, recorder, this.Logger);
     }
 }
