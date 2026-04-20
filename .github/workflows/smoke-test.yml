@@ -20,26 +20,7 @@ jobs:
   smoke-test:
     if: github.repository == 'microsoft/component-detection' && (github.event_name != 'pull_request' || github.event.pull_request.draft == false)
     runs-on: ["self-hosted", "1ES.Pool=1ES-OSE-GH-Pool"]
-    strategy:
-      matrix:
-        language:
-          [
-            { name: "CocoaPods", repo: "realm/realm-swift" },
-            { name: "Gradle", repo: "microsoft/ApplicationInsights-Java" },
-            { name: "Go", repo: "kubernetes/kubernetes" },
-            { name: "Maven", repo: "apache/kafka" },
-            { name: "NPM", repo: "axios/axios" },
-            { name: "NuGet", repo: "Radarr/Radarr" },
-            { name: "Pip", repo: "django/django" },
-            { name: "Pnpm", repo: "pnpm/pnpm" },
-            { name: "Poetry", repo: "Textualize/rich" },
-            { name: "Ruby", repo: "rails/rails" },
-            { name: "Rust", repo: "alacritty/alacritty" },
-            { name: "Yarn", repo: "gatsbyjs/gatsby" },
-          ]
-      fail-fast: false
-      max-parallel: 6
-    name: ${{ matrix.language.name }}
+    name: Smoke Test
     steps:
       - name: Harden Runner
         uses: step-security/harden-runner@fa2e9d605c4eeb9fcad4c99c224cee0c6c7f3594 # v2.16.0
@@ -69,16 +50,31 @@ jobs:
           sudo chmod 777 /usr/share/ant/lib
           curl https://downloads.apache.org/ant/ivy/2.5.2/apache-ivy-2.5.2-bin.tar.gz | tar xOz apache-ivy-2.5.2/ivy-2.5.2.jar > /usr/share/ant/lib/ivy.jar
 
-      - name: Checkout Smoke Test Repo
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-        with:
-          persist-credentials: false
-          repository: ${{ matrix.language.repo }}
-          path: smoke-test-repo
+      - name: Checkout Smoke Test Repos
+        run: |
+          mkdir -p smoke-test-repos
+          repos=(
+            "realm/realm-swift"                    # CocoaPods
+            "microsoft/ApplicationInsights-Java"   # Gradle
+            "kubernetes/kubernetes"                # Go
+            "apache/kafka"                         # Maven
+            "axios/axios"                          # NPM
+            "Radarr/Radarr"                        # NuGet
+            "django/django"                        # Pip
+            "pnpm/pnpm"                            # Pnpm
+            "Textualize/rich"                      # Poetry
+            "rails/rails"                          # Ruby
+            "alacritty/alacritty"                  # Rust
+            "gatsbyjs/gatsby"                      # Yarn
+          )
+          for repo in "${repos[@]}"; do
+            dir="smoke-test-repos/$(basename "$repo")"
+            echo "Cloning $repo into $dir..."
+            git clone --depth 1 "https://github.com/$repo.git" "$dir"
+          done
 
       - name: Restore Smoke Test NuGet Packages
-        if: ${{ matrix.language.name == 'NuGet'}}
-        working-directory: smoke-test-repo/src
+        working-directory: smoke-test-repos/Radarr/src
         run: dotnet restore
 
       - name: Run Smoke Test
@@ -86,7 +82,7 @@ jobs:
         run: |
           ITERATIONS=${{ github.event_name == 'schedule' && 10 || 1 }}
           for i in $(seq 1 $ITERATIONS); do
-              dotnet run -c Release -- scan --SourceDirectory ${{ github.workspace }}/smoke-test-repo --Verbosity Verbose || exit 1
+              dotnet run -c Release -- scan --SourceDirectory ${{ github.workspace }}/smoke-test-repos --Verbosity Verbose || exit 1
           done
 
   create-issue:
