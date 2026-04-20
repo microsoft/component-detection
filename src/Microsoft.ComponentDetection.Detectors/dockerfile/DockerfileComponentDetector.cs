@@ -123,10 +123,10 @@ public class DockerfileComponentDetector : FileComponentDetector, IDefaultOffCom
 
         if (!string.IsNullOrEmpty(stageNameReference))
         {
-            return DockerReferenceUtility.TryParseImageReference(stageNameReference);
+            return DockerReferenceUtility.TryParseImageReference(stageNameReference, this.Logger);
         }
 
-        return DockerReferenceUtility.TryParseImageReference(reference);
+        return DockerReferenceUtility.TryParseImageReference(reference, this.Logger);
     }
 
     private DockerReference? ParseCopyInstruction(DockerfileConstruct construct, char escapeChar, Dictionary<string, string> stageNameMap)
@@ -142,9 +142,9 @@ public class DockerfileComponentDetector : FileComponentDetector, IDefaultOffCom
         stageNameMap.TryGetValue(reference, out var stageNameReference);
         if (!string.IsNullOrEmpty(stageNameReference))
         {
-            return DockerReferenceUtility.TryParseImageReference(stageNameReference);
+            return DockerReferenceUtility.TryParseImageReference(stageNameReference, this.Logger);
         }
 
-        return DockerReferenceUtility.TryParseImageReference(reference);
+        return DockerReferenceUtility.TryParseImageReference(reference, this.Logger);
     }
 }
