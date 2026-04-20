@@ -48,6 +48,12 @@
 | ----------------------- | ------ |
 | GradleComponentDetector | Stable |
 
+- [Helm](helm.md)
+
+| Detector               | Status     |
+| ---------------------- | ---------- |
+| HelmComponentDetector  | DefaultOff |
+
 - [Ivy](ivy.md)
 
 | Detector    | Status       |
