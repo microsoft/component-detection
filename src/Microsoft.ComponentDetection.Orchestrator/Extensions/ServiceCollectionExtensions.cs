@@ -10,6 +10,7 @@ using Microsoft.ComponentDetection.Detectors.Dockerfile;
 using Microsoft.ComponentDetection.Detectors.DotNet;
 using Microsoft.ComponentDetection.Detectors.Go;
 using Microsoft.ComponentDetection.Detectors.Gradle;
+using Microsoft.ComponentDetection.Detectors.Helm;
 using Microsoft.ComponentDetection.Detectors.Ivy;
 using Microsoft.ComponentDetection.Detectors.Linux;
 using Microsoft.ComponentDetection.Detectors.Linux.Factories;
@@ -99,6 +100,9 @@ public static class ServiceCollectionExtensions
 
         // Gradle
         services.AddSingleton<IComponentDetector, GradleComponentDetector>();
+
+        // Helm
+        services.AddSingleton<IComponentDetector, HelmComponentDetector>();
 
         // Ivy
         services.AddSingleton<IComponentDetector, IvyDetector>();
