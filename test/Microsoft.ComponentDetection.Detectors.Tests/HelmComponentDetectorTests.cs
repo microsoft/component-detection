@@ -473,4 +473,29 @@ image: redis:7-alpine
         var components = componentRecorder.GetDetectedComponents();
         components.Should().HaveCount(2);
     }
+
+    [TestMethod]
+    public async Task TestHelm_ImageArrayNotSupportedAsync()
+    {
+        // YAML arrays under the "image" key (e.g. image: [nginx:1.21, redis:7]) are
+        // intentionally not supported. The Helm chart convention is one image per
+        // "image" key — either as a scalar string or a structured mapping with
+        // repository/tag/digest fields. Charts that need multiple images use separate
+        // named keys (e.g. frontendImage, sidecar.image) or sequence items that each
+        // contain their own "image" key. A bare array value is not a valid pattern in
+        // the Helm ecosystem, so we skip it.
+        var valuesYaml = @"
+image:
+  - nginx:1.21
+  - redis:7
+";
+
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+            .WithFile("Chart.yaml", MinimalChartYaml)
+            .WithFile("values.yaml", valuesYaml)
+            .ExecuteDetectorAsync();
+
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+        componentRecorder.GetDetectedComponents().Should().BeEmpty();
+    }
 }

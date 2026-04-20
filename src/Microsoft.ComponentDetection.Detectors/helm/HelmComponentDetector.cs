@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reactive.Linq;
+using System.Reactive.Threading.Tasks;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Common;
@@ -50,7 +51,7 @@ public class HelmComponentDetector : FileComponentDetector, IDefaultOffComponent
         IDictionary<string, string> detectorArgs,
         CancellationToken cancellationToken = default)
     {
-        var allRequests = await processRequests.ToList();
+        var allRequests = await processRequests.ToList().ToTask(cancellationToken);
 
         var chartDirectories = new HashSet<string>(
             allRequests
@@ -182,22 +183,21 @@ public class HelmComponentDetector : FileComponentDetector, IDefaultOffComponent
             var childKey = (child.Key as YamlScalarNode)?.Value;
             var childValue = (child.Value as YamlScalarNode)?.Value;
 
-            switch (childKey?.ToUpperInvariant())
+            if (string.Equals(childKey, "REPOSITORY", StringComparison.OrdinalIgnoreCase))
             {
-                case "REPOSITORY":
-                    repository = childValue;
-                    break;
-                case "TAG":
-                    tag = childValue;
-                    break;
-                case "DIGEST":
-                    digest = childValue;
-                    break;
-                case "REGISTRY":
-                    registry = childValue;
-                    break;
-                default:
-                    break;
+                repository = childValue;
+            }
+            else if (string.Equals(childKey, "TAG", StringComparison.OrdinalIgnoreCase))
+            {
+                tag = childValue;
+            }
+            else if (string.Equals(childKey, "DIGEST", StringComparison.OrdinalIgnoreCase))
+            {
+                digest = childValue;
+            }
+            else if (string.Equals(childKey, "REGISTRY", StringComparison.OrdinalIgnoreCase))
+            {
+                registry = childValue;
             }
         }
 
