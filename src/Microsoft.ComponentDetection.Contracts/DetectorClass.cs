@@ -50,4 +50,7 @@ public enum DetectorClass
 
     /// <summary>Indicates a detector applies to Docker Compose image references.</summary>
     DockerCompose,
+
+    /// <summary>Indicates a detector applies to Helm chart image references.</summary>
+    Helm,
 }
