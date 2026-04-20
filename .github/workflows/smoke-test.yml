@@ -8,6 +8,8 @@ on:
     branches:
       - main
   pull_request:
+    paths:
+      - "src/**"
   schedule:
     - cron: "0 0 * * *" # every day at midnight
 
@@ -16,7 +18,7 @@ permissions:
 
 jobs:
   smoke-test:
-    if: github.repository == 'microsoft/component-detection'
+    if: github.repository == 'microsoft/component-detection' && (github.event_name != 'pull_request' || github.event.pull_request.draft == false)
     runs-on: ["self-hosted", "1ES.Pool=1ES-OSE-GH-Pool"]
     strategy:
       matrix:
@@ -36,7 +38,7 @@ jobs:
             { name: "Yarn", repo: "gatsbyjs/gatsby" },
           ]
       fail-fast: false
-      max-parallel: 4 # limit the total number of running jobs to avoid rate limiting
+      max-parallel: 6
     name: ${{ matrix.language.name }}
     steps:
       - name: Harden Runner
@@ -82,7 +84,8 @@ jobs:
       - name: Run Smoke Test
         working-directory: src/Microsoft.ComponentDetection
         run: |
-          for i in $(seq 1 10); do
+          ITERATIONS=${{ github.event_name == 'schedule' && 10 || 1 }}
+          for i in $(seq 1 $ITERATIONS); do
               dotnet run -c Release -- scan --SourceDirectory ${{ github.workspace }}/smoke-test-repo --Verbosity Verbose || exit 1
           done
 
