@@ -3,30 +3,30 @@ namespace Microsoft.ComponentDetection.Common;
 
 using System;
 
-internal class DockerReferenceException : Exception
+internal class ContainerImageReferenceException : Exception
 {
-    public DockerReferenceException(string reference, string exceptionErrorMessage)
-        : base($"Error while parsing docker reference {reference} : {exceptionErrorMessage}")
+    public ContainerImageReferenceException(string reference, string exceptionErrorMessage)
+        : base($"Error while parsing container image reference {reference} : {exceptionErrorMessage}")
     {
     }
 
-    public DockerReferenceException()
+    public ContainerImageReferenceException()
     {
     }
 
-    public DockerReferenceException(string message)
+    public ContainerImageReferenceException(string message)
         : base(message)
     {
     }
 
-    public DockerReferenceException(string message, Exception innerException)
+    public ContainerImageReferenceException(string message, Exception innerException)
         : base(message, innerException)
     {
     }
 }
 
 // ReferenceInvalidFormat represents an error while trying to parse a string as a reference.
-internal class ReferenceInvalidFormatException : DockerReferenceException
+internal class ReferenceInvalidFormatException : ContainerImageReferenceException
 {
     private const string ErrorMessage = "invalid reference format";
 
@@ -46,7 +46,7 @@ internal class ReferenceInvalidFormatException : DockerReferenceException
 }
 
 // TagInvalidFormat represents an error while trying to parse a string as a tag.
-internal class ReferenceTagInvalidFormatException : DockerReferenceException
+internal class ReferenceTagInvalidFormatException : ContainerImageReferenceException
 {
     private const string ErrorMessage = "invalid tag format";
 
@@ -66,7 +66,7 @@ internal class ReferenceTagInvalidFormatException : DockerReferenceException
 }
 
 // DigestInvalidFormat represents an error while trying to parse a string as a tag.
-internal class ReferenceDigestInvalidFormatException : DockerReferenceException
+internal class ReferenceDigestInvalidFormatException : ContainerImageReferenceException
 {
     private const string ErrorMessage = "invalid digest format";
 
@@ -86,7 +86,7 @@ internal class ReferenceDigestInvalidFormatException : DockerReferenceException
 }
 
 // NameContainsUppercase is returned for invalid repository names that contain uppercase characters.
-internal class ReferenceNameContainsUppercaseException : DockerReferenceException
+internal class ReferenceNameContainsUppercaseException : ContainerImageReferenceException
 {
     private const string ErrorMessage = "repository name must be lowercase";
 
@@ -106,7 +106,7 @@ internal class ReferenceNameContainsUppercaseException : DockerReferenceExceptio
 }
 
 // NameEmpty is returned for empty, invalid repository names.
-internal class ReferenceNameEmptyException : DockerReferenceException
+internal class ReferenceNameEmptyException : ContainerImageReferenceException
 {
     private const string ErrorMessage = "repository name must have at least one component";
 
@@ -126,7 +126,7 @@ internal class ReferenceNameEmptyException : DockerReferenceException
 }
 
 // ErrNameTooLong is returned when a repository name is longer than NameTotalLengthMax.
-internal class ReferenceNameTooLongException : DockerReferenceException
+internal class ReferenceNameTooLongException : ContainerImageReferenceException
 {
     private const string ErrorMessage = "repository name must not be more than 255 characters";
 
@@ -146,7 +146,7 @@ internal class ReferenceNameTooLongException : DockerReferenceException
 }
 
 // ErrNameNotCanonical is returned when a name is not canonical.
-internal class ReferenceNameNotCanonicalException : DockerReferenceException
+internal class ReferenceNameNotCanonicalException : ContainerImageReferenceException
 {
     private const string ErrorMessage = "repository name must be canonical";
 
@@ -165,7 +165,7 @@ internal class ReferenceNameNotCanonicalException : DockerReferenceException
     }
 }
 
-internal class InvalidDigestFormatError : DockerReferenceException
+internal class InvalidDigestFormatError : ContainerImageReferenceException
 {
     private const string ErrorMessage = "invalid digest format";
 
@@ -184,7 +184,7 @@ internal class InvalidDigestFormatError : DockerReferenceException
     }
 }
 
-internal class UnsupportedAlgorithmError : DockerReferenceException
+internal class UnsupportedAlgorithmError : ContainerImageReferenceException
 {
     private const string ErrorMessage = "unsupported digest algorithm";
 
@@ -203,7 +203,7 @@ internal class UnsupportedAlgorithmError : DockerReferenceException
     }
 }
 
-internal class InvalidDigestLengthError : DockerReferenceException
+internal class InvalidDigestLengthError : ContainerImageReferenceException
 {
     private const string ErrorMessage = "invalid checksum digest length";
 

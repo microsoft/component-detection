@@ -1,5 +1,6 @@
 namespace Microsoft.ComponentDetection.Contracts.TypedComponent;
 
+using System;
 using System.Runtime.Serialization;
 using System.Text.Json.Serialization;
 
@@ -54,7 +55,12 @@ public enum ComponentType : byte
     Vcpkg = 15,
 
     [EnumMember]
-    DockerReference = 16,
+    ContainerImageReference = 16,
+
+    /// <summary>Deprecated. Backward compatibility alias for <see cref="ContainerImageReference"/>. This alias will be removed in a future major version. Use <see cref="ContainerImageReference"/> instead.</summary>
+    [EnumMember]
+    [Obsolete("Use ContainerImageReference instead.")]
+    DockerReference = ContainerImageReference,
 
     [EnumMember]
     Conan = 17,

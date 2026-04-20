@@ -9,14 +9,14 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 [TestClass]
 [TestCategory("Governance/All")]
 [TestCategory("Governance/ComponentDetection")]
-public class DockerReferenceUtilityTests
+public class ContainerImageReferenceUtilityTests
 {
     [TestMethod]
     public void ParseQualifiedName_ThrowsReferenceNameEmptyException()
     {
         var qualifiedName = string.Empty;
 
-        var func = () => DockerReferenceUtility.ParseQualifiedName(qualifiedName);
+        var func = () => ContainerImageReferenceUtility.ParseQualifiedName(qualifiedName);
 
         func.Should().Throw<ReferenceNameEmptyException>();
     }
@@ -26,7 +26,7 @@ public class DockerReferenceUtilityTests
     {
         var qualifiedName = "docker.io/library/Nginx";
 
-        var func = () => DockerReferenceUtility.ParseQualifiedName(qualifiedName);
+        var func = () => ContainerImageReferenceUtility.ParseQualifiedName(qualifiedName);
 
         func.Should().Throw<ReferenceNameContainsUppercaseException>();
     }
@@ -36,7 +36,7 @@ public class DockerReferenceUtilityTests
     {
         var qualifiedName = "docker.io/library/nginx:latest:latest";
 
-        var func = () => DockerReferenceUtility.ParseQualifiedName(qualifiedName);
+        var func = () => ContainerImageReferenceUtility.ParseQualifiedName(qualifiedName);
 
         func.Should().Throw<ReferenceInvalidFormatException>();
     }
@@ -46,7 +46,7 @@ public class DockerReferenceUtilityTests
     {
         var qualifiedName = $"docker.io/library/{"nginx".PadRight(256, 'a')}";
 
-        var func = () => DockerReferenceUtility.ParseQualifiedName(qualifiedName);
+        var func = () => ContainerImageReferenceUtility.ParseQualifiedName(qualifiedName);
 
         func.Should().Throw<ReferenceNameTooLongException>();
     }
@@ -56,7 +56,7 @@ public class DockerReferenceUtilityTests
     {
         var qualifiedName = "docker.io/library/nginx:latest";
 
-        var result = DockerReferenceUtility.ParseQualifiedName(qualifiedName);
+        var result = ContainerImageReferenceUtility.ParseQualifiedName(qualifiedName);
 
         result.Should().NotBeNull();
         result.Should().BeAssignableTo<TaggedReference>();
@@ -73,7 +73,7 @@ public class DockerReferenceUtilityTests
     {
         var qualifiedName = "docker.io/library/nginx";
 
-        var result = DockerReferenceUtility.ParseQualifiedName(qualifiedName);
+        var result = ContainerImageReferenceUtility.ParseQualifiedName(qualifiedName);
 
         result.Should().NotBeNull();
         result.Should().BeAssignableTo<RepositoryReference>();
@@ -89,7 +89,7 @@ public class DockerReferenceUtilityTests
     {
         var qualifiedName = "nginx";
 
-        var func = () => DockerReferenceUtility.ParseQualifiedName(qualifiedName);
+        var func = () => ContainerImageReferenceUtility.ParseQualifiedName(qualifiedName);
 
         func.Should().Throw<InvalidOperationException>();
     }
@@ -100,7 +100,7 @@ public class DockerReferenceUtilityTests
         var hashTag = $"sha256:{new string('a', 64)}";
         var qualifiedName = $"docker.io/library/nginx@{hashTag}";
 
-        var result = DockerReferenceUtility.ParseQualifiedName(qualifiedName);
+        var result = ContainerImageReferenceUtility.ParseQualifiedName(qualifiedName);
 
         result.Should().NotBeNull();
         result.Should().BeAssignableTo<CanonicalReference>();
@@ -118,7 +118,7 @@ public class DockerReferenceUtilityTests
         var hashTag = $"sha256:{new string('a', 64)}";
         var qualifiedName = $"nginx@{hashTag}";
 
-        var result = DockerReferenceUtility.ParseQualifiedName(qualifiedName);
+        var result = ContainerImageReferenceUtility.ParseQualifiedName(qualifiedName);
 
         result.Should().NotBeNull();
         result.Should().BeAssignableTo<DigestReference>();
@@ -133,7 +133,7 @@ public class DockerReferenceUtilityTests
         var hashTag = $"sha256:{new string('a', 64)}";
         var qualifiedName = $"docker.io/library/nginx:latest@{hashTag}";
 
-        var result = DockerReferenceUtility.ParseQualifiedName(qualifiedName);
+        var result = ContainerImageReferenceUtility.ParseQualifiedName(qualifiedName);
 
         result.Should().NotBeNull();
         result.Should().BeAssignableTo<DualReference>();
@@ -151,7 +151,7 @@ public class DockerReferenceUtilityTests
     {
         var name = "library/nginx";
 
-        var result = DockerReferenceUtility.SplitDockerDomain(name);
+        var result = ContainerImageReferenceUtility.SplitDockerDomain(name);
 
         result.Should().NotBeNull();
         result.Domain.Should().Be("docker.io");
@@ -163,7 +163,7 @@ public class DockerReferenceUtilityTests
     {
         var name = "index.docker.io/library/nginx";
 
-        var result = DockerReferenceUtility.SplitDockerDomain(name);
+        var result = ContainerImageReferenceUtility.SplitDockerDomain(name);
 
         result.Should().NotBeNull();
         result.Domain.Should().Be("docker.io");
@@ -175,7 +175,7 @@ public class DockerReferenceUtilityTests
     {
         var name = "nginx";
 
-        var result = DockerReferenceUtility.SplitDockerDomain(name);
+        var result = ContainerImageReferenceUtility.SplitDockerDomain(name);
 
         result.Should().NotBeNull();
         result.Domain.Should().Be("docker.io");
@@ -187,7 +187,7 @@ public class DockerReferenceUtilityTests
     {
         var name = "docker.io/library/nginx";
 
-        var result = DockerReferenceUtility.SplitDockerDomain(name);
+        var result = ContainerImageReferenceUtility.SplitDockerDomain(name);
 
         result.Should().NotBeNull();
         result.Domain.Should().Be("docker.io");
@@ -199,7 +199,7 @@ public class DockerReferenceUtilityTests
     {
         var name = new string('a', 64);
 
-        var func = () => DockerReferenceUtility.ParseFamiliarName(name);
+        var func = () => ContainerImageReferenceUtility.ParseFamiliarName(name);
 
         func.Should().Throw<ReferenceNameNotCanonicalException>();
     }
@@ -209,7 +209,7 @@ public class DockerReferenceUtilityTests
     {
         var name = "docker.io/library/nginx";
 
-        var result = DockerReferenceUtility.ParseFamiliarName(name);
+        var result = ContainerImageReferenceUtility.ParseFamiliarName(name);
 
         result.Should().NotBeNull();
         result.Should().BeAssignableTo<RepositoryReference>();
@@ -220,7 +220,7 @@ public class DockerReferenceUtilityTests
     {
         var name = "docker.io/library/nginx:latest";
 
-        var result = DockerReferenceUtility.ParseFamiliarName(name);
+        var result = ContainerImageReferenceUtility.ParseFamiliarName(name);
 
         result.Should().NotBeNull();
         result.Should().BeAssignableTo<TaggedReference>();
@@ -231,7 +231,7 @@ public class DockerReferenceUtilityTests
     {
         var name = "docker.io/library/Nginx";
 
-        var func = () => DockerReferenceUtility.ParseFamiliarName(name);
+        var func = () => ContainerImageReferenceUtility.ParseFamiliarName(name);
 
         func.Should().Throw<ReferenceNameContainsUppercaseException>();
     }
@@ -241,7 +241,7 @@ public class DockerReferenceUtilityTests
     {
         var name = new string('a', 64);
 
-        var result = DockerReferenceUtility.ParseAll(name);
+        var result = ContainerImageReferenceUtility.ParseAll(name);
 
         result.Should().NotBeNull();
         result.Should().BeAssignableTo<CanonicalReference>();
@@ -252,7 +252,7 @@ public class DockerReferenceUtilityTests
     {
         var name = $"sha256:{new string('a', 64)}";
 
-        var result = DockerReferenceUtility.ParseAll(name);
+        var result = ContainerImageReferenceUtility.ParseAll(name);
 
         result.Should().NotBeNull();
         result.Should().BeAssignableTo<CanonicalReference>();
@@ -263,7 +263,7 @@ public class DockerReferenceUtilityTests
     {
         var name = "docker.io/library/nginx";
 
-        var result = DockerReferenceUtility.ParseAll(name);
+        var result = ContainerImageReferenceUtility.ParseAll(name);
 
         result.Should().NotBeNull();
         result.Should().BeAssignableTo<RepositoryReference>();
