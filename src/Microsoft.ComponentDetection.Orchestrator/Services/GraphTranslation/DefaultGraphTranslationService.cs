@@ -34,14 +34,18 @@ internal class DefaultGraphTranslationService : IGraphTranslationService
 
         this.LogComponentScopeTelemetry(mergedComponents);
 
+        var dependencyGraphs = GraphTranslationUtility.AccumulateAndConvertToContract(recorderDetectorPairs
+            .Select(tuple => tuple.Recorder)
+            .Where(x => x != null)
+            .Select(x => x.GetDependencyGraphsByLocation()));
+
+        ReconcileDependencyGraphIds(dependencyGraphs, mergedComponents);
+
         return new DefaultGraphScanResult
         {
             ComponentsFound = mergedComponents.Select(x => this.ConvertToContract(x)).ToList(),
             ContainerDetailsMap = detectorProcessingResult.ContainersDetailsMap,
-            DependencyGraphs = GraphTranslationUtility.AccumulateAndConvertToContract(recorderDetectorPairs
-                .Select(tuple => tuple.Recorder)
-                .Where(x => x != null)
-                .Select(x => x.GetDependencyGraphsByLocation())),
+            DependencyGraphs = dependencyGraphs,
             SourceDirectory = settings.SourceDirectory.ToString(),
         };
     }
@@ -79,6 +83,176 @@ internal class DefaultGraphTranslationService : IGraphTranslationService
     {
         return graph.Contains(component.Id) ||
                (component.Id != component.BaseId && graph.Contains(component.BaseId));
+    }
+
+    /// <summary>
+    /// Reconciles bare component Ids in <see cref="DependencyGraphCollection"/> to match the merged
+    /// identities in ComponentsFound. When a bare node (Id == BaseId) has rich counterparts
+    /// (Id != BaseId, same BaseId) in the same location graph, the bare node is merged into
+    /// all rich counterparts and removed. This ensures every Id referenced in the graph output
+    /// also exists in ComponentsFound.
+    /// </summary>
+    internal static void ReconcileDependencyGraphIds(
+        DependencyGraphCollection graphs,
+        IReadOnlyList<DetectedComponent> mergedComponents)
+    {
+        if (graphs == null || graphs.Count == 0)
+        {
+            return;
+        }
+
+        // Build BaseId → set of rich Ids from merged components.
+        var baseIdToRichIds = new Dictionary<string, HashSet<string>>();
+        foreach (var component in mergedComponents)
+        {
+            var id = component.Component.Id;
+            var baseId = component.Component.BaseId;
+            if (id != baseId)
+            {
+                if (!baseIdToRichIds.TryGetValue(baseId, out var richIds))
+                {
+                    baseIdToRichIds[baseId] = richIds = [];
+                }
+
+                richIds.Add(id);
+            }
+        }
+
+        if (baseIdToRichIds.Count == 0)
+        {
+            return;
+        }
+
+        foreach (var graphWithMetadata in graphs.Values)
+        {
+            ReconcileGraph(graphWithMetadata, baseIdToRichIds);
+        }
+    }
+
+    private static void ReconcileGraph(
+        DependencyGraphWithMetadata graphWithMetadata,
+        Dictionary<string, HashSet<string>> baseIdToRichIds)
+    {
+        var graph = graphWithMetadata.Graph;
+
+        // Identify bare nodes that have at least one rich counterpart in THIS graph.
+        var bareToRich = new Dictionary<string, HashSet<string>>();
+        foreach (var nodeId in graph.Keys)
+        {
+            if (baseIdToRichIds.TryGetValue(nodeId, out var allRichIds))
+            {
+                var richInGraph = new HashSet<string>(allRichIds.Where(graph.ContainsKey));
+                if (richInGraph.Count > 0)
+                {
+                    bareToRich[nodeId] = richInGraph;
+                }
+            }
+        }
+
+        if (bareToRich.Count == 0)
+        {
+            return;
+        }
+
+        // Rewrite a single Id: if it's a bare Id being merged, expand to its rich counterparts.
+        // Returns the existing set for bare ids; yields a single element for non-bare ids to avoid allocation.
+        IEnumerable<string> RewriteId(string id) =>
+            bareToRich.TryGetValue(id, out var richIds) ? richIds : Enumerable.Repeat(id, 1);
+
+        // Rebuild graph: skip bare nodes being merged, rewrite edge targets.
+        var newGraph = new Contracts.BcdeModels.DependencyGraph();
+        foreach (var (nodeId, edges) in graph)
+        {
+            if (bareToRich.ContainsKey(nodeId))
+            {
+                continue; // bare node will be merged into its rich counterparts below
+            }
+
+            if (edges == null)
+            {
+                newGraph[nodeId] = null;
+            }
+            else
+            {
+                var newEdges = new HashSet<string>();
+                foreach (var edge in edges)
+                {
+                    foreach (var rewritten in RewriteId(edge))
+                    {
+                        // Avoid self-edges that rewriting could introduce.
+                        if (rewritten != nodeId)
+                        {
+                            newEdges.Add(rewritten);
+                        }
+                    }
+                }
+
+                newGraph[nodeId] = newEdges.Count > 0 ? newEdges : null;
+            }
+        }
+
+        // Merge bare nodes' outbound edges into their rich counterparts.
+        foreach (var (bareId, richIds) in bareToRich)
+        {
+            var bareEdges = graph[bareId];
+            foreach (var richId in richIds)
+            {
+                if (bareEdges != null)
+                {
+                    newGraph[richId] ??= [];
+                    foreach (var edge in bareEdges)
+                    {
+                        foreach (var rewritten in RewriteId(edge))
+                        {
+                            if (rewritten != richId)
+                            {
+                                newGraph[richId].Add(rewritten);
+                            }
+                        }
+                    }
+
+                    // Normalize empty edge sets to null for consistent serialization.
+                    if (newGraph[richId].Count == 0)
+                    {
+                        newGraph[richId] = null;
+                    }
+                }
+            }
+        }
+
+        // Rebuild metadata sets, rewriting bare Ids to their rich counterparts.
+        graphWithMetadata.Graph = newGraph;
+        graphWithMetadata.ExplicitlyReferencedComponentIds = RewriteIdSet(graphWithMetadata.ExplicitlyReferencedComponentIds, bareToRich);
+        graphWithMetadata.DevelopmentDependencies = RewriteIdSet(graphWithMetadata.DevelopmentDependencies, bareToRich);
+        graphWithMetadata.Dependencies = RewriteIdSet(graphWithMetadata.Dependencies, bareToRich);
+    }
+
+    private static HashSet<string> RewriteIdSet(
+        HashSet<string> original,
+        Dictionary<string, HashSet<string>> bareToRich)
+    {
+        if (original == null || original.Count == 0)
+        {
+            return original;
+        }
+
+        var result = new HashSet<string>();
+        foreach (var id in original)
+        {
+            if (bareToRich.TryGetValue(id, out var richIds))
+            {
+                foreach (var richId in richIds)
+                {
+                    result.Add(richId);
+                }
+            }
+            else
+            {
+                result.Add(id);
+            }
+        }
+
+        return result;
     }
 
     private void LogComponentScopeTelemetry(List<DetectedComponent> components)
