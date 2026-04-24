@@ -10,6 +10,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Docker.DotNet;
 using Docker.DotNet.Models;
+using Microsoft.ComponentDetection.Common.Telemetry;
 using Microsoft.ComponentDetection.Common.Telemetry.Records;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.BcdeModels;
@@ -38,6 +39,7 @@ internal class DockerService : IDockerService
         catch (Exception e)
         {
             this.logger.LogError(e, "Failed to ping docker");
+            cancellationToken.ThrowIfCancellationRequested();
             return false;
         }
     }
@@ -59,6 +61,7 @@ internal class DockerService : IDockerService
         catch (Exception e)
         {
             record.ExceptionMessage = e.Message;
+            cancellationToken.ThrowIfCancellationRequested();
         }
 
         return false;
@@ -79,6 +82,7 @@ internal class DockerService : IDockerService
         catch (Exception e)
         {
             record.ExceptionMessage = e.Message;
+            cancellationToken.ThrowIfCancellationRequested();
             return false;
         }
     }
@@ -114,6 +118,7 @@ internal class DockerService : IDockerService
         catch (Exception e)
         {
             record.ExceptionMessage = e.Message;
+            cancellationToken.ThrowIfCancellationRequested();
             return false;
         }
     }
@@ -178,6 +183,7 @@ internal class DockerService : IDockerService
         catch (Exception e)
         {
             record.ExceptionMessage = e.Message;
+            cancellationToken.ThrowIfCancellationRequested();
             return null;
         }
     }
@@ -207,6 +213,12 @@ internal class DockerService : IDockerService
             var stream = await AttachContainerAsync(container.ID, cancellationToken);
             await StartContainerAsync(container.ID, cancellationToken);
 
+            this.logger.LogInformation("Container {ContainerId} started for image {Image}, reading output...", container.ID, image);
+
+            // Flush telemetry before the long-running ReadOutput so we get mid-scan
+            // data in App Insights even if the process hangs during the read.
+            TelemetryRelay.Instance.FlushCurrentTelemetry();
+
             var (stdout, stderr) = await ReadContainerOutputAsync(stream, container.ID, image, cancellationToken);
 
             record.Stdout = stdout;
@@ -217,13 +229,33 @@ internal class DockerService : IDockerService
         finally
         {
             // Best-effort container cleanup with a bounded timeout.
-            // RemoveContainerAsync already handles not-found, but we must guard against
-            // the Docker daemon hanging on container removal (e.g. when the container
-            // process is stuck), which would block the detector indefinitely.
+            // Use Task.WhenAny as belt-and-suspenders: even if Docker.DotNet's HTTP
+            // pipeline doesn't honor the CTS (e.g. kernel-level socket blocking),
+            // we abandon the removal rather than hanging indefinitely.
+            this.logger.LogInformation("Removing container {ContainerId}...", container.ID);
             using var removeCts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
             try
             {
-                await RemoveContainerAsync(container.ID, removeCts.Token);
+                var removeTask = RemoveContainerAsync(container.ID, removeCts.Token);
+                var removeTimeout = Task.Delay(TimeSpan.FromSeconds(30), CancellationToken.None);
+
+                if (await Task.WhenAny(removeTask, removeTimeout) == removeTimeout)
+                {
+                    this.logger.LogWarning(
+                        "RemoveContainerAsync timed out for container {ContainerId}; abandoning cleanup",
+                        container.ID);
+
+                    // Observe the abandoned task to prevent unobserved task exceptions
+                    _ = removeTask.ContinueWith(
+                        static _ => { },
+                        CancellationToken.None,
+                        TaskContinuationOptions.OnlyOnFaulted,
+                        TaskScheduler.Default);
+                }
+                else
+                {
+                    await removeTask; // Observe any exception from completed task
+                }
             }
             catch (Exception ex)
             {
@@ -232,6 +264,8 @@ internal class DockerService : IDockerService
                     "Failed to remove container {ContainerId}; abandoning cleanup",
                     container.ID);
             }
+
+            this.logger.LogInformation("Container {ContainerId} cleanup complete", container.ID);
         }
     }
 
@@ -264,8 +298,22 @@ internal class DockerService : IDockerService
             {
                 record.WasCancelled = true;
 
-                // Dispose the stream to unblock any pending read operation
-                stream.Dispose();
+                // Dispose the stream to unblock any pending read operation.
+                // Run in fire-and-forget: if the underlying socket close() blocks
+                // (e.g. Docker daemon in kernel D-state), we don't want to hang here.
+                _ = Task.Run(
+                    () =>
+                    {
+                        try
+                        {
+                            stream.Dispose();
+                        }
+                        catch
+                        {
+                            // best effort
+                        }
+                    },
+                    CancellationToken.None);
 
                 // Observe the readTask to prevent unobserved task exceptions.
                 // Running any continuation automatically marks the exception as observed.
