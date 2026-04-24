@@ -32,6 +32,7 @@ public class LinuxContainerDetector(
     private const LinuxScannerScope DefaultScanScope = LinuxScannerScope.AllLayers;
 
     private const string LocalImageMountPoint = "/image";
+    private const int HeartbeatIntervalSeconds = 60;
 
     // Base image annotations from ADO dockerTask
     private const string BaseImageRefAnnotation = "image.base.ref.name";
@@ -99,19 +100,32 @@ public class LinuxContainerDetector(
         using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         timeoutCts.CancelAfter(GetTimeout(request.DetectorArgs));
 
-        if (!await this.dockerService.CanRunLinuxContainersAsync(timeoutCts.Token))
-        {
-            using var record = new LinuxContainerDetectorUnsupportedOs
-            {
-                Os = RuntimeInformation.OSDescription,
-            };
-            this.logger.LogInformation("Linux containers are not available on this host.");
-            return EmptySuccessfulScan();
-        }
-
         var results = Enumerable.Empty<ImageScanningResult>();
+
+        // Heartbeat timer: logs every 60s while the detector is running.
+        // If the process dies silently (OOM, SIGKILL), the heartbeat stops
+        // and we know approximately when it happened from the last log entry.
+        var scanStart = DateTime.UtcNow;
+        using var heartbeat = new Timer(
+            _ => this.logger.LogInformation(
+                "LinuxContainerDetector heartbeat — still scanning ({ElapsedSeconds}s elapsed)",
+                (DateTime.UtcNow - scanStart).TotalSeconds),
+            state: null,
+            dueTime: TimeSpan.FromSeconds(HeartbeatIntervalSeconds),
+            period: TimeSpan.FromSeconds(HeartbeatIntervalSeconds));
+
         try
         {
+            if (!await this.dockerService.CanRunLinuxContainersAsync(timeoutCts.Token))
+            {
+                using var record = new LinuxContainerDetectorUnsupportedOs
+                {
+                    Os = RuntimeInformation.OSDescription,
+                };
+                this.logger.LogInformation("Linux containers are not available on this host.");
+                return EmptySuccessfulScan();
+            }
+
             results = await this.ProcessImagesAsync(
                 allImages,
                 request.ComponentRecorder,
@@ -131,6 +145,10 @@ public class LinuxContainerDetector(
         {
             this.logger.LogError(e, "Unexpected error during Linux container image scanning");
         }
+
+        this.logger.LogInformation(
+            "LinuxContainerDetector completed after {ElapsedSeconds}s",
+            (DateTime.UtcNow - scanStart).TotalSeconds);
 
         return new IndividualDetectorScanResult
         {
