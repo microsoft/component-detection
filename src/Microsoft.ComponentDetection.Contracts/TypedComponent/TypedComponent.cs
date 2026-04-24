@@ -61,7 +61,7 @@ public abstract class TypedComponent
     public string BaseId => this.baseId ??= this.ComputeBaseId();
 
     [SystemTextJson.JsonPropertyName("packageUrl")]
-    public virtual PackageUrl PackageUrl { get; }
+    public virtual PackageURL PackageUrl { get; }
 
     /// <summary>Gets or sets SPDX license expression(s) declared by the package author.</summary>
     [JsonProperty("licenses", NullValueHandling = NullValueHandling.Ignore)]

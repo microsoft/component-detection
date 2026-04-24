@@ -39,13 +39,13 @@ public class GoComponent : TypedComponent, IEquatable<GoComponent>
     // https://github.com/package-url/purl-spec/blame/180c46d266c45aa2bd81a2038af3f78e87bb4a25/README.rst#L610
     // The golang purl spec requires a namespace: https://github.com/package-url/purl-spec/blob/master/types/golang-definition.json
     [JsonPropertyName("packageUrl")]
-    public override PackageUrl PackageUrl
+    public override PackageURL PackageUrl
     {
         get
         {
             var version = string.IsNullOrWhiteSpace(this.Hash) ? this.Version : this.Hash;
             var (ns, name) = this.GetNamespaceAndName();
-            return new PackageUrl("golang", ns, name, version, null, null);
+            return new PackageURL("golang", ns, name, version, null, null);
         }
     }
 

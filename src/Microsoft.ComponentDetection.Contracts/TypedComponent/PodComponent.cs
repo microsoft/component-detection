@@ -32,7 +32,7 @@ public class PodComponent : TypedComponent
     public override ComponentType Type => ComponentType.Pod;
 
     [JsonPropertyName("packageUrl")]
-    public override PackageUrl PackageUrl
+    public override PackageURL PackageUrl
     {
         get
         {
@@ -42,7 +42,7 @@ public class PodComponent : TypedComponent
                 qualifiers.Add("repository_url", this.SpecRepo);
             }
 
-            return new PackageUrl("cocoapods", null, this.Name, this.Version, qualifiers, null);
+            return new PackageURL("cocoapods", null, this.Name, this.Version, qualifiers, null);
         }
     }
 

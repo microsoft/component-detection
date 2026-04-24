@@ -50,7 +50,7 @@ public class VcpkgComponent : TypedComponent
     public override ComponentType Type => ComponentType.Vcpkg;
 
     [JsonPropertyName("packageUrl")]
-    public override PackageUrl PackageUrl
+    public override PackageURL PackageUrl
     {
         get
         {
@@ -58,7 +58,7 @@ public class VcpkgComponent : TypedComponent
                 ? new SortedDictionary<string, string> { { "port_version", this.PortVersion.ToString() } }
                 : null;
 
-            return new PackageUrl("vcpkg", null, this.Name, this.Version, qualifiers, null);
+            return new PackageURL("vcpkg", null, this.Name, this.Version, qualifiers, null);
         }
     }
 

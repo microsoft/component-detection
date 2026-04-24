@@ -31,7 +31,7 @@ public class NuGetComponent : TypedComponent
     public override ComponentType Type => ComponentType.NuGet;
 
     [JsonPropertyName("packageUrl")]
-    public override PackageUrl PackageUrl => new PackageUrl("nuget", null, this.Name, this.Version, null, null);
+    public override PackageURL PackageUrl => new PackageURL("nuget", null, this.Name, this.Version, null, null);
 
     protected override string ComputeBaseId() => $"{this.Name} {this.Version} - {this.Type}";
 }
