@@ -102,7 +102,7 @@ public class SwiftComponentTests
 
         var component = new SwiftComponent(name, version, packageUrl, hash);
 
-        var expectedPackageURL = new PackageUrl(
+        var expectedPackageURL = new PackageURL(
             type: "swift",
             @namespace: "github.com/Alamofire",
             name: name,
@@ -124,7 +124,7 @@ public class SwiftComponentTests
 
         var component = new SwiftComponent(name, version, packageUrl, hash);
 
-        var expectedPackageURL = new PackageUrl(
+        var expectedPackageURL = new PackageURL(
             type: "swift",
             @namespace: "github.com/Alamofire",
             name: name,
@@ -149,7 +149,7 @@ public class SwiftComponentTests
 
         var component = new SwiftComponent(name, version, packageUrl, hash);
 
-        var expectedPackageURL = new PackageUrl(
+        var expectedPackageURL = new PackageURL(
             type: "swift",
             @namespace: "otherhostname.com",
             name: name,

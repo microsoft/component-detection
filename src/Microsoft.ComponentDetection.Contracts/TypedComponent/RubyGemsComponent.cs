@@ -31,7 +31,7 @@ public class RubyGemsComponent : TypedComponent
     public override ComponentType Type => ComponentType.RubyGems;
 
     [JsonPropertyName("packageUrl")]
-    public override PackageUrl PackageUrl => new PackageUrl("gem", null, this.Name, this.Version, null, null);
+    public override PackageURL PackageUrl => new PackageURL("gem", null, this.Name, this.Version, null, null);
 
     protected override string ComputeBaseId() => $"{this.Name} {this.Version} - {this.Type}";
 }

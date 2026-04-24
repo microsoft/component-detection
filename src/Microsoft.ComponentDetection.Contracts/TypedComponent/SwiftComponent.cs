@@ -45,7 +45,7 @@ public class SwiftComponent : TypedComponent
     // namespace: github.com/apple
     // name: swift-asn1
     [JsonPropertyName("packageUrl")]
-    public override PackageUrl PackageUrl => new PackageUrl(
+    public override PackageURL PackageUrl => new PackageURL(
         type: "swift",
         @namespace: this.GetNamespaceFromPackageUrl(),
         name: this.Name,
