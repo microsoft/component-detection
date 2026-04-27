@@ -227,7 +227,7 @@ public class NpmDetectorTests
     }
 
     [TestMethod]
-    public async Task TestNpmDetector_VSCodeEngineCausesSkippedPackageAsync()
+    public async Task TestNpmDetector_VSCodeEnginePackageIsDetectedAsync()
     {
         var componentName = GetRandomString();
         var version = NewRandomVersion();
@@ -239,7 +239,11 @@ public class NpmDetectorTests
             .ExecuteDetectorAsync();
         scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
         var detectedComponents = componentRecorder.GetDetectedComponents();
-        detectedComponents.Should().BeEmpty();
+        detectedComponents.Should().ContainSingle();
+        detectedComponents.Single().Component.Type.Should().Be(ComponentType.Npm);
+        var detectedNpmComponent = (NpmComponent)detectedComponents.Single().Component;
+        detectedNpmComponent.Name.Should().Be(componentName);
+        detectedNpmComponent.Version.Should().Be(version);
     }
 
     [TestMethod]
@@ -256,7 +260,11 @@ public class NpmDetectorTests
             .ExecuteDetectorAsync();
         scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
         var detectedComponents = componentRecorder.GetDetectedComponents();
-        detectedComponents.Should().BeEmpty();
+        detectedComponents.Should().ContainSingle();
+        detectedComponents.Single().Component.Type.Should().Be(ComponentType.Npm);
+        var detectedNpmComponent = (NpmComponent)detectedComponents.Single().Component;
+        detectedNpmComponent.Name.Should().Be(packageName);
+        detectedNpmComponent.Version.Should().Be(packageVersion);
     }
 
     [TestMethod]
