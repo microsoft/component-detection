@@ -61,7 +61,7 @@ public static class PatternMatchingUtility
         private readonly string[] patterns;
 
         public CompiledMatcher(IEnumerable<string> patterns)
-            : this(patterns is string[] arr ? arr : (patterns ?? throw new ArgumentNullException(nameof(patterns))).ToArray())
+            : this(ToArray(patterns))
         {
         }
 
@@ -70,6 +70,12 @@ public static class PatternMatchingUtility
             ArgumentNullException.ThrowIfNull(patterns);
             this.patterns = (string[])patterns.Clone();
             ValidatePatternElements(this.patterns);
+        }
+
+        private static string[] ToArray(IEnumerable<string> patterns)
+        {
+            ArgumentNullException.ThrowIfNull(patterns);
+            return patterns as string[] ?? patterns.ToArray();
         }
 
         public bool IsMatch(ReadOnlySpan<char> fileName) => GetFirstMatchingPattern(fileName, this.patterns) is not null;
