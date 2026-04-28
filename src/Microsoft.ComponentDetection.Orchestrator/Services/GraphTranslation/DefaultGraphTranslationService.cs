@@ -34,14 +34,18 @@ internal class DefaultGraphTranslationService : IGraphTranslationService
 
         this.LogComponentScopeTelemetry(mergedComponents);
 
+        var dependencyGraphs = GraphTranslationUtility.AccumulateAndConvertToContract(recorderDetectorPairs
+            .Select(tuple => tuple.Recorder)
+            .Where(x => x != null)
+            .Select(x => x.GetDependencyGraphsByLocation()));
+
+        ReconcileDependencyGraphIds(dependencyGraphs, mergedComponents);
+
         return new DefaultGraphScanResult
         {
             ComponentsFound = mergedComponents.Select(x => this.ConvertToContract(x)).ToList(),
             ContainerDetailsMap = detectorProcessingResult.ContainersDetailsMap,
-            DependencyGraphs = GraphTranslationUtility.AccumulateAndConvertToContract(recorderDetectorPairs
-                .Select(tuple => tuple.Recorder)
-                .Where(x => x != null)
-                .Select(x => x.GetDependencyGraphsByLocation())),
+            DependencyGraphs = dependencyGraphs,
             SourceDirectory = settings.SourceDirectory.ToString(),
         };
     }
@@ -69,6 +73,186 @@ internal class DefaultGraphTranslationService : IGraphTranslationService
         }
 
         return left;
+    }
+
+    /// <summary>
+    /// Checks whether the graph contains the component by its full Id, or by its BaseId
+    /// when the component is a rich entry (Id != BaseId) whose bare counterpart was registered in the graph.
+    /// </summary>
+    private static bool GraphContainsComponent(IDependencyGraph graph, TypedComponent component)
+    {
+        return graph.Contains(component.Id) ||
+               (component.Id != component.BaseId && graph.Contains(component.BaseId));
+    }
+
+    /// <summary>
+    /// Reconciles bare component Ids in <see cref="DependencyGraphCollection"/> to match the merged
+    /// identities in ComponentsFound. When a bare node (Id == BaseId) has rich counterparts
+    /// (Id != BaseId, same BaseId) in the same location graph, the bare node is merged into
+    /// all rich counterparts and removed. This ensures every Id referenced in the graph output
+    /// also exists in ComponentsFound.
+    /// </summary>
+    internal static void ReconcileDependencyGraphIds(
+        DependencyGraphCollection graphs,
+        IReadOnlyList<DetectedComponent> mergedComponents)
+    {
+        if (graphs == null || graphs.Count == 0)
+        {
+            return;
+        }
+
+        // Build BaseId → set of rich Ids from merged components.
+        var baseIdToRichIds = new Dictionary<string, HashSet<string>>();
+        foreach (var component in mergedComponents)
+        {
+            var id = component.Component.Id;
+            var baseId = component.Component.BaseId;
+            if (id != baseId)
+            {
+                if (!baseIdToRichIds.TryGetValue(baseId, out var richIds))
+                {
+                    baseIdToRichIds[baseId] = richIds = [];
+                }
+
+                richIds.Add(id);
+            }
+        }
+
+        if (baseIdToRichIds.Count == 0)
+        {
+            return;
+        }
+
+        foreach (var graphWithMetadata in graphs.Values)
+        {
+            ReconcileGraph(graphWithMetadata, baseIdToRichIds);
+        }
+    }
+
+    private static void ReconcileGraph(
+        DependencyGraphWithMetadata graphWithMetadata,
+        Dictionary<string, HashSet<string>> baseIdToRichIds)
+    {
+        var graph = graphWithMetadata.Graph;
+
+        // Identify bare nodes that have at least one rich counterpart in THIS graph.
+        var bareToRich = new Dictionary<string, HashSet<string>>();
+        foreach (var nodeId in graph.Keys)
+        {
+            if (baseIdToRichIds.TryGetValue(nodeId, out var allRichIds))
+            {
+                var richInGraph = new HashSet<string>(allRichIds.Where(graph.ContainsKey));
+                if (richInGraph.Count > 0)
+                {
+                    bareToRich[nodeId] = richInGraph;
+                }
+            }
+        }
+
+        if (bareToRich.Count == 0)
+        {
+            return;
+        }
+
+        // Rewrite a single Id: if it's a bare Id being merged, expand to its rich counterparts.
+        // Returns the existing set for bare ids; yields a single element for non-bare ids to avoid allocation.
+        IEnumerable<string> RewriteId(string id) =>
+            bareToRich.TryGetValue(id, out var richIds) ? richIds : Enumerable.Repeat(id, 1);
+
+        // Rebuild graph: skip bare nodes being merged, rewrite edge targets.
+        var newGraph = new Contracts.BcdeModels.DependencyGraph();
+        foreach (var (nodeId, edges) in graph)
+        {
+            if (bareToRich.ContainsKey(nodeId))
+            {
+                continue; // bare node will be merged into its rich counterparts below
+            }
+
+            if (edges == null)
+            {
+                newGraph[nodeId] = null;
+            }
+            else
+            {
+                var newEdges = new HashSet<string>();
+                foreach (var edge in edges)
+                {
+                    foreach (var rewritten in RewriteId(edge))
+                    {
+                        // Avoid self-edges that rewriting could introduce.
+                        if (rewritten != nodeId)
+                        {
+                            newEdges.Add(rewritten);
+                        }
+                    }
+                }
+
+                newGraph[nodeId] = newEdges.Count > 0 ? newEdges : null;
+            }
+        }
+
+        // Merge bare nodes' outbound edges into their rich counterparts.
+        foreach (var (bareId, richIds) in bareToRich)
+        {
+            var bareEdges = graph[bareId];
+            foreach (var richId in richIds)
+            {
+                if (bareEdges != null)
+                {
+                    newGraph[richId] ??= [];
+                    foreach (var edge in bareEdges)
+                    {
+                        foreach (var rewritten in RewriteId(edge))
+                        {
+                            if (rewritten != richId)
+                            {
+                                newGraph[richId].Add(rewritten);
+                            }
+                        }
+                    }
+
+                    // Normalize empty edge sets to null for consistent serialization.
+                    if (newGraph[richId].Count == 0)
+                    {
+                        newGraph[richId] = null;
+                    }
+                }
+            }
+        }
+
+        // Rebuild metadata sets, rewriting bare Ids to their rich counterparts.
+        graphWithMetadata.Graph = newGraph;
+        graphWithMetadata.ExplicitlyReferencedComponentIds = RewriteIdSet(graphWithMetadata.ExplicitlyReferencedComponentIds, bareToRich);
+        graphWithMetadata.DevelopmentDependencies = RewriteIdSet(graphWithMetadata.DevelopmentDependencies, bareToRich);
+        graphWithMetadata.Dependencies = RewriteIdSet(graphWithMetadata.Dependencies, bareToRich);
+    }
+
+    private static HashSet<string> RewriteIdSet(
+        HashSet<string> original,
+        Dictionary<string, HashSet<string>> bareToRich)
+    {
+        if (original == null || original.Count == 0)
+        {
+            return original;
+        }
+
+        var result = new HashSet<string>();
+        foreach (var id in original)
+        {
+            if (bareToRich.TryGetValue(id, out var richIds))
+            {
+                foreach (var richId in richIds)
+                {
+                    result.Add(richId);
+                }
+            }
+            else
+            {
+                result.Add(id);
+            }
+        }
+
+        return result;
     }
 
     private void LogComponentScopeTelemetry(List<DetectedComponent> components)
@@ -126,25 +310,30 @@ internal class DefaultGraphTranslationService : IGraphTranslationService
                     }
 
                     // Information about each component is relative to all of the graphs it is present in, so we take all graphs containing a given component and apply the graph data.
-                    foreach (var graphKvp in dependencyGraphsByLocation.Where(x => x.Value.Contains(component.Component.Id)))
+                    foreach (var graphKvp in dependencyGraphsByLocation.Where(x => GraphContainsComponent(x.Value, component.Component)))
                     {
                         var location = graphKvp.Key;
                         var dependencyGraph = graphKvp.Value;
 
+                        // Determine the Id stored in this graph — may be the rich Id or the bare BaseId.
+                        var graphComponentId = dependencyGraph.Contains(component.Component.Id)
+                            ? component.Component.Id
+                            : component.Component.BaseId;
+
                         // Calculate roots of the component
                         var rootStartTime = DateTime.UtcNow;
-                        this.AddRootsToDetectedComponent(component, dependencyGraph, componentRecorder);
+                        this.AddRootsToDetectedComponent(component, graphComponentId, dependencyGraph, componentRecorder);
                         var rootEndTime = DateTime.UtcNow;
                         totalTimeToAddRoots += rootEndTime - rootStartTime;
 
                         // Calculate Ancestors of the component
                         var ancestorStartTime = DateTime.UtcNow;
-                        this.AddAncestorsToDetectedComponent(component, dependencyGraph, componentRecorder);
+                        this.AddAncestorsToDetectedComponent(component, graphComponentId, dependencyGraph, componentRecorder);
                         var ancestorEndTime = DateTime.UtcNow;
                         totalTimeToAddAncestors += ancestorEndTime - ancestorStartTime;
 
-                        component.DevelopmentDependency = this.MergeDevDependency(component.DevelopmentDependency, dependencyGraph.IsDevelopmentDependency(component.Component.Id));
-                        component.DependencyScope = DependencyScopeComparer.GetMergedDependencyScope(component.DependencyScope, dependencyGraph.GetDependencyScope(component.Component.Id));
+                        component.DevelopmentDependency = this.MergeDevDependency(component.DevelopmentDependency, dependencyGraph.IsDevelopmentDependency(graphComponentId));
+                        component.DependencyScope = DependencyScopeComparer.GetMergedDependencyScope(component.DependencyScope, dependencyGraph.GetDependencyScope(graphComponentId));
                         component.DetectedBy = detector;
 
                         // Experiments uses this service to build the dependency graph for analysis. In this case, we do not want to update the locations of the component.
@@ -269,7 +458,7 @@ internal class DefaultGraphTranslationService : IGraphTranslationService
         return firstComponent;
     }
 
-    private void AddRootsToDetectedComponent(DetectedComponent detectedComponent, IDependencyGraph dependencyGraph, IComponentRecorder componentRecorder)
+    private void AddRootsToDetectedComponent(DetectedComponent detectedComponent, string graphComponentId, IDependencyGraph dependencyGraph, IComponentRecorder componentRecorder)
     {
         detectedComponent.DependencyRoots ??= new HashSet<TypedComponent>(new ComponentComparer());
         if (dependencyGraph == null)
@@ -277,10 +466,10 @@ internal class DefaultGraphTranslationService : IGraphTranslationService
             return;
         }
 
-        detectedComponent.DependencyRoots.UnionWith(dependencyGraph.GetRootsAsTypedComponents(detectedComponent.Component.Id, componentRecorder.GetComponent));
+        detectedComponent.DependencyRoots.UnionWith(dependencyGraph.GetRootsAsTypedComponents(graphComponentId, componentRecorder.GetComponent));
     }
 
-    private void AddAncestorsToDetectedComponent(DetectedComponent detectedComponent, IDependencyGraph dependencyGraph, IComponentRecorder componentRecorder)
+    private void AddAncestorsToDetectedComponent(DetectedComponent detectedComponent, string graphComponentId, IDependencyGraph dependencyGraph, IComponentRecorder componentRecorder)
     {
         detectedComponent.AncestralDependencyRoots ??= new HashSet<TypedComponent>(new ComponentComparer());
         if (dependencyGraph == null)
@@ -288,7 +477,7 @@ internal class DefaultGraphTranslationService : IGraphTranslationService
             return;
         }
 
-        detectedComponent.AncestralDependencyRoots.UnionWith(dependencyGraph.GetAncestorsAsTypedComponents(detectedComponent.Component.Id, componentRecorder.GetComponent));
+        detectedComponent.AncestralDependencyRoots.UnionWith(dependencyGraph.GetAncestorsAsTypedComponents(graphComponentId, componentRecorder.GetComponent));
     }
 
     private HashSet<string> MakeFilePathsRelative(ILogger logger, DirectoryInfo rootDirectory, HashSet<string> filePaths)

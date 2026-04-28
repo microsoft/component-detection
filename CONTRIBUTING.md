@@ -61,6 +61,20 @@ Analysis rulesets are defined in [analyzers.ruleset](analyzers.ruleset) and vali
 
 ### Testing
 
-L0s are defined in `Microsoft.ComponentDetection.*.Tests`.
+**Unit tests (L0s)** are defined in `Microsoft.ComponentDetection.*.Tests` and should be fast, isolated, and free of external process calls.
 
-Verification tests are run on the sample projects defined in [microsoft/componentdetection-verification](https://github.com/microsoft/componentdetection-verification).
+**Integration tests** spawn real processes (e.g. `dotnet build`, `dotnet restore`) and are therefore slower and environment-dependent. Tag these with `[TestCategory("Integration")]` so they can be filtered during local development.
+
+By default, `dotnet test` **excludes** Integration tests (configured in `test/Directory.Build.props`). CI runs all tests including Integration (see `.github/workflows/build.yml`).
+
+To run only Integration tests locally:
+```bash
+dotnet test -- --filter "TestCategory=Integration"
+```
+
+To run everything (same as CI):
+```bash
+dotnet test -p:ExcludeIntegrationTests=false
+```
+
+**Verification tests** are run on the sample projects defined in [microsoft/componentdetection-verification](https://github.com/microsoft/componentdetection-verification).

@@ -11,12 +11,12 @@ using Microsoft.Extensions.Logging;
 
 public class SafeFileEnumerable : IEnumerable<MatchedFile>
 {
-    private readonly IEnumerable<string> searchPatterns;
     private readonly ExcludeDirectoryPredicate directoryExclusionPredicate;
     private readonly DirectoryInfo directory;
     private readonly IPathUtilityService pathUtilityService;
     private readonly bool recursivelyScanDirectories;
     private readonly Func<FileInfo, bool> fileMatchingPredicate;
+    private readonly PatternMatchingUtility.CompiledMatcher compiledMatcher;
 
     private readonly EnumerationOptions enumerationOptions;
 
@@ -27,11 +27,11 @@ public class SafeFileEnumerable : IEnumerable<MatchedFile>
     {
         this.directory = directory;
         this.logger = logger;
-        this.searchPatterns = searchPatterns;
         this.directoryExclusionPredicate = directoryExclusionPredicate;
         this.recursivelyScanDirectories = recursivelyScanDirectories;
         this.pathUtilityService = pathUtilityService;
         this.enumeratedDirectories = previouslyEnumeratedDirectories;
+        this.compiledMatcher = PatternMatchingUtility.Compile(searchPatterns);
 
         this.enumerationOptions = new EnumerationOptions()
         {
@@ -58,14 +58,10 @@ public class SafeFileEnumerable : IEnumerable<MatchedFile>
                     throw new InvalidOperationException("Encountered directory when expecting a file");
                 }
 
-                var foundPattern = entry.FileName.ToString();
-                foreach (var searchPattern in this.searchPatterns)
-                {
-                    if (PathUtilityService.MatchesPattern(searchPattern, ref entry))
-                    {
-                        foundPattern = searchPattern;
-                    }
-                }
+                // Pattern priority is first-match-wins: earlier entries in searchPatterns
+                // are treated as higher priority when multiple patterns match.
+                var foundPattern = this.compiledMatcher.GetMatchingPattern(entry.FileName)
+                    ?? entry.FileName.ToString();
 
                 return new MatchedFile() { File = fi, Pattern = foundPattern };
             },
@@ -78,15 +74,7 @@ public class SafeFileEnumerable : IEnumerable<MatchedFile>
                     return false;
                 }
 
-                foreach (var searchPattern in this.searchPatterns)
-                {
-                    if (PathUtilityService.MatchesPattern(searchPattern, ref entry))
-                    {
-                        return true;
-                    }
-                }
-
-                return false;
+                return this.compiledMatcher.IsMatch(entry.FileName);
             },
             ShouldRecursePredicate = (ref FileSystemEntry entry) =>
             {

@@ -18,6 +18,12 @@
 | -------------------------- | ---------- |
 | CondaLockComponentDetector | DefaultOff |
 
+- [Docker Compose](dockercompose.md)
+
+| Detector                       | Status     |
+| ------------------------------ | ---------- |
+| DockerComposeComponentDetector | DefaultOff |
+
 - [Dockerfile](dockerfile.md)
 
 | Detector                    | Status     |
@@ -41,6 +47,12 @@
 | Detector                | Status |
 | ----------------------- | ------ |
 | GradleComponentDetector | Stable |
+
+- [Helm](helm.md)
+
+| Detector               | Status     |
+| ---------------------- | ---------- |
+| HelmComponentDetector  | DefaultOff |
 
 - [Ivy](ivy.md)
 
@@ -70,11 +82,12 @@
 
 - [NuGet](nuget.md)
 
-| Detector                                         | Status |
-| ------------------------------------------------ | ------ |
-| NuGetComponentDetector                           | Stable |
-| NuGetPackagesConfigDetector                      | Stable |
-| NuGetProjectModelProjectCentricComponentDetector | Stable |
+| Detector                                         | Status     |
+| ------------------------------------------------ | ---------- |
+| NuGetComponentDetector                           | Stable     |
+| NuGetPackagesConfigDetector                      | Stable     |
+| NuGetProjectModelProjectCentricComponentDetector | Stable     |
+| MSBuildBinaryLogComponentDetector                | DefaultOff |
 
 - [Paket](paket.md)
 

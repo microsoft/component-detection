@@ -1,11 +1,8 @@
-#nullable disable
 namespace Microsoft.ComponentDetection.Detectors.Dockerfile;
 
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Common;
@@ -36,7 +33,7 @@ public class DockerfileComponentDetector : FileComponentDetector, IDefaultOffCom
 
     public override string Id { get; } = "DockerReference";
 
-    public override IEnumerable<string> Categories => [Enum.GetName(typeof(DetectorClass), DetectorClass.DockerReference)];
+    public override IEnumerable<string> Categories => [nameof(DetectorClass.DockerReference)];
 
     public override IList<string> SearchPatterns { get; } = ["dockerfile", "dockerfile.*", "*.dockerfile"];
 
@@ -75,38 +72,22 @@ public class DockerfileComponentDetector : FileComponentDetector, IDefaultOffCom
         foreach (var instruction in instructions)
         {
             var imageReference = this.ProcessDockerfileConstruct(instruction, dockerfileModel.EscapeChar, stageNameMap);
-            if (imageReference != null)
-            {
-                singleFileComponentRecorder.RegisterUsage(new DetectedComponent(imageReference.ToTypedDockerReferenceComponent()));
-            }
+            DockerReferenceUtility.TryRegisterImageReference(imageReference, singleFileComponentRecorder);
         }
 
         return Task.CompletedTask;
     }
 
-    private DockerReference ProcessDockerfileConstruct(DockerfileConstruct construct, char escapeChar, Dictionary<string, string> stageNameMap)
+    private DockerReference? ProcessDockerfileConstruct(DockerfileConstruct construct, char escapeChar, Dictionary<string, string> stageNameMap)
     {
         try
         {
-            var instructionKeyword = construct.Type;
-            DockerReference baseImage = null;
-            if (instructionKeyword == ConstructType.Instruction)
+            return construct switch
             {
-                var constructType = construct.GetType().Name;
-                switch (constructType)
-                {
-                    case "FromInstruction":
-                        baseImage = this.ParseFromInstruction(construct, escapeChar, stageNameMap);
-                        break;
-                    case "CopyInstruction":
-                        baseImage = this.ParseCopyInstruction(construct, escapeChar, stageNameMap);
-                        break;
-                    default:
-                        break;
-                }
-            }
-
-            return baseImage;
+                FromInstruction => this.ParseFromInstruction(construct, escapeChar, stageNameMap),
+                CopyInstruction => this.ParseCopyInstruction(construct, escapeChar, stageNameMap),
+                _ => null,
+            };
         }
         catch (Exception e)
         {
@@ -115,10 +96,9 @@ public class DockerfileComponentDetector : FileComponentDetector, IDefaultOffCom
         }
     }
 
-    private DockerReference ParseFromInstruction(DockerfileConstruct construct, char escapeChar, Dictionary<string, string> stageNameMap)
+    private DockerReference? ParseFromInstruction(DockerfileConstruct construct, char escapeChar, Dictionary<string, string> stageNameMap)
     {
-        var tokens = construct.Tokens.ToArray();
-        var resolvedFromStatement = construct.ResolveVariables(escapeChar).TrimEnd();
+        var resolvedFromStatement = construct.ResolveVariables(escapeChar)?.TrimEnd();
         var fromInstruction = (FromInstruction)construct;
         var reference = fromInstruction.ImageName;
         if (string.IsNullOrWhiteSpace(resolvedFromStatement) || string.IsNullOrEmpty(reference))
@@ -143,25 +123,15 @@ public class DockerfileComponentDetector : FileComponentDetector, IDefaultOffCom
 
         if (!string.IsNullOrEmpty(stageNameReference))
         {
-            if (this.HasUnresolvedVariables(stageNameReference))
-            {
-                return null;
-            }
-
-            return DockerReferenceUtility.ParseFamiliarName(stageNameReference);
+            return DockerReferenceUtility.TryParseImageReference(stageNameReference, this.Logger);
         }
 
-        if (this.HasUnresolvedVariables(reference))
-        {
-            return null;
-        }
-
-        return DockerReferenceUtility.ParseFamiliarName(reference);
+        return DockerReferenceUtility.TryParseImageReference(reference, this.Logger);
     }
 
-    private DockerReference ParseCopyInstruction(DockerfileConstruct construct, char escapeChar, Dictionary<string, string> stageNameMap)
+    private DockerReference? ParseCopyInstruction(DockerfileConstruct construct, char escapeChar, Dictionary<string, string> stageNameMap)
     {
-        var resolvedCopyStatement = construct.ResolveVariables(escapeChar).TrimEnd();
+        var resolvedCopyStatement = construct.ResolveVariables(escapeChar)?.TrimEnd();
         var copyInstruction = (CopyInstruction)construct;
         var reference = copyInstruction.FromStageName;
         if (string.IsNullOrWhiteSpace(resolvedCopyStatement) || string.IsNullOrWhiteSpace(reference))
@@ -172,26 +142,9 @@ public class DockerfileComponentDetector : FileComponentDetector, IDefaultOffCom
         stageNameMap.TryGetValue(reference, out var stageNameReference);
         if (!string.IsNullOrEmpty(stageNameReference))
         {
-            if (this.HasUnresolvedVariables(stageNameReference))
-            {
-                return null;
-            }
-            else
-            {
-                return DockerReferenceUtility.ParseFamiliarName(stageNameReference);
-            }
+            return DockerReferenceUtility.TryParseImageReference(stageNameReference, this.Logger);
         }
 
-        if (this.HasUnresolvedVariables(reference))
-        {
-            return null;
-        }
-
-        return DockerReferenceUtility.ParseFamiliarName(reference);
-    }
-
-    private bool HasUnresolvedVariables(string reference)
-    {
-        return new Regex("[${}]").IsMatch(reference);
+        return DockerReferenceUtility.TryParseImageReference(reference, this.Logger);
     }
 }
