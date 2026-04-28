@@ -122,9 +122,47 @@ public static class CondaDependencyResolver
     /// <param name="package">The CondaPackage to convert.</param>
     /// <returns>The TypedComponent.</returns>
     private static TypedComponent CreateComponent(CondaPackage package)
-        => IsPythonPackage(package)
-                ? new PipComponent(package.Name, package.Version)
-                : new CondaComponent(package.Name, package.Version, null, package.Category, null, null, null, null);
+    {
+        var md5 = TryGetHash(package.Hash, "md5");
+        var sha256 = TryGetHash(package.Hash, "sha256");
+
+        if (IsPythonPackage(package))
+        {
+            return new PipComponent(package.Name, package.Version)
+            {
+                Md5 = md5,
+                Sha256 = sha256,
+            };
+        }
+
+        return new CondaComponent(package.Name, package.Version, null, package.Category, null, null, null, md5, sha256);
+    }
+
+    /// <summary>
+    /// Reads a digest value from conda-lock's per-package hash map (YAML keys are typically lowercase md5 / sha256).
+    /// </summary>
+    private static string TryGetHash(Dictionary<string, string> hash, string key)
+    {
+        if (hash is null || key is null)
+        {
+            return null;
+        }
+
+        if (hash.TryGetValue(key, out var exact) && !string.IsNullOrEmpty(exact))
+        {
+            return exact;
+        }
+
+        foreach (var kv in hash)
+        {
+            if (string.Equals(kv.Key, key, StringComparison.OrdinalIgnoreCase) && !string.IsNullOrEmpty(kv.Value))
+            {
+                return kv.Value;
+            }
+        }
+
+        return null;
+    }
 
     /// <summary>
     /// Checks if a package is a python package.

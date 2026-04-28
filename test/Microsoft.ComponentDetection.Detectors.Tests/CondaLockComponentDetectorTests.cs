@@ -102,6 +102,32 @@ package:
         this.AssertPipComponentNameAndVersion(detectedComponents, "requests", "2.31.0");
 
         detectedComponents.Should().HaveCount(4);
+
+        var condaLockTop = detectedComponents.Single(c =>
+            c.Component is CondaComponent cl &&
+            cl.Name.Equals("conda-lock") &&
+            cl.Version.Equals("2.1.0")).Component as CondaComponent;
+        condaLockTop!.MD5.Should().Be("1e07afcf3d3e371fc3a3681fe9b78e90");
+        condaLockTop.Sha256.Should().Be("05319e84cbd36f6a05563954d2dbff041de6ece406a59650784918026080c98c");
+
+        var urllib = detectedComponents.Single(c =>
+            c.Component is CondaComponent u &&
+            u.Name.Equals("urllib3") &&
+            u.Version.Equals("1.26.16")).Component as CondaComponent;
+        urllib!.MD5.Should().Be("4b62a74f7e797800039971833968e23f");
+        urllib.Sha256.Should().Be("b9e919a9bcb4cb291fe60952895bf0c3ce9dbcbeaa3d5706131f862756fabc40");
+
+        var requests = detectedComponents.Single(c =>
+            c.Component is PipComponent r &&
+            r.Name.Equals("requests") &&
+            r.Version.Equals("2.31.0")).Component as PipComponent;
+        requests!.Sha256.Should().Be("58cd2187c01e70e6e26505bca751777aa9f2ee0b7f4300988b709f44e013003f");
+
+        var certifi = detectedComponents.Single(c =>
+            c.Component is PipComponent cf &&
+            cf.Name.Equals("certifi") &&
+            cf.Version.Equals("2023.5.7")).Component as PipComponent;
+        certifi!.Sha256.Should().Be("c6c2e98f5c7869efca1f8916fed228dd91539f9f1b444c314c06eef02980c716");
     }
 
     private void AssertCondaLockComponentNameAndVersion(IEnumerable<DetectedComponent> detectedComponents, string name, string version)
