@@ -15,7 +15,7 @@ using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.Extensions.Logging;
 using YamlDotNet.RepresentationModel;
 
-public class HelmComponentDetector : FileComponentDetector, IDefaultOffComponentDetector
+public class HelmComponentDetector : FileComponentDetector, IExperimentalDetector
 {
     public HelmComponentDetector(
         IComponentStreamEnumerableFactory componentStreamEnumerableFactory,
