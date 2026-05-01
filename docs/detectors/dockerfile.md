@@ -6,7 +6,7 @@ Dockerfile detection depends on the following to successfully run:
 
 - One or more Dockerfile files matching the patterns: `dockerfile`, `dockerfile.*`, or `*.dockerfile`
 
-The `DockerfileComponentDetector` is an **Experimental** detector. It runs automatically during scans, but its output is not included in the final scan results.
+The `DockerfileComponentDetector` is an **Experimental** detector. It runs automatically during scans, but its output is not included in the final scan results. To include its output, pass `--DetectorArgs DockerReference=Enable` (the key is the detector Id `DockerReference`, not the class name).
 
 ## Detection strategy
 
@@ -26,7 +26,7 @@ The detector attempts to resolve Dockerfile variables using the `ResolveVariable
 
 ## Known limitations
 
-- **Experimental Status**: This detector runs automatically but its output is not included in scan results
+- **Experimental Status**: This detector runs automatically but its output is not included in scan results by default. To opt in, pass `--DetectorArgs DockerReference=Enable`
 - **Variable Resolution**: Image references containing unresolved Dockerfile `ARG` or `ENV` variables are not reported, which may lead to under-reporting in Dockerfiles that heavily use build-time variables
 - **No Version Pinning Validation**: The detector does not warn about unpinned image versions (e.g., `latest` tags), which are generally discouraged in production Dockerfiles
 - **No Digest Support**: While Docker supports content-addressable image references using SHA256 digests (e.g., `ubuntu@sha256:abc...`), the parsing and reporting of these references depends on the underlying `DockerReferenceUtility.ParseFamiliarName()` implementation
