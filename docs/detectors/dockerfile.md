@@ -6,7 +6,7 @@ Dockerfile detection depends on the following to successfully run:
 
 - One or more Dockerfile files matching the patterns: `dockerfile`, `dockerfile.*`, or `*.dockerfile`
 
-The `DockerfileComponentDetector` is a **DefaultOff** detector and must be explicitly enabled via the `--DetectorArgs` parameter.
+The `DockerfileComponentDetector` is an **Experimental** detector. It runs automatically during scans, but its output is not included in the final scan results. To include its output, pass `--DetectorArgs DockerReference=Enable` (the key is the detector Id `DockerReference`, not the class name).
 
 ## Detection strategy
 
@@ -24,9 +24,15 @@ The detector extracts image references from `COPY --from=<image>` instructions t
 ### Variable Resolution
 The detector attempts to resolve Dockerfile variables using the `ResolveVariables()` method from the parser library. Images with unresolved variables (containing `$`, `{`, or `}` characters) are skipped to avoid reporting incomplete or incorrect references.
 
+### Tag and Digest Support
+The detector supports the full Docker reference grammar via `DockerReferenceUtility.ParseFamiliarName()`. Image references are parsed and reported with their tag, digest, or both:
+- Tagged references (e.g., `FROM nginx:1.21`) populate the `Tag` field
+- Canonical references with a SHA256 digest (e.g., `FROM nginx@sha256:abc...`) populate the `Digest` field
+- Dual references with both a tag and a digest (e.g., `FROM nginx:1.21@sha256:abc...`) populate both fields
+
 ## Known limitations
 
-- **DefaultOff Status**: This detector must be explicitly enabled using `--DetectorArgs DockerReference=EnableIfDefaultOff`
+- **Experimental Status**: This detector runs automatically but its output is not included in scan results by default. To opt in, pass `--DetectorArgs DockerReference=Enable`
 - **Variable Resolution**: Image references containing unresolved Dockerfile `ARG` or `ENV` variables are not reported, which may lead to under-reporting in Dockerfiles that heavily use build-time variables
 - **No Version Pinning Validation**: The detector does not warn about unpinned image versions (e.g., `latest` tags), which are generally discouraged in production Dockerfiles
-- **No Digest Support**: While Docker supports content-addressable image references using SHA256 digests (e.g., `ubuntu@sha256:abc...`), the parsing and reporting of these references depends on the underlying `DockerReferenceUtility.ParseFamiliarName()` implementation
+- **Untagged Images Skipped**: Image references with neither a tag nor a digest (e.g. `FROM nginx`) are skipped because they cannot be uniquely identified
