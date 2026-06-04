@@ -28,6 +28,7 @@ namespace Microsoft.ComponentDetection.Common;
 
 using System;
 using System.Diagnostics.CodeAnalysis;
+using System.Text.RegularExpressions;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.Extensions.Logging;
 
@@ -39,14 +40,29 @@ public static class DockerReferenceUtility
     private const string LEGACYDEFAULTDOMAIN = "index.docker.io";
     private const string OFFICIALREPOSITORYNAME = "library";
 
+    // Characters that only appear in an image reference as part of an unresolved templating
+    // token. '$', '{' and '}' cover shell / Helm / Go-template placeholders (e.g. ${VAR},
+    // {{ .Values.tag }}); '#' covers Azure DevOps and other token-replacement placeholders
+    // (e.g. #imageTag#) and is never valid in a resolved docker reference.
+    private static readonly char[] TemplateDelimiters = ['$', '{', '}', '#'];
+
+    // Matches token-replacement placeholders that wrap an identifier in double underscores,
+    // e.g. __IMAGE_TAG__ or __MCR_ENDPOINT__. Without this they parse as an uppercase repository
+    // name and surface as a noisy parse failure instead of being skipped as a templated value.
+    private static readonly Regex DoubleUnderscoreTokenRegex = new(@"__\w+__");
+
     /// <summary>
-    /// Returns true if the reference contains unresolved variable placeholders (e.g., ${VAR}, {{ .Values.tag }}).
-    /// Such references should be skipped before calling <see cref="ParseFamiliarName"/> or <see cref="ParseQualifiedName"/>.
+    /// Returns true if the reference contains unresolved variable or templating placeholders,
+    /// e.g. <c>${VAR}</c>, <c>{{ .Values.tag }}</c>, <c>#imageTag#</c>, or <c>__IMAGE_TAG__</c>.
+    /// Such references are not real, resolvable images, so they should be skipped before calling
+    /// <see cref="ParseFamiliarName"/> or <see cref="ParseQualifiedName"/> and treated as
+    /// unresolved values rather than reported as parse failures.
     /// </summary>
     /// <param name="reference">The image reference string to check.</param>
     /// <returns><c>true</c> if the reference contains variable placeholder characters; otherwise <c>false</c>.</returns>
     public static bool HasUnresolvedVariables(string reference) =>
-        reference.IndexOfAny(['$', '{', '}']) >= 0;
+        reference.IndexOfAny(TemplateDelimiters) >= 0 ||
+        DoubleUnderscoreTokenRegex.IsMatch(reference);
 
     /// <summary>
     /// Attempts to parse an image reference string into a <see cref="DockerReference"/>.
