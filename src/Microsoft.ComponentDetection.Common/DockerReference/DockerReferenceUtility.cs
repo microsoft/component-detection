@@ -317,6 +317,7 @@ public static class DockerReferenceUtility
         }
 
         return string.Join(", ", invalidStrings);
+    }
 
     private static DockerReference CreateDockerReference(Reference options)
     {
