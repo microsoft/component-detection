@@ -44,11 +44,11 @@ public static class DockerReferenceUtility
 
     // Delimiters that only appear in an image reference as part of an unresolved templating
     // token: '$', '{' and '}' cover shell / Helm / Go-template placeholders (e.g. ${VAR},
-    // {{ .Values.tag }}). These are recognized templating syntaxes that are expected in
-    // un-rendered manifests, so they are skipped silently rather than reported. A token wrapped
-    // in matching '#' or '!' (handled by DelimiterWrappedTokenRegex) is treated the same way. A
-    // stray invalid character that is not part of such a token (e.g. a single '#' or '!') is still
-    // reported via GetInvalidReferenceCharacters.
+    // {{ .Values.tag }}). These are recognized templating syntaxes expected in un-rendered manifests,
+    // so TryParseImageReference skips them (logging a warning) rather than treating them as invalid.
+    // A token wrapped in matching '#' or '!' (handled by DelimiterWrappedTokenRegex) is treated the same way.
+    // When no templating token is present, stray invalid characters (e.g. a single '#' or '!') are reported
+    // via GetInvalidReferenceCharacters.
     private static readonly char[] TemplateDelimiters = ['$', '{', '}'];
 
     // Matches token-replacement placeholders that wrap an identifier in double underscores,
@@ -310,8 +310,13 @@ public static class DockerReferenceUtility
             }
         }
 
-        return string.Join(", ", invalid);
-    }
+        var invalidStrings = new List<string>(invalid.Count);
+        foreach (var c in invalid)
+        {
+            invalidStrings.Add($"'{c}'");
+        }
+
+        return string.Join(", ", invalidStrings);
 
     private static DockerReference CreateDockerReference(Reference options)
     {
