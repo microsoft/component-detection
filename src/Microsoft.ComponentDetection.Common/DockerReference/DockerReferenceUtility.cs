@@ -59,8 +59,8 @@ public static class DockerReferenceUtility
     // Matches token-replacement placeholders wrapped in a matching '#' or '!', e.g. #imageTag#,
     // #cs_containerRegistryLoginServerUrl#, or !imageTag!. A string surrounded by the same '#' or
     // '!' delimiter is almost always an unsubstituted template variable (Azure DevOps token
-    // replacement and similar), so it is skipped silently instead of surfacing as a misleading
-    // docker-reference parse failure. The backreference requires the closing delimiter to match
+    // replacement and similar), so it is skipped (and may be logged as a warning) instead of
+    // surfacing as a misleading docker-reference parse failure. The backreference requires the closing delimiter to match
     // the opening one, so a mismatched stray '#' or '!' is left to GetInvalidReferenceCharacters.
     private static readonly Regex DelimiterWrappedTokenRegex = new(@"([#!])[^#!]+\1");
 
