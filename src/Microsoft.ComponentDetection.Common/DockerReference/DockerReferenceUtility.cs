@@ -27,6 +27,8 @@
 namespace Microsoft.ComponentDetection.Common;
 
 using System;
+using System.Buffers;
+using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Text.RegularExpressions;
 using Microsoft.ComponentDetection.Contracts;
@@ -40,20 +42,39 @@ public static class DockerReferenceUtility
     private const string LEGACYDEFAULTDOMAIN = "index.docker.io";
     private const string OFFICIALREPOSITORYNAME = "library";
 
-    // Characters that only appear in an image reference as part of an unresolved templating
-    // token. '$', '{' and '}' cover shell / Helm / Go-template placeholders (e.g. ${VAR},
-    // {{ .Values.tag }}); '#' covers Azure DevOps and other token-replacement placeholders
-    // (e.g. #imageTag#) and is never valid in a resolved docker reference.
-    private static readonly char[] TemplateDelimiters = ['$', '{', '}', '#'];
+    // Delimiters that only appear in an image reference as part of an unresolved templating
+    // token: '$', '{' and '}' cover shell / Helm / Go-template placeholders (e.g. ${VAR},
+    // {{ .Values.tag }}). These are recognized templating syntaxes expected in un-rendered manifests,
+    // so TryParseImageReference skips them (logging a warning) rather than treating them as invalid.
+    // A token wrapped in matching '#' or '!' (handled by DelimiterWrappedTokenRegex) is treated the same way.
+    // When no templating token is present, stray invalid characters (e.g. a single '#' or '!') are reported
+    // via GetInvalidReferenceCharacters.
+    private static readonly char[] TemplateDelimiters = ['$', '{', '}'];
 
     // Matches token-replacement placeholders that wrap an identifier in double underscores,
     // e.g. __IMAGE_TAG__ or __MCR_ENDPOINT__. Without this they parse as an uppercase repository
     // name and surface as a noisy parse failure instead of being skipped as a templated value.
     private static readonly Regex DoubleUnderscoreTokenRegex = new(@"__\w+__");
 
+    // Matches token-replacement placeholders wrapped in a matching '#' or '!', e.g. #imageTag#,
+    // #cs_containerRegistryLoginServerUrl#, or !imageTag!. A string surrounded by the same '#' or
+    // '!' delimiter is almost always an unsubstituted template variable (Azure DevOps token
+    // replacement and similar), so it is skipped (and may be logged as a warning) instead of
+    // surfacing as a misleading docker-reference parse failure. The backreference requires the closing delimiter to match
+    // the opening one, so a mismatched stray '#' or '!' is left to GetInvalidReferenceCharacters.
+    private static readonly Regex DelimiterWrappedTokenRegex = new(@"([#!])[^#!]+\1");
+
+    // Every character permitted anywhere in a docker reference per the grammar at the top of this
+    // file: alphanumerics, the separators '.', '_' and '-', the path separator '/', the tag/port
+    // and digest separators ':' and '@', and the digest-algorithm separator '+'. Anything else
+    // (e.g. '#', '!') comes from unsubstituted template tokens and is reported as invalid.
+    private static readonly SearchValues<char> ValidReferenceChars = SearchValues.Create(
+        "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789._-/:@+");
+
     /// <summary>
     /// Returns true if the reference contains unresolved variable or templating placeholders,
-    /// e.g. <c>${VAR}</c>, <c>{{ .Values.tag }}</c>, <c>#imageTag#</c>, or <c>__IMAGE_TAG__</c>.
+    /// e.g. <c>${VAR}</c>, <c>{{ .Values.tag }}</c>, <c>__IMAGE_TAG__</c>, <c>#imageTag#</c>, or
+    /// <c>!imageTag!</c>.
     /// Such references are not real, resolvable images, so they should be skipped before calling
     /// <see cref="ParseFamiliarName"/> or <see cref="ParseQualifiedName"/> and treated as
     /// unresolved values rather than reported as parse failures.
@@ -62,11 +83,14 @@ public static class DockerReferenceUtility
     /// <returns><c>true</c> if the reference contains variable placeholder characters; otherwise <c>false</c>.</returns>
     public static bool HasUnresolvedVariables(string reference) =>
         reference.IndexOfAny(TemplateDelimiters) >= 0 ||
-        DoubleUnderscoreTokenRegex.IsMatch(reference);
+        DoubleUnderscoreTokenRegex.IsMatch(reference) ||
+        DelimiterWrappedTokenRegex.IsMatch(reference);
 
     /// <summary>
     /// Attempts to parse an image reference string into a <see cref="DockerReference"/>.
-    /// Returns <c>null</c> if the reference contains unresolved variables or cannot be parsed.
+    /// Returns <c>null</c> if the reference contains unresolved variables, contains characters that
+    /// are not valid in a docker reference, or otherwise cannot be parsed. A warning is logged in
+    /// every skip/failure case so that references which are not scanned remain visible in logs.
     /// </summary>
     /// <param name="imageReference">The image reference string to parse.</param>
     /// <param name="logger">Optional logger for recording parse failures.</param>
@@ -75,6 +99,19 @@ public static class DockerReferenceUtility
     {
         if (HasUnresolvedVariables(imageReference))
         {
+            logger?.LogWarning(
+                "Skipping image reference '{ImageReference}' because it contains one or more unresolved template tokens or variable placeholders.",
+                imageReference);
+            return null;
+        }
+
+        var invalidCharacters = GetInvalidReferenceCharacters(imageReference);
+        if (invalidCharacters.Length > 0)
+        {
+            logger?.LogWarning(
+                "Skipping image reference '{ImageReference}' because it contains character(s) that are not valid in a docker reference: {InvalidCharacters}",
+                imageReference,
+                invalidCharacters);
             return null;
         }
 
@@ -92,7 +129,7 @@ public static class DockerReferenceUtility
     /// <summary>
     /// Parses an image reference and registers it with the recorder if valid.
     /// Skips references with unresolved variables or that cannot be parsed,
-    /// logging a warning for parse failures so that remaining entries continue to be processed.
+    /// logging a warning in each skipped case so that remaining entries continue to be processed.
     /// </summary>
     /// <param name="imageReference">The image reference string to parse.</param>
     /// <param name="recorder">The component recorder to register the image with.</param>
@@ -242,6 +279,44 @@ public static class DockerReferenceUtility
         }
 
         return ParseFamiliarName(name);
+    }
+
+    /// <summary>
+    /// Returns the distinct characters in <paramref name="reference"/> that are not valid in any
+    /// part of a docker reference (domain, repository, tag, or digest) as a comma-separated string,
+    /// or an empty string when every character is valid. Characters such as <c>#</c> and <c>!</c>
+    /// commonly appear in unsubstituted template tokens and otherwise surface as misleading
+    /// "must be lowercase" or "invalid reference format" parse errors.
+    /// </summary>
+    /// <param name="reference">The image reference string to inspect.</param>
+    /// <returns>A comma-separated list of invalid characters, or an empty string if there are none.</returns>
+    private static string GetInvalidReferenceCharacters(string reference)
+    {
+        // Vectorized happy-path check: the overwhelmingly common case is an all-valid reference,
+        // for which this returns without allocating. Only gather the offending characters when
+        // at least one is present.
+        var span = reference.AsSpan();
+        if (!span.ContainsAnyExcept(ValidReferenceChars))
+        {
+            return string.Empty;
+        }
+
+        SortedSet<char> invalid = [];
+        foreach (var c in span)
+        {
+            if (!ValidReferenceChars.Contains(c))
+            {
+                invalid.Add(c);
+            }
+        }
+
+        var invalidStrings = new List<string>(invalid.Count);
+        foreach (var c in invalid)
+        {
+            invalidStrings.Add($"'{c}'");
+        }
+
+        return string.Join(", ", invalidStrings);
     }
 
     private static DockerReference CreateDockerReference(Reference options)
