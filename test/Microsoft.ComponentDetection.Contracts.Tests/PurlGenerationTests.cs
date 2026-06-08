@@ -203,4 +203,17 @@ public class PurlGenerationTests
 
         component.PackageUrl.Should().BeNull();
     }
+
+    [TestMethod]
+    public void GitComponentWhitespaceCommitHashShouldHaveNoPackageUrl()
+    {
+        // CommitHash is required via the public ctor, but the parameterless deserialization ctor can carry whitespace.
+        var component = new GitComponent
+        {
+            RepositoryUrl = new Uri("https://github.com/google/guava"),
+            CommitHash = "   ",
+        };
+
+        component.PackageUrl.Should().BeNull();
+    }
 }

@@ -48,7 +48,7 @@ public class GitComponent : TypedComponent
     {
         get
         {
-            if (string.IsNullOrEmpty(this.CommitHash)
+            if (string.IsNullOrWhiteSpace(this.CommitHash)
                 || !TryGetGithubOwnerAndRepo(this.RepositoryUrl, out var owner, out var repo))
             {
                 return null;
