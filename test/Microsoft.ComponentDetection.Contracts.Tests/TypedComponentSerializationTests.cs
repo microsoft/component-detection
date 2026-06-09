@@ -504,4 +504,36 @@ public class TypedComponentSerializationTests
         tc.BaseId.Should().Be("TestPackage 1.0.0 - NuGet");
         tc.Id.Should().Be("TestPackage 1.0.0 - NuGet [DownloadUrl:https://example.com/package/1.0.0 SourceUrl:https://github.com/test-org/TestPackage]");
     }
+
+    [TestMethod]
+    public void MavenComponent_Id_ExcludesDownloadUrlAndSourceUrl_WhenSet()
+    {
+        // MavenComponent overrides GetExtendedIdProperties to keep Id stable across detectors that
+        // may or may not populate DownloadUrl / SourceUrl (e.g. CDS surfaces SourceUrl from the POM,
+        // and DownloadUrl is deterministic from GAV — neither should affect identity).
+        var tc = new MavenComponent("com.google.guava", "guava", "33.0-jre")
+        {
+            DownloadUrl = new Uri("https://repo1.maven.org/maven2/com/google/guava/guava/33.0-jre/guava-33.0-jre.jar"),
+            SourceUrl = new Uri("https://github.com/google/guava"),
+        };
+
+        tc.BaseId.Should().Be("com.google.guava guava 33.0-jre - Maven");
+        tc.Id.Should().Be(tc.BaseId, "DownloadUrl and SourceUrl must not affect MavenComponent identity");
+    }
+
+    [TestMethod]
+    public void GitComponent_Id_ExcludesDownloadUrlAndSourceUrl_WhenSet()
+    {
+        // GitComponent overrides GetExtendedIdProperties for the same reason as MavenComponent:
+        // SourceUrl would duplicate RepositoryUrl, and DownloadUrl (the github archive URL) is deterministic.
+        var repo = new Uri("https://github.com/google/guava");
+        var tc = new GitComponent(repo, "abcdef1234567890")
+        {
+            DownloadUrl = new Uri("https://github.com/google/guava/archive/abcdef1234567890.zip"),
+            SourceUrl = repo,
+        };
+
+        tc.BaseId.Should().Be("https://github.com/google/guava : abcdef1234567890 - Git");
+        tc.Id.Should().Be(tc.BaseId, "DownloadUrl and SourceUrl must not affect GitComponent identity");
+    }
 }
