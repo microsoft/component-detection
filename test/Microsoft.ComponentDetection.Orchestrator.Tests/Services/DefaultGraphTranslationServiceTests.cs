@@ -564,4 +564,128 @@ public class DefaultGraphTranslationServiceTests
         // Both rich entries should have the bare graph's file path (package.json)
         lodashResults.Should().OnlyContain(c => c.LocationsFoundAt.Any(l => l.Contains("package.json")));
     }
+
+    [TestMethod]
+    public void FilterBaseImageComponents_RemovesComponentsExclusivelyFromBaseImageLayers()
+    {
+        var singleFileRecorder = this.componentRecorder.CreateSingleFileComponentRecorder(Path.Join(this.sourceDirectory.FullName, "/file1"));
+
+        var baseImageComponent = new DetectedComponent(new NpmComponent("base-pkg", "1.0.0"), containerDetailsId: 1, containerLayerId: 0);
+        singleFileRecorder.RegisterUsage(baseImageComponent);
+
+        var containerDetailsMap = new Dictionary<int, ContainerDetails>
+        {
+            [1] = new ContainerDetails
+            {
+                Id = 1,
+                Layers = [new DockerLayer { LayerIndex = 0, IsBaseImage = true }, new DockerLayer { LayerIndex = 1, IsBaseImage = false }],
+            },
+        };
+
+        var processingResult = new DetectorProcessingResult
+        {
+            ResultCode = ProcessingResultCode.Success,
+            ContainersDetailsMap = containerDetailsMap,
+            ComponentRecorders = [(this.componentDetectorMock.Object, this.componentRecorder)],
+        };
+
+        var result = this.serviceUnderTest.GenerateScanResultFromProcessingResult(
+            processingResult, new ScanSettings { SourceDirectory = this.sourceDirectory, FilterBaseImageComponents = true });
+
+        result.ComponentsFound.Should().BeEmpty();
+    }
+
+    [TestMethod]
+    public void FilterBaseImageComponents_RetainsComponentsWithMixedLayers()
+    {
+        var singleFileRecorder = this.componentRecorder.CreateSingleFileComponentRecorder(Path.Join(this.sourceDirectory.FullName, "/file1"));
+
+        var mixedComponent = new DetectedComponent(new NpmComponent("mixed-pkg", "1.0.0"), containerDetailsId: 1, containerLayerId: 0);
+        mixedComponent.ContainerLayerIds[1] = [0, 1];
+        singleFileRecorder.RegisterUsage(mixedComponent);
+
+        var containerDetailsMap = new Dictionary<int, ContainerDetails>
+        {
+            [1] = new ContainerDetails
+            {
+                Id = 1,
+                Layers = [new DockerLayer { LayerIndex = 0, IsBaseImage = true }, new DockerLayer { LayerIndex = 1, IsBaseImage = false }],
+            },
+        };
+
+        var processingResult = new DetectorProcessingResult
+        {
+            ResultCode = ProcessingResultCode.Success,
+            ContainersDetailsMap = containerDetailsMap,
+            ComponentRecorders = [(this.componentDetectorMock.Object, this.componentRecorder)],
+        };
+
+        var result = this.serviceUnderTest.GenerateScanResultFromProcessingResult(
+            processingResult, new ScanSettings { SourceDirectory = this.sourceDirectory, FilterBaseImageComponents = true });
+
+        result.ComponentsFound.Should().HaveCount(1);
+        ((NpmComponent)result.ComponentsFound.Single().Component).Name.Should().Be("mixed-pkg");
+    }
+
+    [TestMethod]
+    public void FilterBaseImageComponents_RetainsComponentsWithNoContainerReferences()
+    {
+        var singleFileRecorder = this.componentRecorder.CreateSingleFileComponentRecorder(Path.Join(this.sourceDirectory.FullName, "/file1"));
+
+        var filesystemComponent = new DetectedComponent(new NpmComponent("fs-pkg", "2.0.0"));
+        singleFileRecorder.RegisterUsage(filesystemComponent);
+
+        var containerDetailsMap = new Dictionary<int, ContainerDetails>
+        {
+            [1] = new ContainerDetails
+            {
+                Id = 1,
+                Layers = [new DockerLayer { LayerIndex = 0, IsBaseImage = true }],
+            },
+        };
+
+        var processingResult = new DetectorProcessingResult
+        {
+            ResultCode = ProcessingResultCode.Success,
+            ContainersDetailsMap = containerDetailsMap,
+            ComponentRecorders = [(this.componentDetectorMock.Object, this.componentRecorder)],
+        };
+
+        var result = this.serviceUnderTest.GenerateScanResultFromProcessingResult(
+            processingResult, new ScanSettings { SourceDirectory = this.sourceDirectory, FilterBaseImageComponents = true });
+
+        result.ComponentsFound.Should().HaveCount(1);
+        ((NpmComponent)result.ComponentsFound.Single().Component).Name.Should().Be("fs-pkg");
+    }
+
+    [TestMethod]
+    public void FilterBaseImageComponents_NoOpWhenFlagIsDisabled()
+    {
+        var singleFileRecorder = this.componentRecorder.CreateSingleFileComponentRecorder(Path.Join(this.sourceDirectory.FullName, "/file1"));
+
+        var baseImageComponent = new DetectedComponent(new NpmComponent("base-pkg", "1.0.0"), containerDetailsId: 1, containerLayerId: 0);
+        singleFileRecorder.RegisterUsage(baseImageComponent);
+
+        var containerDetailsMap = new Dictionary<int, ContainerDetails>
+        {
+            [1] = new ContainerDetails
+            {
+                Id = 1,
+                Layers = [new DockerLayer { LayerIndex = 0, IsBaseImage = true }],
+            },
+        };
+
+        var processingResult = new DetectorProcessingResult
+        {
+            ResultCode = ProcessingResultCode.Success,
+            ContainersDetailsMap = containerDetailsMap,
+            ComponentRecorders = [(this.componentDetectorMock.Object, this.componentRecorder)],
+        };
+
+        var result = this.serviceUnderTest.GenerateScanResultFromProcessingResult(
+            processingResult, new ScanSettings { SourceDirectory = this.sourceDirectory, FilterBaseImageComponents = false });
+
+        result.ComponentsFound.Should().HaveCount(1);
+        ((NpmComponent)result.ComponentsFound.Single().Component).Name.Should().Be("base-pkg");
+    }
 }

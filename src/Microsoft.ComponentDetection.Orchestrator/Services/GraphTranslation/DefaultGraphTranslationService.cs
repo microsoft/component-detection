@@ -41,13 +41,72 @@ internal class DefaultGraphTranslationService : IGraphTranslationService
 
         ReconcileDependencyGraphIds(dependencyGraphs, mergedComponents);
 
+        var componentsToOutput = mergedComponents;
+        if (settings.FilterBaseImageComponents)
+        {
+            componentsToOutput = FilterOutBaseImageComponents(componentsToOutput, detectorProcessingResult.ContainersDetailsMap);
+        }
+
         return new DefaultGraphScanResult
         {
-            ComponentsFound = mergedComponents.Select(x => this.ConvertToContract(x)).ToList(),
+            ComponentsFound = componentsToOutput.Select(x => this.ConvertToContract(x)).ToList(),
             ContainerDetailsMap = detectorProcessingResult.ContainersDetailsMap,
             DependencyGraphs = dependencyGraphs,
             SourceDirectory = settings.SourceDirectory.ToString(),
         };
+    }
+
+    /// <summary>
+    /// Filters out components that originate exclusively from base image layers.
+    /// A component is removed only if it has container layer references and every referenced
+    /// layer across all containers has <see cref="DockerLayer.IsBaseImage"/> set to true.
+    /// Components with no container references or with at least one non-base-image layer are retained.
+    /// </summary>
+    /// <param name="components">The list of detected components to filter.</param>
+    /// <param name="containerDetailsMap">The map of container details with layer information.</param>
+    /// <returns>A filtered list of components excluding those exclusively from base image layers.</returns>
+    internal static List<DetectedComponent> FilterOutBaseImageComponents(
+        List<DetectedComponent> components,
+        Dictionary<int, ContainerDetails> containerDetailsMap)
+    {
+        if (containerDetailsMap == null || containerDetailsMap.Count == 0)
+        {
+            return components;
+        }
+
+        return components.Where(component => !IsExclusivelyFromBaseImage(component, containerDetailsMap)).ToList();
+    }
+
+    private static bool IsExclusivelyFromBaseImage(DetectedComponent component, Dictionary<int, ContainerDetails> containerDetailsMap)
+    {
+        // Components without container layer references are not from a container scan - keep them.
+        if (component.ContainerLayerIds == null || component.ContainerLayerIds.Count == 0)
+        {
+            return false;
+        }
+
+        foreach (var (containerDetailId, layerIndices) in component.ContainerLayerIds)
+        {
+            if (!containerDetailsMap.TryGetValue(containerDetailId, out var containerDetails) || containerDetails.Layers == null)
+            {
+                // If we can't resolve the container details, assume it's not a base image component.
+                return false;
+            }
+
+            var layersList = containerDetails.Layers.ToList();
+
+            foreach (var layerIndex in layerIndices)
+            {
+                var layer = layersList.FirstOrDefault(l => l.LayerIndex == layerIndex);
+                if (layer == null || !layer.IsBaseImage)
+                {
+                    // Layer not found or not from base image. Keep this component.
+                    return false;
+                }
+            }
+        }
+
+        return true;
     }
 
     private static ConcurrentHashSet<string> MergeTargetFrameworks(ConcurrentHashSet<string> left, ConcurrentHashSet<string> right)
