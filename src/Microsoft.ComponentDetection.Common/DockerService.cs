@@ -25,12 +25,10 @@ internal class DockerService : IDockerService
     private static readonly DockerClient Client = new DockerClientConfiguration().CreateClient();
 
     /// <summary>
-    /// Serializes image pull operations so only one pull runs at a time,
-    /// and tracks which images have already been pulled to avoid redundant work.
+    /// Tracks in-flight and completed image pulls so each image is pulled at most once.
+    /// Concurrent callers for the same image await the same task.
     /// </summary>
-    private static readonly SemaphoreSlim PullSemaphore = new(1, 1);
-
-    private static readonly ConcurrentDictionary<string, bool> PulledImages = new();
+    private static readonly ConcurrentDictionary<string, Task<bool>> PullCache = new();
 
     private static int incrementingContainerId;
 
@@ -105,41 +103,34 @@ internal class DockerService : IDockerService
 
     public async Task<bool> TryPullImageAsync(string image, CancellationToken cancellationToken = default)
     {
-        // Fast path: already pulled in this process
-        if (PulledImages.ContainsKey(image))
-        {
-            return true;
-        }
-
-        // Check if already available locally before acquiring the semaphore
+        // Check if already available locally before attempting a pull
         if (await this.ImageExistsLocallyAsync(image, cancellationToken))
         {
-            PulledImages.TryAdd(image, true);
+            PullCache.TryAdd(image, Task.FromResult(true));
             return true;
         }
 
-        await PullSemaphore.WaitAsync(cancellationToken);
+        var tcs = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var existingTask = PullCache.GetOrAdd(image, tcs.Task);
+
+        if (existingTask != tcs.Task)
+        {
+            // Another caller is already pulling this image — await their result.
+            return await existingTask;
+        }
+
+        // We own this cache entry — perform the actual pull.
         try
         {
-            // Double-check after acquiring semaphore — another caller may have
-            // pulled this image (or a different image that satisfied the local check)
-            // while we were waiting.
-            if (PulledImages.ContainsKey(image))
-            {
-                return true;
-            }
-
             var result = await this.PullImageCoreAsync(image, cancellationToken);
-            if (result)
-            {
-                PulledImages.TryAdd(image, true);
-            }
-
+            tcs.SetResult(result);
             return result;
         }
-        finally
+        catch (Exception ex)
         {
-            PullSemaphore.Release();
+            PullCache.TryRemove(image, out _);
+            tcs.SetException(ex);
+            throw;
         }
     }
 
