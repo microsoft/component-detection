@@ -228,6 +228,9 @@ public class LinuxScannerTests
 
     public LinuxScannerTests()
     {
+        // Clear the static syft run cache to prevent cross-test interference.
+        LinuxScanner.ResetCache();
+
         this.mockDockerService = new Mock<IDockerService>();
         this.mockDockerService.Setup(service =>
                 service.CanPingDockerAsync(It.IsAny<CancellationToken>())
@@ -1026,5 +1029,441 @@ public class LinuxScannerTests
         entry.Components.Should().AllBeOfType<LinuxComponent>();
         entry.Components.Select(c => (c as LinuxComponent)!.Name)
             .Should().Contain("bash").And.Contain("openssl");
+    }
+
+    [TestMethod]
+    public async Task TestLinuxScanner_ConcurrentScansSameImage_RunsSyftOnlyOnceAsync()
+    {
+        LinuxScanner.ResetCache();
+
+        // Use a TCS so the mock doesn't complete synchronously — both callers
+        // must enter GetOrAdd while the task is still in-flight.
+        var syftTcs = new TaskCompletionSource<(string, string)>();
+
+        this.mockDockerService.Setup(service =>
+                service.CreateAndRunContainerAsync(
+                    It.IsAny<string>(),
+                    It.IsAny<List<string>>(),
+                    It.IsAny<IList<string>>(),
+                    It.IsAny<CancellationToken>()
+                )
+            )
+            .Returns(syftTcs.Task);
+
+        var enabledTypes = new HashSet<ComponentType>
+        {
+            ComponentType.Linux,
+            ComponentType.Npm,
+            ComponentType.Pip,
+        };
+
+        var layers = new[]
+        {
+            new DockerLayer
+            {
+                LayerIndex = 0,
+                DiffId = "sha256:f95fc50d21d981f1efe1f04109c2c3287c271794f5d9e4fdf9888851a174a971",
+            },
+        };
+
+        var scanner1 = new LinuxScanner(
+            this.mockDockerService.Object,
+            this.mockLogger.Object,
+            this.componentFactories,
+            this.artifactFilters
+        );
+        var scanner2 = new LinuxScanner(
+            this.mockDockerService.Object,
+            this.mockLogger.Object,
+            this.componentFactories,
+            this.artifactFilters
+        );
+
+        // Both start while the task is still pending — they should share one run.
+        var task1 = scanner1.ScanLinuxAsync("same_hash", layers, 0, enabledTypes, LinuxScannerScope.AllLayers);
+        var task2 = scanner2.ScanLinuxAsync("same_hash", layers, 0, enabledTypes, LinuxScannerScope.AllLayers);
+
+        // Complete the single syft run.
+        syftTcs.SetResult((SyftOutputNoAuthorOrLicense, string.Empty));
+
+        var results = await Task.WhenAll(task1, task2);
+
+        results[0].Should().NotBeEmpty();
+        results[1].Should().NotBeEmpty();
+        results[0].First().Components.Should().ContainSingle();
+        results[1].First().Components.Should().ContainSingle();
+
+        this.mockDockerService.Verify(
+            service =>
+                service.CreateAndRunContainerAsync(
+                    It.IsAny<string>(),
+                    It.IsAny<List<string>>(),
+                    It.IsAny<IList<string>>(),
+                    It.IsAny<CancellationToken>()
+                ),
+            Times.Once
+        );
+    }
+
+    [TestMethod]
+    public async Task TestLinuxScanner_ConcurrentScansDifferentImages_RunsSyftForEachAsync()
+    {
+        LinuxScanner.ResetCache();
+
+        this.mockDockerService.Setup(service =>
+                service.CreateAndRunContainerAsync(
+                    It.IsAny<string>(),
+                    It.IsAny<List<string>>(),
+                    It.IsAny<IList<string>>(),
+                    It.IsAny<CancellationToken>()
+                )
+            )
+            .ReturnsAsync((SyftOutputNoAuthorOrLicense, string.Empty));
+
+        var enabledTypes = new HashSet<ComponentType>
+        {
+            ComponentType.Linux,
+            ComponentType.Npm,
+            ComponentType.Pip,
+        };
+
+        var layers = new[]
+        {
+            new DockerLayer
+            {
+                LayerIndex = 0,
+                DiffId = "sha256:f95fc50d21d981f1efe1f04109c2c3287c271794f5d9e4fdf9888851a174a971",
+            },
+        };
+
+        var scanner1 = new LinuxScanner(
+            this.mockDockerService.Object,
+            this.mockLogger.Object,
+            this.componentFactories,
+            this.artifactFilters
+        );
+        var scanner2 = new LinuxScanner(
+            this.mockDockerService.Object,
+            this.mockLogger.Object,
+            this.componentFactories,
+            this.artifactFilters
+        );
+
+        var task1 = scanner1.ScanLinuxAsync("image_hash_A", layers, 0, enabledTypes, LinuxScannerScope.AllLayers);
+        var task2 = scanner2.ScanLinuxAsync("image_hash_B", layers, 0, enabledTypes, LinuxScannerScope.AllLayers);
+
+        var results = await Task.WhenAll(task1, task2);
+
+        results[0].Should().NotBeEmpty();
+        results[1].Should().NotBeEmpty();
+
+        this.mockDockerService.Verify(
+            service =>
+                service.CreateAndRunContainerAsync(
+                    It.IsAny<string>(),
+                    It.IsAny<List<string>>(),
+                    It.IsAny<IList<string>>(),
+                    It.IsAny<CancellationToken>()
+                ),
+            Times.Exactly(2)
+        );
+    }
+
+    [TestMethod]
+    public async Task TestLinuxScanner_ConcurrentScansDifferentScopes_RunsSyftForEachAsync()
+    {
+        LinuxScanner.ResetCache();
+
+        this.mockDockerService.Setup(service =>
+                service.CreateAndRunContainerAsync(
+                    It.IsAny<string>(),
+                    It.IsAny<List<string>>(),
+                    It.IsAny<IList<string>>(),
+                    It.IsAny<CancellationToken>()
+                )
+            )
+            .ReturnsAsync((SyftOutputNoAuthorOrLicense, string.Empty));
+
+        var enabledTypes = new HashSet<ComponentType>
+        {
+            ComponentType.Linux,
+            ComponentType.Npm,
+            ComponentType.Pip,
+        };
+
+        var layers = new[]
+        {
+            new DockerLayer
+            {
+                LayerIndex = 0,
+                DiffId = "sha256:f95fc50d21d981f1efe1f04109c2c3287c271794f5d9e4fdf9888851a174a971",
+            },
+        };
+
+        var scanner1 = new LinuxScanner(
+            this.mockDockerService.Object,
+            this.mockLogger.Object,
+            this.componentFactories,
+            this.artifactFilters
+        );
+        var scanner2 = new LinuxScanner(
+            this.mockDockerService.Object,
+            this.mockLogger.Object,
+            this.componentFactories,
+            this.artifactFilters
+        );
+
+        var task1 = scanner1.ScanLinuxAsync("same_hash", layers, 0, enabledTypes, LinuxScannerScope.AllLayers);
+        var task2 = scanner2.ScanLinuxAsync("same_hash", layers, 0, enabledTypes, LinuxScannerScope.Squashed);
+
+        var results = await Task.WhenAll(task1, task2);
+
+        results[0].Should().NotBeEmpty();
+        results[1].Should().NotBeEmpty();
+
+        this.mockDockerService.Verify(
+            service =>
+                service.CreateAndRunContainerAsync(
+                    It.IsAny<string>(),
+                    It.IsAny<List<string>>(),
+                    It.IsAny<IList<string>>(),
+                    It.IsAny<CancellationToken>()
+                ),
+            Times.Exactly(2)
+        );
+    }
+
+    [TestMethod]
+    public async Task TestLinuxScanner_SyftCacheKey_BindOrderDoesNotMatterAsync()
+    {
+        LinuxScanner.ResetCache();
+
+        const string syftOutputWithSource = """
+            {
+                "distro": { "id": "test", "versionID": "1.0" },
+                "artifacts": [],
+                "source": {
+                    "id": "sha256:abc",
+                    "name": "/img",
+                    "type": "image",
+                    "version": "sha256:abc",
+                    "metadata": {
+                        "userInput": "/img",
+                        "imageID": "sha256:img",
+                        "layers": [],
+                        "labels": {}
+                    }
+                }
+            }
+            """;
+
+        // Use a TCS so the mock doesn't complete synchronously — both callers
+        // must enter GetOrAdd while the task is still in-flight.
+        var syftTcs = new TaskCompletionSource<(string, string)>();
+
+        this.mockDockerService.Setup(service =>
+                service.CreateAndRunContainerAsync(
+                    It.IsAny<string>(),
+                    It.IsAny<List<string>>(),
+                    It.IsAny<IList<string>>(),
+                    It.IsAny<CancellationToken>()
+                )
+            )
+            .Returns(syftTcs.Task);
+
+        var scanner1 = new LinuxScanner(
+            this.mockDockerService.Object,
+            this.mockLogger.Object,
+            this.componentFactories,
+            this.artifactFilters
+        );
+        var scanner2 = new LinuxScanner(
+            this.mockDockerService.Object,
+            this.mockLogger.Object,
+            this.componentFactories,
+            this.artifactFilters
+        );
+
+        // Both calls start concurrently with binds in different order.
+        var task1 = scanner1.GetSyftOutputAsync(
+            "oci-dir:/img",
+            ["/host/a:/container/a:ro", "/host/b:/container/b:ro"],
+            LinuxScannerScope.AllLayers
+        );
+        var task2 = scanner2.GetSyftOutputAsync(
+            "oci-dir:/img",
+            ["/host/b:/container/b:ro", "/host/a:/container/a:ro"],
+            LinuxScannerScope.AllLayers
+        );
+
+        // Complete the single syft run.
+        syftTcs.SetResult((syftOutputWithSource, string.Empty));
+
+        var results = await Task.WhenAll(task1, task2);
+
+        results[0].Should().NotBeNull();
+        results[1].Should().NotBeNull();
+
+        // Bind order shouldn't matter — both should share a single container run.
+        this.mockDockerService.Verify(
+            service =>
+                service.CreateAndRunContainerAsync(
+                    It.IsAny<string>(),
+                    It.IsAny<List<string>>(),
+                    It.IsAny<IList<string>>(),
+                    It.IsAny<CancellationToken>()
+                ),
+            Times.Once
+        );
+    }
+
+    [TestMethod]
+    public async Task TestLinuxScanner_FailedSyftRun_RemovesCacheEntry_AllowsRetryAsync()
+    {
+        LinuxScanner.ResetCache();
+
+        var callCount = 0;
+        this.mockDockerService.Setup(service =>
+                service.CreateAndRunContainerAsync(
+                    It.IsAny<string>(),
+                    It.IsAny<List<string>>(),
+                    It.IsAny<IList<string>>(),
+                    It.IsAny<CancellationToken>()
+                )
+            )
+            .ReturnsAsync(() =>
+            {
+                var current = Interlocked.Increment(ref callCount);
+                if (current == 1)
+                {
+                    throw new InvalidOperationException("Simulated Docker failure");
+                }
+
+                return (SyftOutputNoAuthorOrLicense, string.Empty);
+            });
+
+        var enabledTypes = new HashSet<ComponentType>
+        {
+            ComponentType.Linux,
+            ComponentType.Npm,
+            ComponentType.Pip,
+        };
+
+        var layers = new[]
+        {
+            new DockerLayer
+            {
+                LayerIndex = 0,
+                DiffId = "sha256:f95fc50d21d981f1efe1f04109c2c3287c271794f5d9e4fdf9888851a174a971",
+            },
+        };
+
+        // First call should fail.
+        Func<Task> firstCall = async () =>
+            await this.linuxScanner.ScanLinuxAsync(
+                "retry_hash",
+                layers,
+                0,
+                enabledTypes,
+                LinuxScannerScope.AllLayers
+            );
+
+        await firstCall.Should().ThrowAsync<InvalidOperationException>();
+
+        // Second call should succeed because the failed cache entry was removed.
+        var result = await this.linuxScanner.ScanLinuxAsync(
+            "retry_hash",
+            layers,
+            0,
+            enabledTypes,
+            LinuxScannerScope.AllLayers
+        );
+
+        result.Should().NotBeEmpty();
+        result.First().Components.Should().ContainSingle();
+
+        this.mockDockerService.Verify(
+            service =>
+                service.CreateAndRunContainerAsync(
+                    It.IsAny<string>(),
+                    It.IsAny<List<string>>(),
+                    It.IsAny<IList<string>>(),
+                    It.IsAny<CancellationToken>()
+                ),
+            Times.Exactly(2)
+        );
+    }
+
+    [TestMethod]
+    public async Task TestLinuxScanner_CancelledCaller_DoesNotBlockOnInFlightSyftRunAsync()
+    {
+        LinuxScanner.ResetCache();
+
+        // Use a TCS to control when the syft container "completes",
+        // so the first caller's run stays in-flight while we cancel the second.
+        var syftCompletionSource = new TaskCompletionSource<(string, string)>();
+
+        this.mockDockerService.Setup(service =>
+                service.CreateAndRunContainerAsync(
+                    It.IsAny<string>(),
+                    It.IsAny<List<string>>(),
+                    It.IsAny<IList<string>>(),
+                    It.IsAny<CancellationToken>()
+                )
+            )
+            .Returns(syftCompletionSource.Task);
+
+        var enabledTypes = new HashSet<ComponentType> { ComponentType.Linux };
+
+        var layers = new[]
+        {
+            new DockerLayer
+            {
+                LayerIndex = 0,
+                DiffId = "sha256:f95fc50d21d981f1efe1f04109c2c3287c271794f5d9e4fdf9888851a174a971",
+            },
+        };
+
+        var scanner1 = new LinuxScanner(
+            this.mockDockerService.Object,
+            this.mockLogger.Object,
+            this.componentFactories,
+            this.artifactFilters
+        );
+        var scanner2 = new LinuxScanner(
+            this.mockDockerService.Object,
+            this.mockLogger.Object,
+            this.componentFactories,
+            this.artifactFilters
+        );
+
+        // First caller starts the syft run (it will block on syftCompletionSource).
+        var task1 = scanner1.ScanLinuxAsync("cancel_hash", layers, 0, enabledTypes, LinuxScannerScope.AllLayers);
+
+        // Second caller with a cancellable token joins the same in-flight run.
+        using var cts = new CancellationTokenSource();
+        var task2 = scanner2.ScanLinuxAsync("cancel_hash", layers, 0, enabledTypes, LinuxScannerScope.AllLayers, cts.Token);
+
+        // Cancel the second caller while the first is still running.
+        await cts.CancelAsync();
+
+        // The second caller should throw OperationCanceledException promptly.
+        try
+        {
+            await task2;
+            Assert.Fail("Expected OperationCanceledException was not thrown");
+        }
+        catch (OperationCanceledException)
+        {
+            // Expected — the second caller was cancelled while waiting for the in-flight run.
+        }
+
+        // The first caller should still be running (not cancelled).
+        task1.IsCompleted.Should().BeFalse();
+
+        // Now let the first caller complete normally.
+        syftCompletionSource.SetResult((SyftOutputNoAuthorOrLicense, string.Empty));
+        var result1 = await task1;
+        result1.Should().NotBeEmpty();
     }
 }

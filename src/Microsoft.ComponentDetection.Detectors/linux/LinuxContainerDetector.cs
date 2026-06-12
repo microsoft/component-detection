@@ -662,6 +662,24 @@ public class LinuxContainerDetector(
             refWithDigest,
             cancellationToken
         );
+
+        if (baseImageDetails == null)
+        {
+            record.BaseImageLayerMessage = "Failed to inspect base image after pull";
+            this.logger.LogInformation(
+                "Failed to inspect base image {BaseImage} after pull. Results will not be mapped to base image layers",
+                refWithDigest
+            );
+            return 0;
+        }
+
+        this.logger.LogDebug(
+            "Base image {BaseImage} resolved for {ContainerImage} with {LayerCount} layers",
+            refWithDigest,
+            image,
+            baseImageDetails.Layers.Count()
+        );
+
         if (!ValidateBaseImageLayers(scannedImageDetails, baseImageDetails))
         {
             record.BaseImageLayerMessage =
