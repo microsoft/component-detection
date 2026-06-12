@@ -1495,4 +1495,50 @@ public class LinuxContainerDetectorTests
         // The first image should have produced components
         componentRecorder.GetDetectedComponents().Should().NotBeEmpty();
     }
+
+    [TestMethod]
+    public async Task TestLinuxContainerDetector_DuplicateImageReferences_ScansOnlyOnceAsync()
+    {
+        var componentRecorder = new ComponentRecorder();
+
+        // Pass the exact same image reference twice.
+        var scanRequest = new ScanRequest(
+            new DirectoryInfo(Path.GetTempPath()),
+            (_, __) => false,
+            this.mockLogger.Object,
+            null,
+            [NodeLatestImage, NodeLatestImage],
+            componentRecorder
+        );
+
+        var linuxContainerDetector = new LinuxContainerDetector(
+            this.mockSyftLinuxScanner.Object,
+            this.mockDockerService.Object,
+            this.mockLinuxContainerDetectorLogger.Object
+        );
+
+        var scanResult = await linuxContainerDetector.ExecuteDetectorAsync(scanRequest);
+
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+        scanResult.ContainerDetails.Should().ContainSingle();
+
+        var detectedComponents = componentRecorder.GetDetectedComponents().ToList();
+        detectedComponents.Should().ContainSingle();
+        detectedComponents.First().Component.Id.Should().Be(BashPackageId);
+
+        // Both references resolve to the same ImageId via InspectImageAsync,
+        // so the ConcurrentDictionary in ProcessImagesAsync deduplicates them.
+        this.mockSyftLinuxScanner.Verify(
+            scanner =>
+                scanner.ScanLinuxAsync(
+                    It.IsAny<string>(),
+                    It.IsAny<IEnumerable<DockerLayer>>(),
+                    It.IsAny<int>(),
+                    It.IsAny<ISet<ComponentType>>(),
+                    It.IsAny<LinuxScannerScope>(),
+                    It.IsAny<CancellationToken>()
+                ),
+            Times.Once
+        );
+    }
 }
