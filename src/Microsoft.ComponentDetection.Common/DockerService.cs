@@ -25,7 +25,7 @@ internal class DockerService : IDockerService
     private static readonly DockerClient Client = new DockerClientConfiguration().CreateClient();
 
     /// <summary>
-    /// Tracks in-flight and completed image pulls so each image is pulled at most once.
+    /// Tracks in-flight image pulls so each image is pulled at most once concurrently.
     /// Concurrent callers for the same image await the same task.
     /// </summary>
     private static readonly ConcurrentDictionary<string, Task<bool>> PullCache = new();

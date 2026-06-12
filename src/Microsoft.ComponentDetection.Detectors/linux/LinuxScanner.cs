@@ -33,7 +33,7 @@ internal class LinuxScanner : ILinuxScanner
     private static readonly SemaphoreSlim ContainerSemaphore = new SemaphoreSlim(2);
 
     /// <summary>
-    /// Caches in-flight and completed syft runs.
+    /// Caches in-flight syft runs.
     /// When multiple detectors scan the same image concurrently, the second
     /// caller awaits the already-running task instead of launching a new container.
     /// </summary>
