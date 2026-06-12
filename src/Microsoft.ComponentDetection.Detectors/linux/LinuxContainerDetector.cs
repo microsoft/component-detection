@@ -662,6 +662,12 @@ public class LinuxContainerDetector(
             refWithDigest,
             cancellationToken
         );
+        this.logger.LogDebug(
+            "Base image {BaseImage} resolved for {ContainerImage} with {LayerCount} layers",
+            refWithDigest,
+            image,
+            baseImageDetails.Layers.Count()
+        );
         if (!ValidateBaseImageLayers(scannedImageDetails, baseImageDetails))
         {
             record.BaseImageLayerMessage =

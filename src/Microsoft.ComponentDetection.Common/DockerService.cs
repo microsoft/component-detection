@@ -84,11 +84,13 @@ internal class DockerService : IDockerService
         {
             var imageInspectResponse = await this.InspectImageAndSanitizeVarsAsync(image, cancellationToken);
             record.ImageInspectResponse = JsonSerializer.Serialize(imageInspectResponse);
+            this.logger.LogDebug("Image {Image} found locally", image);
             return true;
         }
         catch (Exception e)
         {
             record.ExceptionMessage = e.Message;
+            this.logger.LogDebug("Image {Image} not found locally", image);
             cancellationToken.ThrowIfCancellationRequested();
             return false;
         }
@@ -116,18 +118,22 @@ internal class DockerService : IDockerService
         if (existingTask != tcs.Task)
         {
             // Another caller is already pulling this image — await their result.
+            this.logger.LogDebug("Image {Image} is already being pulled by another caller, waiting", image);
             return await existingTask;
         }
 
         // We own this cache entry — perform the actual pull.
         try
         {
+            this.logger.LogDebug("Pulling image {Image}...", image);
             var result = await this.PullImageCoreAsync(image, cancellationToken);
+            this.logger.LogDebug("Pull of image {Image} completed (success={Success})", image, result);
             tcs.SetResult(result);
             return result;
         }
         catch (Exception ex)
         {
+            this.logger.LogDebug(ex, "Pull of image {Image} failed", image);
             PullCache.TryRemove(image, out _);
             tcs.SetException(ex);
             throw;
@@ -253,7 +259,7 @@ internal class DockerService : IDockerService
             var stream = await AttachContainerAsync(container.ID, cancellationToken);
             await StartContainerAsync(container.ID, cancellationToken);
 
-            this.logger.LogInformation("Container {ContainerId} started for image {Image}, reading output...", container.ID, image);
+            this.logger.LogInformation("Container {ContainerId} started with image {Image} to execute {Command}, reading output...", container.ID, image, commandJson);
 
             // Flush telemetry before the long-running ReadOutput so we get mid-scan
             // data in App Insights even if the process hangs during the read.
