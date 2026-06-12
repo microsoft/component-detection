@@ -33,7 +33,7 @@ internal class LinuxScanner : ILinuxScanner
     private static readonly SemaphoreSlim ContainerSemaphore = new SemaphoreSlim(2);
 
     /// <summary>
-    /// Caches in-flight and completed syft runs keyed by (source, scope).
+    /// Caches in-flight and completed syft runs.
     /// When multiple detectors scan the same image concurrently, the second
     /// caller awaits the already-running task instead of launching a new container.
     /// </summary>
@@ -261,8 +261,7 @@ internal class LinuxScanner : ILinuxScanner
 
     /// <summary>
     /// Runs the Syft scanner container and returns the stdout output.
-    /// Results are cached by (source, scope, binds) so that concurrent callers
-    /// with identical parameters share a single container run.
+    /// Results are cached so that callers with identical parameters share a single container run.
     /// </summary>
     private async Task<string> RunSyftAsync(
         string syftSource,
@@ -279,8 +278,9 @@ internal class LinuxScanner : ILinuxScanner
 
         if (existingTask != tcs.Task)
         {
-            // Another caller is already running syft for this image+scope — await their result.
-            return await existingTask;
+            // Another caller is already running syft for this image+scope — await their result,
+            // but allow this caller's cancellation token to abort the wait.
+            return await existingTask.WaitAsync(cancellationToken);
         }
 
         // We own this cache entry — run syft and propagate the result.

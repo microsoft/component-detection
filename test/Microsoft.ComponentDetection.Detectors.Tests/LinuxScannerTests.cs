@@ -1274,13 +1274,13 @@ public class LinuxScannerTests
 
         var result1 = await scanner1.GetSyftOutputAsync(
             "oci-dir:/img",
-            new List<string> { "/host/a:/container/a:ro", "/host/b:/container/b:ro" },
+            ["/host/a:/container/a:ro", "/host/b:/container/b:ro"],
             LinuxScannerScope.AllLayers
         );
 
         var result2 = await scanner2.GetSyftOutputAsync(
             "oci-dir:/img",
-            new List<string> { "/host/b:/container/b:ro", "/host/a:/container/a:ro" },
+            ["/host/b:/container/b:ro", "/host/a:/container/a:ro"],
             LinuxScannerScope.AllLayers
         );
 
@@ -1374,5 +1374,78 @@ public class LinuxScannerTests
                 ),
             Times.Exactly(2)
         );
+    }
+
+    [TestMethod]
+    public async Task TestLinuxScanner_CancelledCaller_DoesNotBlockOnInFlightSyftRunAsync()
+    {
+        LinuxScanner.ResetCache();
+
+        // Use a TCS to control when the syft container "completes",
+        // so the first caller's run stays in-flight while we cancel the second.
+        var syftCompletionSource = new TaskCompletionSource<(string, string)>();
+
+        this.mockDockerService.Setup(service =>
+                service.CreateAndRunContainerAsync(
+                    It.IsAny<string>(),
+                    It.IsAny<List<string>>(),
+                    It.IsAny<IList<string>>(),
+                    It.IsAny<CancellationToken>()
+                )
+            )
+            .Returns(syftCompletionSource.Task);
+
+        var enabledTypes = new HashSet<ComponentType> { ComponentType.Linux };
+
+        var layers = new[]
+        {
+            new DockerLayer
+            {
+                LayerIndex = 0,
+                DiffId = "sha256:f95fc50d21d981f1efe1f04109c2c3287c271794f5d9e4fdf9888851a174a971",
+            },
+        };
+
+        var scanner1 = new LinuxScanner(
+            this.mockDockerService.Object,
+            this.mockLogger.Object,
+            this.componentFactories,
+            this.artifactFilters
+        );
+        var scanner2 = new LinuxScanner(
+            this.mockDockerService.Object,
+            this.mockLogger.Object,
+            this.componentFactories,
+            this.artifactFilters
+        );
+
+        // First caller starts the syft run (it will block on syftCompletionSource).
+        var task1 = scanner1.ScanLinuxAsync("cancel_hash", layers, 0, enabledTypes, LinuxScannerScope.AllLayers);
+
+        // Second caller with a cancellable token joins the same in-flight run.
+        using var cts = new CancellationTokenSource();
+        var task2 = scanner2.ScanLinuxAsync("cancel_hash", layers, 0, enabledTypes, LinuxScannerScope.AllLayers, cts.Token);
+
+        // Cancel the second caller while the first is still running.
+        await cts.CancelAsync();
+
+        // The second caller should throw OperationCanceledException promptly.
+        try
+        {
+            await task2;
+            Assert.Fail("Expected OperationCanceledException was not thrown");
+        }
+        catch (OperationCanceledException)
+        {
+            // Expected — the second caller was cancelled while waiting for the in-flight run.
+        }
+
+        // The first caller should still be running (not cancelled).
+        task1.IsCompleted.Should().BeFalse();
+
+        // Now let the first caller complete normally.
+        syftCompletionSource.SetResult((SyftOutputNoAuthorOrLicense, string.Empty));
+        var result1 = await task1;
+        result1.Should().NotBeEmpty();
     }
 }

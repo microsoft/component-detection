@@ -117,9 +117,9 @@ internal class DockerService : IDockerService
 
         if (existingTask != tcs.Task)
         {
-            // Another caller is already pulling this image — await their result.
+            // Another caller is already pulling this image — await their result
             this.logger.LogDebug("Image {Image} is already being pulled by another caller, waiting", image);
-            return await existingTask;
+            return await existingTask.WaitAsync(cancellationToken);
         }
 
         // We own this cache entry — perform the actual pull.
@@ -128,6 +128,12 @@ internal class DockerService : IDockerService
             this.logger.LogDebug("Pulling image {Image}...", image);
             var result = await this.PullImageCoreAsync(image, cancellationToken);
             this.logger.LogDebug("Pull of image {Image} completed (success={Success})", image, result);
+            if (!result)
+            {
+                // Non-exception failure — remove the entry so later callers can retry.
+                PullCache.TryRemove(image, out _);
+            }
+
             tcs.SetResult(result);
             return result;
         }
