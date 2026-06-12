@@ -37,7 +37,7 @@ internal class LinuxScanner : ILinuxScanner
     /// When multiple detectors scan the same image concurrently, the second
     /// caller awaits the already-running task instead of launching a new container.
     /// </summary>
-    private static readonly ConcurrentDictionary<(string Source, LinuxScannerScope Scope), Task<string>> SyftRunCache = new();
+    private static readonly ConcurrentDictionary<(string Source, LinuxScannerScope Scope, string Binds), Task<string>> SyftRunCache = new();
 
     private static readonly int SemaphoreTimeout = Convert.ToInt32(
         TimeSpan.FromHours(1).TotalMilliseconds
@@ -261,8 +261,8 @@ internal class LinuxScanner : ILinuxScanner
 
     /// <summary>
     /// Runs the Syft scanner container and returns the stdout output.
-    /// For Docker image scans (no additional binds), results are cached so that
-    /// concurrent callers scanning the same image+scope share a single container run.
+    /// Results are cached by (source, scope, binds) so that concurrent callers
+    /// with identical parameters share a single container run.
     /// </summary>
     private async Task<string> RunSyftAsync(
         string syftSource,
@@ -272,14 +272,8 @@ internal class LinuxScanner : ILinuxScanner
         LinuxScannerSyftTelemetryRecord syftTelemetryRecord,
         CancellationToken cancellationToken)
     {
-        // Local image scans use additional binds specific to each call, so they
-        // cannot be deduplicated safely — run them directly.
-        if (additionalBinds is { Count: > 0 })
-        {
-            return await this.RunSyftCoreAsync(syftSource, scope, additionalBinds, record, syftTelemetryRecord, cancellationToken);
-        }
-
-        var cacheKey = (syftSource, scope);
+        var bindsKey = string.Join(";", (additionalBinds ?? []).OrderBy(b => b, StringComparer.Ordinal));
+        var cacheKey = (syftSource, scope, bindsKey);
         var tcs = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
         var existingTask = SyftRunCache.GetOrAdd(cacheKey, tcs.Task);
 
@@ -292,7 +286,7 @@ internal class LinuxScanner : ILinuxScanner
         // We own this cache entry — run syft and propagate the result.
         try
         {
-            var result = await this.RunSyftCoreAsync(syftSource, scope, additionalBinds, record, syftTelemetryRecord, cancellationToken);
+            var result = await this.RunSyftCoreAsync(syftSource, scope, additionalBinds ?? [], record, syftTelemetryRecord, cancellationToken);
             tcs.SetResult(result);
             return result;
         }
