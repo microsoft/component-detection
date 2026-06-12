@@ -228,6 +228,9 @@ public class LinuxScannerTests
 
     public LinuxScannerTests()
     {
+        // Clear the static syft run cache to prevent cross-test interference.
+        LinuxScanner.ResetCache();
+
         this.mockDockerService = new Mock<IDockerService>();
         this.mockDockerService.Setup(service =>
                 service.CanPingDockerAsync(It.IsAny<CancellationToken>())

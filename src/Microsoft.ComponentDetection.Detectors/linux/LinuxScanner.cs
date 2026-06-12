@@ -1,6 +1,7 @@
 namespace Microsoft.ComponentDetection.Detectors.Linux;
 
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
@@ -30,6 +31,13 @@ internal class LinuxScanner : ILinuxScanner
     private static readonly IList<string> ScopeSquashedParameter = ["--scope", "squashed"];
 
     private static readonly SemaphoreSlim ContainerSemaphore = new SemaphoreSlim(2);
+
+    /// <summary>
+    /// Caches in-flight and completed syft runs keyed by (source, scope).
+    /// When multiple detectors scan the same image concurrently, the second
+    /// caller awaits the already-running task instead of launching a new container.
+    /// </summary>
+    private static readonly ConcurrentDictionary<(string Source, LinuxScannerScope Scope), Task<string>> SyftRunCache = new();
 
     private static readonly int SemaphoreTimeout = Convert.ToInt32(
         TimeSpan.FromHours(1).TotalMilliseconds
@@ -253,8 +261,54 @@ internal class LinuxScanner : ILinuxScanner
 
     /// <summary>
     /// Runs the Syft scanner container and returns the stdout output.
+    /// For Docker image scans (no additional binds), results are cached so that
+    /// concurrent callers scanning the same image+scope share a single container run.
     /// </summary>
     private async Task<string> RunSyftAsync(
+        string syftSource,
+        LinuxScannerScope scope,
+        IList<string> additionalBinds,
+        LinuxScannerTelemetryRecord record,
+        LinuxScannerSyftTelemetryRecord syftTelemetryRecord,
+        CancellationToken cancellationToken)
+    {
+        // Local image scans use additional binds specific to each call, so they
+        // cannot be deduplicated safely — run them directly.
+        if (additionalBinds is { Count: > 0 })
+        {
+            return await this.RunSyftCoreAsync(syftSource, scope, additionalBinds, record, syftTelemetryRecord, cancellationToken);
+        }
+
+        var cacheKey = (syftSource, scope);
+        var tcs = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var existingTask = SyftRunCache.GetOrAdd(cacheKey, tcs.Task);
+
+        if (existingTask != tcs.Task)
+        {
+            // Another caller is already running syft for this image+scope — await their result.
+            return await existingTask;
+        }
+
+        // We own this cache entry — run syft and propagate the result.
+        try
+        {
+            var result = await this.RunSyftCoreAsync(syftSource, scope, additionalBinds, record, syftTelemetryRecord, cancellationToken);
+            tcs.SetResult(result);
+            return result;
+        }
+        catch (Exception ex)
+        {
+            // Remove the failed entry so a retry can start fresh.
+            SyftRunCache.TryRemove(cacheKey, out _);
+            tcs.SetException(ex);
+            throw;
+        }
+    }
+
+    /// <summary>
+    /// Executes the Syft scanner container and returns the stdout output.
+    /// </summary>
+    private async Task<string> RunSyftCoreAsync(
         string syftSource,
         LinuxScannerScope scope,
         IList<string> additionalBinds,
@@ -357,4 +411,9 @@ internal class LinuxScanner : ILinuxScanner
         var layerIds = artifact.Locations?.Select(location => location.LayerId).Distinct() ?? [];
         return (component, layerIds);
     }
+
+    /// <summary>
+    /// Clears the syft run cache. Intended for test isolation only.
+    /// </summary>
+    internal static void ResetCache() => SyftRunCache.Clear();
 }

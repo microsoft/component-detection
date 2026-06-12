@@ -2,8 +2,8 @@
 namespace Microsoft.ComponentDetection.Common;
 
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Text.Json;
 using System.Threading;
@@ -23,6 +23,15 @@ internal class DockerService : IDockerService
     private const string BaseImageDigestAnnotation = "image.base.digest";
 
     private static readonly DockerClient Client = new DockerClientConfiguration().CreateClient();
+
+    /// <summary>
+    /// Serializes image pull operations so only one pull runs at a time,
+    /// and tracks which images have already been pulled to avoid redundant work.
+    /// </summary>
+    private static readonly SemaphoreSlim PullSemaphore = new(1, 1);
+
+    private static readonly ConcurrentDictionary<string, bool> PulledImages = new();
+
     private static int incrementingContainerId;
 
     private readonly ILogger logger;
@@ -95,6 +104,46 @@ internal class DockerService : IDockerService
     }
 
     public async Task<bool> TryPullImageAsync(string image, CancellationToken cancellationToken = default)
+    {
+        // Fast path: already pulled in this process
+        if (PulledImages.ContainsKey(image))
+        {
+            return true;
+        }
+
+        // Check if already available locally before acquiring the semaphore
+        if (await this.ImageExistsLocallyAsync(image, cancellationToken))
+        {
+            PulledImages.TryAdd(image, true);
+            return true;
+        }
+
+        await PullSemaphore.WaitAsync(cancellationToken);
+        try
+        {
+            // Double-check after acquiring semaphore — another caller may have
+            // pulled this image (or a different image that satisfied the local check)
+            // while we were waiting.
+            if (PulledImages.ContainsKey(image))
+            {
+                return true;
+            }
+
+            var result = await this.PullImageCoreAsync(image, cancellationToken);
+            if (result)
+            {
+                PulledImages.TryAdd(image, true);
+            }
+
+            return result;
+        }
+        finally
+        {
+            PullSemaphore.Release();
+        }
+    }
+
+    private async Task<bool> PullImageCoreAsync(string image, CancellationToken cancellationToken)
     {
         using var record = new DockerServiceTryPullImageTelemetryRecord
         {
@@ -353,7 +402,6 @@ internal class DockerService : IDockerService
         {
             var binds = new List<string>
             {
-                $"{Path.GetTempPath()}:/tmp",
                 "/var/run/docker.sock:/var/run/docker.sock",
             };
 
