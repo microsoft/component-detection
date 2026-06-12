@@ -108,7 +108,6 @@ internal class DockerService : IDockerService
         // Check if already available locally before attempting a pull
         if (await this.ImageExistsLocallyAsync(image, cancellationToken))
         {
-            PullCache.TryAdd(image, Task.FromResult(true));
             return true;
         }
 
@@ -128,21 +127,21 @@ internal class DockerService : IDockerService
             this.logger.LogDebug("Pulling image {Image}...", image);
             var result = await this.PullImageCoreAsync(image, cancellationToken);
             this.logger.LogDebug("Pull of image {Image} completed (success={Success})", image, result);
-            if (!result)
-            {
-                // Non-exception failure — remove the entry so later callers can retry.
-                PullCache.TryRemove(image, out _);
-            }
-
             tcs.SetResult(result);
             return result;
         }
         catch (Exception ex)
         {
             this.logger.LogDebug(ex, "Pull of image {Image} failed", image);
-            PullCache.TryRemove(image, out _);
             tcs.SetException(ex);
             throw;
+        }
+        finally
+        {
+            // Remove the entry once complete. The cache only deduplicates concurrent
+            // in-flight pulls — subsequent callers will hit ImageExistsLocallyAsync
+            // for images that were already pulled successfully.
+            PullCache.TryRemove(image, out _);
         }
     }
 

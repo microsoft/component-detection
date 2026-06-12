@@ -280,6 +280,7 @@ internal class LinuxScanner : ILinuxScanner
         {
             // Another caller is already running syft for this image+scope — await their result,
             // but allow this caller's cancellation token to abort the wait.
+            this.logger.LogDebug("Syft run for {SyftSource} (scope={Scope}) is already in-flight, reusing existing result", syftSource, scope);
             return await existingTask.WaitAsync(cancellationToken);
         }
 
@@ -292,10 +293,15 @@ internal class LinuxScanner : ILinuxScanner
         }
         catch (Exception ex)
         {
-            // Remove the failed entry so a retry can start fresh.
-            SyftRunCache.TryRemove(cacheKey, out _);
             tcs.SetException(ex);
             throw;
+        }
+        finally
+        {
+            // Remove the entry once complete. The cache only deduplicates concurrent
+            // in-flight calls — keeping completed entries would leak memory for the
+            // lifetime of the process.
+            SyftRunCache.TryRemove(cacheKey, out _);
         }
     }
 
