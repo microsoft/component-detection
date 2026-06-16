@@ -33,21 +33,34 @@ Component Detection can also be used as a library to detect dependencies in your
 
 ## Features
 
-Component Detection supports detecting libraries from the following ecosystem:
+Component Detection supports detecting libraries from the following ecosystems:
 
 | Ecosystem                                                                        | Scanning                                        | Graph Creation |
 | -------------------------------------------------------------------------------- | ----------------------------------------------- | -------------- |
-| CocoaPods                                                                        | ✔                                               | ✔              |
-| [Go](docs/detectors/go.md)                                                       | ✔                                               | ❌              |
+| [CocoaPods](docs/detectors/cocoapods.md)                                         | ✔                                               | ✔              |
+| [Conan](docs/detectors/conan.md)                                                 | ✔                                               | ❌              |
+| [Conda (Python)](docs/detectors/conda.md)                                        | ✔                                               | ✔              |
+| [Docker Compose](docs/detectors/dockercompose.md)                                | ✔                                               | ❌              |
+| [Dockerfile](docs/detectors/dockerfile.md)                                       | ✔                                               | ❌              |
+| [DotNet SDK](docs/detectors/dotnet.md)                                           | ✔                                               | ❌              |
+| [Go](docs/detectors/go.md)                                                       | ✔                                               | ✔ (with Go 1.11+) |
 | [Gradle (lockfiles only)](docs/detectors/gradle.md)                              | ✔                                               | ❌              |
-| [Linux (Debian, Alpine, Rhel, Centos, Fedora, Ubuntu)](docs/detectors//linux.md) | ✔ (via [syft](https://github.com/anchore/syft)) | ❌              |
+| [Helm](docs/detectors/helm.md)                                                   | ✔                                               | ❌              |
+| [Ivy](docs/detectors/ivy.md)                                                     | ✔                                               | ✔              |
+| [Linux (Debian, Alpine, Rhel, Centos, Fedora, Ubuntu)](docs/detectors/linux.md)  | ✔ (via [syft](https://github.com/anchore/syft)) | ❌              |
 | [Maven](docs/detectors/maven.md)                                                 | ✔                                               | ✔              |
 | [NPM (including Yarn, Pnpm)](docs/detectors/npm.md)                              | ✔                                               | ✔              |
 | [NuGet (including Paket)](docs/detectors/nuget.md)                               | ✔                                               | ✔              |
 | [Pip (Python)](docs/detectors/pip.md)                                            | ✔                                               | ✔              |
 | [Poetry (Python, lockfiles only)](docs/detectors/poetry.md)                      | ✔                                               | ❌              |
-| Ruby                                                                             | ✔                                               | ✔              |
-| Rust                                                                             | ✔                                               | ✔              |
+| [Ruby](docs/detectors/ruby.md)                                                   | ✔                                               | ✔              |
+| [Rust (Cargo)](docs/detectors/rust.md)                                           | ✔                                               | ✔              |
+| [SPDX SBOM](docs/detectors/spdx.md)                                              | ✔                                               | ❌              |
+| [Swift](docs/detectors/swift.md)                                                 | ✔                                               | ❌              |
+| [Uv (Python)](docs/detectors/uv.md)                                              | ✔                                               | ✔              |
+| [Vcpkg](docs/detectors/vcpkg.md)                                                 | ✔                                               | ❌              |
+
+See the [detectors directory](docs/detectors/README.md) for the current status (Stable, Experimental, or DefaultOff) of each individual detector.
 
 For a complete feature overview refer to [feature-overview.md](docs/feature-overview.md)
 

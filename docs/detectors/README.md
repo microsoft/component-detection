@@ -87,7 +87,7 @@
 | NuGetComponentDetector                           | Stable     |
 | NuGetPackagesConfigDetector                      | Stable     |
 | NuGetProjectModelProjectCentricComponentDetector | Stable     |
-| MSBuildBinaryLogComponentDetector                | DefaultOff |
+| MSBuildBinaryLogComponentDetector                | Experimental |
 
 - [Pip](pip.md)
 
