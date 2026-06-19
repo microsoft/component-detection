@@ -22,13 +22,13 @@
 
 | Detector                       | Status     |
 | ------------------------------ | ---------- |
-| DockerComposeComponentDetector | DefaultOff |
+| DockerComposeComponentDetector | Experimental |
 
 - [Dockerfile](dockerfile.md)
 
 | Detector                    | Status     |
 | --------------------------- | ---------- |
-| DockerfileComponentDetector | DefaultOff |
+| DockerfileComponentDetector | Experimental |
 
 - [DotNet](dotnet.md)
 
@@ -52,7 +52,7 @@
 
 | Detector               | Status     |
 | ---------------------- | ---------- |
-| HelmComponentDetector  | DefaultOff |
+| HelmComponentDetector  | Experimental |
 
 - [Ivy](ivy.md)
 
@@ -87,7 +87,7 @@
 | NuGetComponentDetector                           | Stable     |
 | NuGetPackagesConfigDetector                      | Stable     |
 | NuGetProjectModelProjectCentricComponentDetector | Stable     |
-| MSBuildBinaryLogComponentDetector                | DefaultOff |
+| MSBuildBinaryLogComponentDetector                | Experimental |
 
 - [Paket](paket.md)
 

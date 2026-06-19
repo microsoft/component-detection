@@ -15,8 +15,16 @@ using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.Extensions.Logging;
 using YamlDotNet.RepresentationModel;
 
-public class HelmComponentDetector : FileComponentDetector, IDefaultOffComponentDetector
+public class HelmComponentDetector : FileComponentDetector, IExperimentalDetector
 {
+    /// <summary>
+    /// Maximum size (in bytes) of a values file the detector will parse. The "*values*" globs
+    /// can match large, non-Helm YAML files whose full-DOM parse dominates worst-case runtime;
+    /// files above this limit are skipped so a single pathological file cannot exhaust the
+    /// detector's time budget.
+    /// </summary>
+    private const long MaxValuesFileSizeBytes = 20 * 1024 * 1024; // 20 MB
+
     public HelmComponentDetector(
         IComponentStreamEnumerableFactory componentStreamEnumerableFactory,
         IObservableDirectoryWalkerFactory walkerFactory,
@@ -42,6 +50,14 @@ public class HelmComponentDetector : FileComponentDetector, IDefaultOffComponent
     public override IEnumerable<string> Categories => [nameof(DetectorClass.Helm)];
 
     /// <summary>
+    /// Gets or sets a value indicating whether values files are processed concurrently.
+    /// Each file is parsed independently into its own <see cref="ISingleFileComponentRecorder"/>
+    /// and <see cref="DockerReferenceUtility"/> is stateless, so parsing is thread-safe and
+    /// scales across cores for repositories containing many charts.
+    /// </summary>
+    protected override bool EnableParallelism { get; set; } = true;
+
+    /// <summary>
     /// Pre-filters scan work to only values files co-located with a Chart.yaml/Chart.yml.
     /// Materializes all matched files, identifies Helm chart directories, then filters.
     /// </summary>
@@ -65,7 +81,7 @@ public class HelmComponentDetector : FileComponentDetector, IDefaultOffComponent
             .ToObservable();
     }
 
-    protected override async Task OnFileFoundAsync(ProcessRequest processRequest, IDictionary<string, string> detectorArgs, CancellationToken cancellationToken = default)
+    protected override Task OnFileFoundAsync(ProcessRequest processRequest, IDictionary<string, string> detectorArgs, CancellationToken cancellationToken = default)
     {
         var file = processRequest.ComponentStream;
 
@@ -74,20 +90,34 @@ public class HelmComponentDetector : FileComponentDetector, IDefaultOffComponent
         // filename/directory checks are needed.
         try
         {
-            this.Logger.LogInformation("Discovered Helm values file: {Location}", file.Location);
-
-            string contents;
-            using (var reader = new StreamReader(file.Stream))
+            // Check the size before touching ComponentStream so an oversized file is never
+            // buffered into memory. The "*values*" globs can match large, non-Helm YAML files
+            // whose full-DOM parse is the main driver of worst-case (timeout) runtime.
+            var fileInfo = new FileInfo(file.Location);
+            if (fileInfo.Exists && fileInfo.Length > MaxValuesFileSizeBytes)
             {
-                contents = await reader.ReadToEndAsync(cancellationToken);
+                this.Logger.LogWarning(
+                    "Skipping Helm values file exceeding size limit ({Length} bytes > {Limit} bytes): {Location}",
+                    fileInfo.Length,
+                    MaxValuesFileSizeBytes,
+                    file.Location);
+                return Task.CompletedTask;
             }
 
+            this.Logger.LogInformation("Discovered Helm values file: {Location}", file.Location);
+
+            // Parse directly from the stream; the content is already buffered in memory by
+            // LazyComponentStream, so reading it into an intermediate string only adds an
+            // extra full-file allocation and GC pressure under parallel processing.
             var yaml = new YamlStream();
-            yaml.Load(new StringReader(contents));
+            using (var reader = new StreamReader(file.Stream))
+            {
+                yaml.Load(reader);
+            }
 
             if (yaml.Documents.Count == 0)
             {
-                return;
+                return Task.CompletedTask;
             }
 
             this.ExtractImageReferencesFromValues(yaml, processRequest.SingleFileComponentRecorder);
@@ -96,6 +126,8 @@ public class HelmComponentDetector : FileComponentDetector, IDefaultOffComponent
         {
             this.Logger.LogError(e, "Failed to parse Helm file: {Location}", file.Location);
         }
+
+        return Task.CompletedTask;
     }
 
     /// <summary>

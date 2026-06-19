@@ -285,15 +285,161 @@ public class DockerReferenceUtilityTests
     }
 
     [TestMethod]
+    public void HasUnresolvedVariables_ReturnsTrueForDoubleUnderscoreTokens()
+    {
+        DockerReferenceUtility.HasUnresolvedVariables("__MCR_ENDPOINT__/aks/devinfra/helm3sample:__IMAGE_TAG__").Should().BeTrue();
+    }
+
+    [TestMethod]
+    public void HasUnresolvedVariables_ReturnsTrueForHashDelimitedTokens()
+    {
+        // A token wrapped in matching '#' (e.g. #imageTag#) is treated as an unresolved template
+        // variable and skipped silently rather than reported as an invalid character.
+        DockerReferenceUtility.HasUnresolvedVariables("#cs_containerRegistryLoginServerUrl#/coreservicesaksservice_#cs_aks_workloadName#_#cs_aks_serviceTrackIdentifier#/#serviceName#:#imageTag#").Should().BeTrue();
+    }
+
+    [TestMethod]
+    public void HasUnresolvedVariables_ReturnsTrueForExclamationDelimitedTokens()
+    {
+        // A token wrapped in matching '!' (e.g. !imageTag!) is treated as an unresolved template
+        // variable and skipped silently rather than reported as an invalid character.
+        DockerReferenceUtility.HasUnresolvedVariables("!cs_containerRegistryLoginServerUrl!/coreservicesaksservice_!cs_aks_workloadName!/!serviceName!:!imageTag!").Should().BeTrue();
+    }
+
+    [TestMethod]
     public void HasUnresolvedVariables_ReturnsFalseForPlainReference()
     {
         DockerReferenceUtility.HasUnresolvedVariables("docker.io/library/nginx:latest").Should().BeFalse();
     }
 
     [TestMethod]
+    public void HasUnresolvedVariables_ReturnsFalseForReferenceWithUnderscores()
+    {
+        DockerReferenceUtility.HasUnresolvedVariables("mcr.microsoft.com/some_repo/my_image:1.0").Should().BeFalse();
+    }
+
+    [TestMethod]
     public void TryParseImageReference_ReturnsNullForUnresolvedVariables()
     {
         DockerReferenceUtility.TryParseImageReference("${IMAGE}:latest").Should().BeNull();
+    }
+
+    [TestMethod]
+    public void TryParseImageReference_ReturnsNullForDoubleUnderscoreTokens()
+    {
+        DockerReferenceUtility.TryParseImageReference("__MCR_ENDPOINT__/aks/devinfra/helm3sample:__IMAGE_TAG__").Should().BeNull();
+    }
+
+    [TestMethod]
+    public void TryParseImageReference_ReturnsNullForHashDelimitedTokens()
+    {
+        DockerReferenceUtility.TryParseImageReference("#cs_containerRegistryLoginServerUrl#/svc/#serviceName#:#imageTag#").Should().BeNull();
+    }
+
+    [TestMethod]
+    public void TryParseImageReference_ReturnsNullForExclamationDelimitedTokens()
+    {
+        DockerReferenceUtility.TryParseImageReference("!cs_containerRegistryLoginServerUrl!/svc/!serviceName!:!imageTag!").Should().BeNull();
+    }
+
+    [TestMethod]
+    public void TryParseImageReference_LogsWarningForTemplatedReference()
+    {
+        var logger = new Mock<ILogger>();
+
+        var result = DockerReferenceUtility.TryParseImageReference("__MCR_ENDPOINT__/aks/devinfra/helm3sample:__IMAGE_TAG__", logger.Object);
+
+        result.Should().BeNull();
+        logger.Verify(
+            l => l.Log(
+                LogLevel.Warning,
+                It.IsAny<EventId>(),
+                It.IsAny<It.IsAnyType>(),
+                It.IsAny<Exception>(),
+                It.IsAny<Func<It.IsAnyType, Exception, string>>()),
+            Times.Once);
+    }
+
+    [TestMethod]
+    public void TryParseImageReference_LogsWarningForHashDelimitedTokens()
+    {
+        var logger = new Mock<ILogger>();
+
+        var result = DockerReferenceUtility.TryParseImageReference(
+            "#cs_containerRegistryLoginServerUrl#/svc/#serviceName#:#imageTag#",
+            logger.Object);
+
+        result.Should().BeNull();
+        logger.Verify(
+            l => l.Log(
+                LogLevel.Warning,
+                It.IsAny<EventId>(),
+                It.IsAny<It.IsAnyType>(),
+                It.IsAny<Exception>(),
+                It.IsAny<Func<It.IsAnyType, Exception, string>>()),
+            Times.Once);
+    }
+
+    [TestMethod]
+    public void TryParseImageReference_LogsWarningForExclamationDelimitedTokens()
+    {
+        var logger = new Mock<ILogger>();
+
+        var result = DockerReferenceUtility.TryParseImageReference(
+            "!cs_containerRegistryLoginServerUrl!/svc/!serviceName!:!imageTag!",
+            logger.Object);
+
+        result.Should().BeNull();
+        logger.Verify(
+            l => l.Log(
+                LogLevel.Warning,
+                It.IsAny<EventId>(),
+                It.IsAny<It.IsAnyType>(),
+                It.IsAny<Exception>(),
+                It.IsAny<Func<It.IsAnyType, Exception, string>>()),
+            Times.Once);
+    }
+
+    [TestMethod]
+    public void TryParseImageReference_ReturnsNullForExclamationCharacter()
+    {
+        DockerReferenceUtility.TryParseImageReference("docker.io/library/nginx!:latest").Should().BeNull();
+    }
+
+    [TestMethod]
+    public void TryParseImageReference_LogsWarningForExclamationCharacter()
+    {
+        var logger = new Mock<ILogger>();
+
+        var result = DockerReferenceUtility.TryParseImageReference("docker.io/library/nginx!:latest", logger.Object);
+
+        result.Should().BeNull();
+        logger.Verify(
+            l => l.Log(
+                LogLevel.Warning,
+                It.IsAny<EventId>(),
+                It.IsAny<It.IsAnyType>(),
+                It.IsAny<Exception>(),
+                It.IsAny<Func<It.IsAnyType, Exception, string>>()),
+            Times.Once);
+    }
+
+    [TestMethod]
+    public void TryParseImageReference_LogsWarningForInvalidCharacterInTag()
+    {
+        var logger = new Mock<ILogger>();
+
+        var result = DockerReferenceUtility.TryParseImageReference("mcr.microsoft.com/dotnet/sdk:8.0#preview", logger.Object);
+
+        result.Should().BeNull();
+        logger.Verify(
+            l => l.Log(
+                LogLevel.Warning,
+                It.IsAny<EventId>(),
+                It.IsAny<It.IsAnyType>(),
+                It.IsAny<Exception>(),
+                It.IsAny<Func<It.IsAnyType, Exception, string>>()),
+            Times.Once);
     }
 
     [TestMethod]

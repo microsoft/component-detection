@@ -38,7 +38,9 @@ The `NuGetPackagesConfig` detector raises NuGet components referenced by project
 
 ## MSBuildBinaryLog
 
-The `MSBuildBinaryLog` detector is a **DefaultOff** detector intended to eventually replace both the `NuGetProjectCentric` and `DotNet` detectors. It combines MSBuild binary log (binlog) information with `project.assets.json` to provide enhanced component detection with project-level classifications.
+The `MSBuildBinaryLog` detector is an **Experimental** detector intended to eventually replace both the `NuGetProjectCentric` and `DotNet` detectors. It combines MSBuild binary log (binlog) information with `project.assets.json` to provide enhanced component detection with project-level classifications.
+
+As an experimental detector, it runs automatically whenever a scan is performed, but its results are not reported as part of the normal scan output. Instead, the results are compared against the existing `NuGetProjectCentric` and `DotNet` detectors and recorded as telemetry so maintainers can evaluate parity before promoting the detector to default.
 
 It looks for `project.assets.json` files and separately discovers `*.binlog` files. The binlog provides build-time context that isn't available from `project.assets.json` alone.
 

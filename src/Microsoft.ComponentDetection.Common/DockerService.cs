@@ -2,8 +2,8 @@
 namespace Microsoft.ComponentDetection.Common;
 
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Text.Json;
 using System.Threading;
@@ -23,6 +23,13 @@ internal class DockerService : IDockerService
     private const string BaseImageDigestAnnotation = "image.base.digest";
 
     private static readonly DockerClient Client = new DockerClientConfiguration().CreateClient();
+
+    /// <summary>
+    /// Tracks in-flight image pulls so each image is pulled at most once concurrently.
+    /// Concurrent callers for the same image await the same task.
+    /// </summary>
+    private static readonly ConcurrentDictionary<string, Task<bool>> PullCache = new();
+
     private static int incrementingContainerId;
 
     private readonly ILogger logger;
@@ -77,11 +84,13 @@ internal class DockerService : IDockerService
         {
             var imageInspectResponse = await this.InspectImageAndSanitizeVarsAsync(image, cancellationToken);
             record.ImageInspectResponse = JsonSerializer.Serialize(imageInspectResponse);
+            this.logger.LogDebug("Image {Image} found locally", image);
             return true;
         }
         catch (Exception e)
         {
             record.ExceptionMessage = e.Message;
+            this.logger.LogDebug("Image {Image} not found locally", image);
             cancellationToken.ThrowIfCancellationRequested();
             return false;
         }
@@ -95,6 +104,48 @@ internal class DockerService : IDockerService
     }
 
     public async Task<bool> TryPullImageAsync(string image, CancellationToken cancellationToken = default)
+    {
+        // Check if already available locally before attempting a pull
+        if (await this.ImageExistsLocallyAsync(image, cancellationToken))
+        {
+            return true;
+        }
+
+        var tcs = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var existingTask = PullCache.GetOrAdd(image, tcs.Task);
+
+        if (existingTask != tcs.Task)
+        {
+            // Another caller is already pulling this image — await their result
+            this.logger.LogDebug("Image {Image} is already being pulled by another caller, waiting", image);
+            return await existingTask.WaitAsync(cancellationToken);
+        }
+
+        // We own this cache entry — perform the actual pull.
+        try
+        {
+            this.logger.LogDebug("Pulling image {Image}...", image);
+            var result = await this.PullImageCoreAsync(image, cancellationToken);
+            this.logger.LogDebug("Pull of image {Image} completed (success={Success})", image, result);
+            tcs.SetResult(result);
+            return result;
+        }
+        catch (Exception ex)
+        {
+            this.logger.LogDebug(ex, "Pull of image {Image} failed", image);
+            tcs.SetException(ex);
+            throw;
+        }
+        finally
+        {
+            // Remove the entry once complete. The cache only deduplicates concurrent
+            // in-flight pulls — subsequent callers will hit ImageExistsLocallyAsync
+            // for images that were already pulled successfully.
+            PullCache.TryRemove(image, out _);
+        }
+    }
+
+    private async Task<bool> PullImageCoreAsync(string image, CancellationToken cancellationToken)
     {
         using var record = new DockerServiceTryPullImageTelemetryRecord
         {
@@ -213,7 +264,7 @@ internal class DockerService : IDockerService
             var stream = await AttachContainerAsync(container.ID, cancellationToken);
             await StartContainerAsync(container.ID, cancellationToken);
 
-            this.logger.LogInformation("Container {ContainerId} started for image {Image}, reading output...", container.ID, image);
+            this.logger.LogInformation("Container {ContainerId} started with image {Image} to execute {Command}, reading output...", container.ID, image, commandJson);
 
             // Flush telemetry before the long-running ReadOutput so we get mid-scan
             // data in App Insights even if the process hangs during the read.
@@ -353,7 +404,6 @@ internal class DockerService : IDockerService
         {
             var binds = new List<string>
             {
-                $"{Path.GetTempPath()}:/tmp",
                 "/var/run/docker.sock:/var/run/docker.sock",
             };
 

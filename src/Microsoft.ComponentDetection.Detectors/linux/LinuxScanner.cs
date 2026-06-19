@@ -1,6 +1,7 @@
 namespace Microsoft.ComponentDetection.Detectors.Linux;
 
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
@@ -30,6 +31,13 @@ internal class LinuxScanner : ILinuxScanner
     private static readonly IList<string> ScopeSquashedParameter = ["--scope", "squashed"];
 
     private static readonly SemaphoreSlim ContainerSemaphore = new SemaphoreSlim(2);
+
+    /// <summary>
+    /// Caches in-flight syft runs.
+    /// When multiple detectors scan the same image concurrently, the second
+    /// caller awaits the already-running task instead of launching a new container.
+    /// </summary>
+    private static readonly ConcurrentDictionary<(string Source, LinuxScannerScope Scope, string Binds), Task<string>> SyftRunCache = new();
 
     private static readonly int SemaphoreTimeout = Convert.ToInt32(
         TimeSpan.FromHours(1).TotalMilliseconds
@@ -253,8 +261,54 @@ internal class LinuxScanner : ILinuxScanner
 
     /// <summary>
     /// Runs the Syft scanner container and returns the stdout output.
+    /// Results are cached so that callers with identical parameters share a single container run.
     /// </summary>
     private async Task<string> RunSyftAsync(
+        string syftSource,
+        LinuxScannerScope scope,
+        IList<string> additionalBinds,
+        LinuxScannerTelemetryRecord record,
+        LinuxScannerSyftTelemetryRecord syftTelemetryRecord,
+        CancellationToken cancellationToken)
+    {
+        var bindsKey = string.Join(";", (additionalBinds ?? []).OrderBy(b => b, StringComparer.Ordinal));
+        var cacheKey = (syftSource, scope, bindsKey);
+        var tcs = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var existingTask = SyftRunCache.GetOrAdd(cacheKey, tcs.Task);
+
+        if (existingTask != tcs.Task)
+        {
+            // Another caller is already running syft for this image+scope — await their result,
+            // but allow this caller's cancellation token to abort the wait.
+            this.logger.LogDebug("Syft run for {SyftSource} (scope={Scope}) is already in-flight, reusing existing result", syftSource, scope);
+            return await existingTask.WaitAsync(cancellationToken);
+        }
+
+        // We own this cache entry — run syft and propagate the result.
+        try
+        {
+            var result = await this.RunSyftCoreAsync(syftSource, scope, additionalBinds ?? [], record, syftTelemetryRecord, cancellationToken);
+            tcs.SetResult(result);
+            return result;
+        }
+        catch (Exception ex)
+        {
+            tcs.SetException(ex);
+            throw;
+        }
+        finally
+        {
+            // Remove the entry once complete. The cache only deduplicates concurrent
+            // in-flight calls — keeping completed entries would leak memory for the
+            // lifetime of the process.
+            SyftRunCache.TryRemove(cacheKey, out _);
+        }
+    }
+
+    /// <summary>
+    /// Executes the Syft scanner container and returns the stdout output.
+    /// </summary>
+    private async Task<string> RunSyftCoreAsync(
         string syftSource,
         LinuxScannerScope scope,
         IList<string> additionalBinds,
@@ -357,4 +411,9 @@ internal class LinuxScanner : ILinuxScanner
         var layerIds = artifact.Locations?.Select(location => location.LayerId).Distinct() ?? [];
         return (component, layerIds);
     }
+
+    /// <summary>
+    /// Clears the syft run cache. Intended for test isolation only.
+    /// </summary>
+    internal static void ResetCache() => SyftRunCache.Clear();
 }

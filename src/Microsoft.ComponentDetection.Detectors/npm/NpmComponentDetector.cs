@@ -38,7 +38,7 @@ public class NpmComponentDetector : FileComponentDetector
 
     public override IEnumerable<ComponentType> SupportedComponentTypes { get; } = [ComponentType.Npm];
 
-    public override int Version { get; } = 3;
+    public override int Version { get; } = 4;
 
     protected override async Task OnFileFoundAsync(ProcessRequest processRequest, IDictionary<string, string> detectorArgs, CancellationToken cancellationToken = default)
     {
@@ -79,20 +79,6 @@ public class NpmComponentDetector : FileComponentDetector
         {
             this.Logger.LogWarning("Unable to parse version {NpmPackageVersion} for package {NpmPackageName} found at path {NpmPackageLocation}. This may indicate an invalid npm package component and it will not be registered.", version, name, filePath);
             singleFileComponentRecorder.RegisterPackageParseFailure($"{name} - {version}");
-            return false;
-        }
-
-        // Check for VS Code extensions
-        // See https://code.visualstudio.com/api/working-with-extensions/publishing-extension#visual-studio-code-compatibility
-        var containsVsCodeEngine = false;
-        if (packageJson.Engines is not null && packageJson.Engines.ContainsKey("vscode"))
-        {
-            containsVsCodeEngine = true;
-        }
-
-        if (containsVsCodeEngine)
-        {
-            this.Logger.LogInformation("{NpmPackageName} found at path {NpmPackageLocation} represents a built-in VS Code extension. This package will not be registered.", name, filePath);
             return false;
         }
 

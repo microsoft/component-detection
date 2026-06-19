@@ -8,7 +8,7 @@ Helm detection depends on the following to successfully run:
 - A chart metadata file named `Chart.yaml` or `Chart.yml` must exist in the same directory for file discovery/co-location checks; only values files are parsed for image references
   - Lowercase `chart.yaml` and `chart.yml` do not satisfy this requirement; the detector requires an uppercase `Chart.*` file name.
 
-The `HelmComponentDetector` is a **DefaultOff** detector and must be explicitly enabled via the `--DetectorArgs` parameter.
+The `HelmComponentDetector` is an **Experimental** detector. It runs automatically during scans, but its output is not included in the final scan results. To include its output, pass `--DetectorArgs Helm=Enable` (the key is the detector Id `Helm`, not the class name).
 
 ## Detection strategy
 
@@ -45,7 +45,7 @@ Images containing unresolved variables (e.g., `{{ .Values.tag }}`) are skipped t
 
 ## Known limitations
 
-- **DefaultOff Status**: This detector must be explicitly enabled using `--DetectorArgs Helm=EnableIfDefaultOff`
+- **Experimental Status**: This detector runs automatically but its output is not included in scan results by default. To opt in, pass `--DetectorArgs Helm=Enable`
 - **Values Files Only**: Only files with `values` in the name are parsed for image references. Chart.yaml files are matched but not processed
 - **Same-Directory Co-location**: Values files are only processed when a `Chart.yaml` (or `Chart.yml`) exists in the **same directory**. Values files in subdirectories of a chart root (e.g., `mychart/subdir/values.yaml`) will not be detected, even if a `Chart.yaml` exists in the parent directory
 - **Variable Resolution**: Image references containing unresolved Helm template expressions are not reported

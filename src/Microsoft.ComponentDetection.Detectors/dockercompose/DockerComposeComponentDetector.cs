@@ -12,7 +12,7 @@ using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.Extensions.Logging;
 using YamlDotNet.RepresentationModel;
 
-public class DockerComposeComponentDetector : FileComponentDetector, IDefaultOffComponentDetector
+public class DockerComposeComponentDetector : FileComponentDetector, IExperimentalDetector
 {
     public DockerComposeComponentDetector(
         IComponentStreamEnumerableFactory componentStreamEnumerableFactory,
@@ -40,7 +40,15 @@ public class DockerComposeComponentDetector : FileComponentDetector, IDefaultOff
 
     public override IEnumerable<string> Categories => [nameof(DetectorClass.DockerCompose)];
 
-    protected override async Task OnFileFoundAsync(ProcessRequest processRequest, IDictionary<string, string> detectorArgs, CancellationToken cancellationToken = default)
+    /// <summary>
+    /// Gets or sets a value indicating whether compose files are processed concurrently.
+    /// Each file is parsed independently into its own <see cref="ISingleFileComponentRecorder"/>
+    /// and <see cref="DockerReferenceUtility"/> is stateless, so parsing is thread-safe and
+    /// scales across cores for repositories containing many compose files.
+    /// </summary>
+    protected override bool EnableParallelism { get; set; } = true;
+
+    protected override Task OnFileFoundAsync(ProcessRequest processRequest, IDictionary<string, string> detectorArgs, CancellationToken cancellationToken = default)
     {
         var singleFileComponentRecorder = processRequest.SingleFileComponentRecorder;
         var file = processRequest.ComponentStream;
@@ -49,18 +57,18 @@ public class DockerComposeComponentDetector : FileComponentDetector, IDefaultOff
         {
             this.Logger.LogInformation("Discovered Docker Compose file: {Location}", file.Location);
 
-            string contents;
+            // Parse directly from the stream; the content is already buffered in memory by
+            // LazyComponentStream, so reading it into an intermediate string only adds an
+            // extra full-file allocation and GC pressure under parallel processing.
+            var yaml = new YamlStream();
             using (var reader = new StreamReader(file.Stream))
             {
-                contents = await reader.ReadToEndAsync(cancellationToken);
+                yaml.Load(reader);
             }
-
-            var yaml = new YamlStream();
-            yaml.Load(new StringReader(contents));
 
             if (yaml.Documents.Count == 0)
             {
-                return;
+                return Task.CompletedTask;
             }
 
             foreach (var document in yaml.Documents)
@@ -75,6 +83,8 @@ public class DockerComposeComponentDetector : FileComponentDetector, IDefaultOff
         {
             this.Logger.LogError(e, "Failed to parse Docker Compose file: {Location}", file.Location);
         }
+
+        return Task.CompletedTask;
     }
 
     private static YamlMappingNode? GetMappingChild(YamlMappingNode parent, string key)
