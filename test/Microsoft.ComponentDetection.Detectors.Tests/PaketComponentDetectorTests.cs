@@ -9,6 +9,7 @@ using Microsoft.ComponentDetection.Detectors.Paket;
 using Microsoft.ComponentDetection.Detectors.Tests.Utilities;
 using Microsoft.ComponentDetection.TestsUtilities;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Moq;
 
 [TestClass]
 public class PaketComponentDetectorTests : BaseDetectorTest<PaketComponentDetector>
@@ -840,6 +841,206 @@ NUGET
     }
 
     [TestMethod]
+    public async Task TestPaketDetector_MalformedVersionDoesNotFaultDetector()
+    {
+        // A line with an empty/whitespace version would make NuGetComponent throw ArgumentNullException.
+        // The detector must catch it, record a parse failure, and still succeed (parsing the valid entries),
+        // rather than letting the exception fault the detector and fail the entire scan.
+        var paketLock = @"NUGET
+  remote: https://api.nuget.org/v3/index.json
+    BadPackage (   )
+    ValidPackage (1.0.0)
+";
+
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+            .WithFile("paket.lock", paketLock)
+            .ExecuteDetectorAsync();
+
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+        var detectedComponents = componentRecorder.GetDetectedComponents();
+
+        detectedComponents.Should().ContainSingle(c => c.Component.Id.Contains("ValidPackage 1.0.0"));
+    }
+
+    [TestMethod]
+    public async Task TestPaketDetector_PaketDependenciesMarksDirectDependencyThatIsAlsoTransitive()
+    {
+        // PackageB is both declared directly (in paket.dependencies) AND pulled in transitively by PackageA.
+        // The lock-graph heuristic alone would misclassify it as transitive; paket.dependencies corrects it.
+        var paketLock = @"NUGET
+  remote: https://api.nuget.org/v3/index.json
+    PackageA (1.0.0)
+      PackageB (>= 2.0.0)
+    PackageB (2.0.0)
+      PackageC (>= 3.0.0)
+    PackageC (3.0.0)
+";
+
+        var paketDependencies = @"source https://api.nuget.org/v3/index.json
+
+nuget PackageA
+nuget PackageB >= 2.0.0
+";
+
+        var componentRecorder = await this.RunWithPaketDependenciesAsync(paketLock, paketDependencies);
+        var dependencyGraph = componentRecorder.GetDependencyGraphsByLocation().Values.First();
+
+        // PackageA and PackageB are declared direct dependencies, so both are explicit.
+        dependencyGraph.IsComponentExplicitlyReferenced("PackageA 1.0.0 - NuGet").Should().BeTrue();
+        dependencyGraph.IsComponentExplicitlyReferenced("PackageB 2.0.0 - NuGet").Should().BeTrue();
+
+        // PackageC is only transitive (not declared), so it stays transitive.
+        dependencyGraph.IsComponentExplicitlyReferenced("PackageC 3.0.0 - NuGet").Should().BeFalse();
+    }
+
+    [TestMethod]
+    public async Task TestPaketDetector_TopLevelLockEntryNotDeclaredIsTransitive()
+    {
+        // PackageZ has no parent in the lock graph (heuristic would call it explicit) but it is NOT
+        // declared in paket.dependencies, so with the companion file present it is classified transitive.
+        var paketLock = @"NUGET
+  remote: https://api.nuget.org/v3/index.json
+    PackageA (1.0.0)
+    PackageZ (9.0.0)
+";
+
+        var paketDependencies = @"source https://api.nuget.org/v3/index.json
+
+nuget PackageA
+";
+
+        var componentRecorder = await this.RunWithPaketDependenciesAsync(paketLock, paketDependencies);
+        var dependencyGraph = componentRecorder.GetDependencyGraphsByLocation().Values.First();
+
+        dependencyGraph.IsComponentExplicitlyReferenced("PackageA 1.0.0 - NuGet").Should().BeTrue();
+        dependencyGraph.IsComponentExplicitlyReferenced("PackageZ 9.0.0 - NuGet").Should().BeFalse();
+    }
+
+    [TestMethod]
+    public async Task TestPaketDetector_FallsBackToHeuristicWhenNoPaketDependencies()
+    {
+        // Without a paket.dependencies file (default mock reports it missing), the detector falls back to
+        // the lock-graph heuristic: PackageB is a dependency of PackageA, so it is treated as transitive.
+        var paketLock = @"NUGET
+  remote: https://api.nuget.org/v3/index.json
+    PackageA (1.0.0)
+      PackageB (>= 2.0.0)
+    PackageB (2.0.0)
+";
+
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+            .WithFile("paket.lock", paketLock)
+            .ExecuteDetectorAsync();
+
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+        var dependencyGraph = componentRecorder.GetDependencyGraphsByLocation().Values.First();
+
+        dependencyGraph.IsComponentExplicitlyReferenced("PackageA 1.0.0 - NuGet").Should().BeTrue();
+        dependencyGraph.IsComponentExplicitlyReferenced("PackageB 2.0.0 - NuGet").Should().BeFalse();
+    }
+
+    [TestMethod]
+    public async Task TestPaketDetector_PaketDependenciesRespectsGroups()
+    {
+        // A package declared direct in one group must not be considered direct in a different group.
+        var paketLock = @"NUGET
+  remote: https://api.nuget.org/v3/index.json
+    Serilog (4.2.0)
+      System.Memory (>= 4.6.0)
+    System.Memory (4.6.0)
+
+GROUP Test
+NUGET
+  remote: https://api.nuget.org/v3/index.json
+    NUnit (4.3.2)
+";
+
+        var paketDependencies = @"source https://api.nuget.org/v3/index.json
+nuget Serilog
+
+group Test
+    source https://api.nuget.org/v3/index.json
+    nuget NUnit
+";
+
+        var componentRecorder = await this.RunWithPaketDependenciesAsync(paketLock, paketDependencies);
+        var dependencyGraph = componentRecorder.GetDependencyGraphsByLocation().Values.First();
+
+        // Declared directs in their respective groups.
+        dependencyGraph.IsComponentExplicitlyReferenced("Serilog 4.2.0 - NuGet").Should().BeTrue();
+        dependencyGraph.IsComponentExplicitlyReferenced("NUnit 4.3.2 - NuGet").Should().BeTrue();
+
+        // System.Memory is only transitive and not declared anywhere.
+        dependencyGraph.IsComponentExplicitlyReferenced("System.Memory 4.6.0 - NuGet").Should().BeFalse();
+    }
+
+    [TestMethod]
+    public async Task TestPaketDetector_PaketDependenciesDefaultGroupMatchesMainGroupInLock()
+    {
+        // paket.dependencies declares the default group while paket.lock writes it as "GROUP Main".
+        // Both must be treated as the same group so the declaration is matched.
+        var paketLock = @"GROUP Main
+NUGET
+  remote: https://api.nuget.org/v3/index.json
+    Newtonsoft.Json (13.0.3)
+";
+
+        var paketDependencies = @"source https://api.nuget.org/v3/index.json
+nuget Newtonsoft.Json
+";
+
+        var componentRecorder = await this.RunWithPaketDependenciesAsync(paketLock, paketDependencies);
+        var dependencyGraph = componentRecorder.GetDependencyGraphsByLocation().Values.First();
+
+        dependencyGraph.IsComponentExplicitlyReferenced("Newtonsoft.Json 13.0.3 - NuGet").Should().BeTrue();
+    }
+
+    [TestMethod]
+    public void TestParseDeclaredDirectDependencies_ParsesNuGetLinesPerGroup()
+    {
+        var content = @"source https://api.nuget.org/v3/index.json
+# a comment
+framework: net8.0
+nuget Newtonsoft.Json >= 13.0
+nuget FSharp.Core
+github owner/repo file.fs
+
+group Test
+    nuget NUnit ~> 4.0
+";
+
+        var declared = PaketComponentDetector.ParseDeclaredDirectDependencies(content);
+
+        declared.Should().Contain((string.Empty, "Newtonsoft.Json"));
+        declared.Should().Contain((string.Empty, "FSharp.Core"));
+        declared.Should().Contain(("Test", "NUnit"));
+
+        // github/source/framework/comment lines are not NuGet declarations.
+        declared.Should().NotContain(d => d.Name == "owner/repo");
+        declared.Should().HaveCount(3);
+    }
+
+    [TestMethod]
+    public void TestParseDeclaredDirectDependencies_ReturnsNullWhenNoNuGetLines()
+    {
+        var content = @"source https://api.nuget.org/v3/index.json
+framework: net8.0
+";
+
+        PaketComponentDetector.ParseDeclaredDirectDependencies(content).Should().BeNull();
+    }
+
+    [TestMethod]
+    public void TestNormalizeGroupName_TreatsDefaultAndMainAsSame()
+    {
+        PaketComponentDetector.NormalizeGroupName(null).Should().BeEmpty();
+        PaketComponentDetector.NormalizeGroupName(string.Empty).Should().BeEmpty();
+        PaketComponentDetector.NormalizeGroupName("Main").Should().BeEmpty();
+        PaketComponentDetector.NormalizeGroupName("main").Should().BeEmpty();
+        PaketComponentDetector.NormalizeGroupName("Test").Should().Be("Test");
+    }
+
+    [TestMethod]
     public void TestIsDevelopmentDependencyGroup_WellKnownNames()
     {
         // Exact matches
@@ -885,5 +1086,24 @@ NUGET
         PaketComponentDetector.IsDevelopmentDependencyGroup("Api").Should().BeFalse();
         PaketComponentDetector.IsDevelopmentDependencyGroup("Core").Should().BeFalse();
         PaketComponentDetector.IsDevelopmentDependencyGroup("Infrastructure").Should().BeFalse();
+    }
+
+    private async Task<IComponentRecorder> RunWithPaketDependenciesAsync(string paketLock, string paketDependencies)
+    {
+        var mockFileUtility = new Mock<IFileUtilityService>();
+        mockFileUtility
+            .Setup(x => x.Exists(It.Is<string>(p => p.EndsWith(PaketComponentDetector.DependenciesFileName))))
+            .Returns(true);
+        mockFileUtility
+            .Setup(x => x.ReadAllText(It.Is<string>(p => p.EndsWith(PaketComponentDetector.DependenciesFileName))))
+            .Returns(paketDependencies);
+
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+            .WithFile("paket.lock", paketLock)
+            .AddServiceMock(mockFileUtility)
+            .ExecuteDetectorAsync();
+
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+        return componentRecorder;
     }
 }
