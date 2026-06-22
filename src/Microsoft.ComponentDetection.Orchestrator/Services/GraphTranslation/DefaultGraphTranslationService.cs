@@ -45,6 +45,7 @@ internal class DefaultGraphTranslationService : IGraphTranslationService
         if (settings.FilterBaseImageComponents)
         {
             componentsToOutput = FilterOutBaseImageComponents(componentsToOutput, detectorProcessingResult.ContainersDetailsMap);
+            PruneFilteredComponentsFromGraphs(dependencyGraphs, componentsToOutput);
         }
 
         return new DefaultGraphScanResult
@@ -74,10 +75,20 @@ internal class DefaultGraphTranslationService : IGraphTranslationService
             return components;
         }
 
-        return components.Where(component => !IsExclusivelyFromBaseImage(component, containerDetailsMap)).ToList();
+        // Build an indexed lookup: containerDetailId → (layerIndex → DockerLayer)
+        var layerLookup = new Dictionary<int, Dictionary<int, DockerLayer>>();
+        foreach (var (id, details) in containerDetailsMap)
+        {
+            if (details.Layers != null)
+            {
+                layerLookup[id] = details.Layers.ToDictionary(l => l.LayerIndex);
+            }
+        }
+
+        return components.Where(component => !IsExclusivelyFromBaseImage(component, layerLookup)).ToList();
     }
 
-    private static bool IsExclusivelyFromBaseImage(DetectedComponent component, Dictionary<int, ContainerDetails> containerDetailsMap)
+    private static bool IsExclusivelyFromBaseImage(DetectedComponent component, Dictionary<int, Dictionary<int, DockerLayer>> layerLookup)
     {
         // Components without container layer references are not from a container scan - keep them.
         if (component.ContainerLayerIds == null || component.ContainerLayerIds.Count == 0)
@@ -87,18 +98,15 @@ internal class DefaultGraphTranslationService : IGraphTranslationService
 
         foreach (var (containerDetailId, layerIndices) in component.ContainerLayerIds)
         {
-            if (!containerDetailsMap.TryGetValue(containerDetailId, out var containerDetails) || containerDetails.Layers == null)
+            if (!layerLookup.TryGetValue(containerDetailId, out var layersByIndex))
             {
                 // If we can't resolve the container details, assume it's not a base image component.
                 return false;
             }
 
-            var layersList = containerDetails.Layers.ToList();
-
             foreach (var layerIndex in layerIndices)
             {
-                var layer = layersList.FirstOrDefault(l => l.LayerIndex == layerIndex);
-                if (layer == null || !layer.IsBaseImage)
+                if (!layersByIndex.TryGetValue(layerIndex, out var layer) || !layer.IsBaseImage)
                 {
                     // Layer not found or not from base image. Keep this component.
                     return false;
@@ -107,6 +115,42 @@ internal class DefaultGraphTranslationService : IGraphTranslationService
         }
 
         return true;
+    }
+
+    /// <summary>
+    /// Removes component IDs from dependency graphs that are no longer present in the output components list.
+    /// </summary>
+    private static void PruneFilteredComponentsFromGraphs(DependencyGraphCollection graphs, List<DetectedComponent> retainedComponents)
+    {
+        if (graphs == null || graphs.Count == 0)
+        {
+            return;
+        }
+
+        var retainedIds = new HashSet<string>(retainedComponents.Select(c => c.Component.Id));
+
+        foreach (var graphWithMetadata in graphs.Values)
+        {
+            var graph = graphWithMetadata.Graph;
+
+            // Remove nodes that are no longer in retained components.
+            var idsToRemove = graph.Keys.Where(id => !retainedIds.Contains(id)).ToList();
+            foreach (var id in idsToRemove)
+            {
+                graph.Remove(id);
+            }
+
+            // Remove references to removed IDs from remaining nodes' dependency sets.
+            foreach (var edges in graph.Values)
+            {
+                edges?.RemoveWhere(id => !retainedIds.Contains(id));
+            }
+
+            // Clean up metadata sets.
+            graphWithMetadata.ExplicitlyReferencedComponentIds?.RemoveWhere(id => !retainedIds.Contains(id));
+            graphWithMetadata.DevelopmentDependencies?.RemoveWhere(id => !retainedIds.Contains(id));
+            graphWithMetadata.Dependencies?.RemoveWhere(id => !retainedIds.Contains(id));
+        }
     }
 
     private static ConcurrentHashSet<string> MergeTargetFrameworks(ConcurrentHashSet<string> left, ConcurrentHashSet<string> right)

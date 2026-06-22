@@ -568,7 +568,7 @@ public class DefaultGraphTranslationServiceTests
     [TestMethod]
     public void FilterBaseImageComponents_RemovesComponentsExclusivelyFromBaseImageLayers()
     {
-        var singleFileRecorder = this.componentRecorder.CreateSingleFileComponentRecorder(Path.Join(this.sourceDirectory.FullName, "/file1"));
+        var singleFileRecorder = this.componentRecorder.CreateSingleFileComponentRecorder(Path.Join(this.sourceDirectory.FullName, "file1"));
 
         var baseImageComponent = new DetectedComponent(new NpmComponent("base-pkg", "1.0.0"), containerDetailsId: 1, containerLayerId: 0);
         singleFileRecorder.RegisterUsage(baseImageComponent);
@@ -598,7 +598,7 @@ public class DefaultGraphTranslationServiceTests
     [TestMethod]
     public void FilterBaseImageComponents_RetainsComponentsWithMixedLayers()
     {
-        var singleFileRecorder = this.componentRecorder.CreateSingleFileComponentRecorder(Path.Join(this.sourceDirectory.FullName, "/file1"));
+        var singleFileRecorder = this.componentRecorder.CreateSingleFileComponentRecorder(Path.Join(this.sourceDirectory.FullName, "file1"));
 
         var mixedComponent = new DetectedComponent(new NpmComponent("mixed-pkg", "1.0.0"), containerDetailsId: 1, containerLayerId: 0);
         mixedComponent.ContainerLayerIds[1] = [0, 1];
@@ -630,7 +630,7 @@ public class DefaultGraphTranslationServiceTests
     [TestMethod]
     public void FilterBaseImageComponents_RetainsComponentsWithNoContainerReferences()
     {
-        var singleFileRecorder = this.componentRecorder.CreateSingleFileComponentRecorder(Path.Join(this.sourceDirectory.FullName, "/file1"));
+        var singleFileRecorder = this.componentRecorder.CreateSingleFileComponentRecorder(Path.Join(this.sourceDirectory.FullName, "file1"));
 
         var filesystemComponent = new DetectedComponent(new NpmComponent("fs-pkg", "2.0.0"));
         singleFileRecorder.RegisterUsage(filesystemComponent);
@@ -661,7 +661,7 @@ public class DefaultGraphTranslationServiceTests
     [TestMethod]
     public void FilterBaseImageComponents_NoOpWhenFlagIsDisabled()
     {
-        var singleFileRecorder = this.componentRecorder.CreateSingleFileComponentRecorder(Path.Join(this.sourceDirectory.FullName, "/file1"));
+        var singleFileRecorder = this.componentRecorder.CreateSingleFileComponentRecorder(Path.Join(this.sourceDirectory.FullName, "file1"));
 
         var baseImageComponent = new DetectedComponent(new NpmComponent("base-pkg", "1.0.0"), containerDetailsId: 1, containerLayerId: 0);
         singleFileRecorder.RegisterUsage(baseImageComponent);
@@ -687,5 +687,95 @@ public class DefaultGraphTranslationServiceTests
 
         result.ComponentsFound.Should().HaveCount(1);
         ((NpmComponent)result.ComponentsFound.Single().Component).Name.Should().Be("base-pkg");
+    }
+
+    [TestMethod]
+    public void FilterBaseImageComponents_PrunesFilteredComponentsFromDependencyGraphs()
+    {
+        var filePath = Path.Join(this.sourceDirectory.FullName, "file1");
+        var singleFileRecorder = this.componentRecorder.CreateSingleFileComponentRecorder(filePath);
+
+        // Register a retained (non-base-image) component and a base-image component with a dependency edge.
+        var retainedComponent = new DetectedComponent(new NpmComponent("app-pkg", "1.0.0"), containerDetailsId: 1, containerLayerId: 1);
+        var baseImageComponent = new DetectedComponent(new NpmComponent("base-pkg", "2.0.0"), containerDetailsId: 1, containerLayerId: 0);
+
+        singleFileRecorder.RegisterUsage(retainedComponent, isExplicitReferencedDependency: true);
+        singleFileRecorder.RegisterUsage(baseImageComponent, parentComponentId: retainedComponent.Component.Id);
+
+        var containerDetailsMap = new Dictionary<int, ContainerDetails>
+        {
+            [1] = new ContainerDetails
+            {
+                Id = 1,
+                Layers = [new DockerLayer { LayerIndex = 0, IsBaseImage = true }, new DockerLayer { LayerIndex = 1, IsBaseImage = false }],
+            },
+        };
+
+        var processingResult = new DetectorProcessingResult
+        {
+            ResultCode = ProcessingResultCode.Success,
+            ContainersDetailsMap = containerDetailsMap,
+            ComponentRecorders = [(this.componentDetectorMock.Object, this.componentRecorder)],
+        };
+
+        var result = (DefaultGraphScanResult)this.serviceUnderTest.GenerateScanResultFromProcessingResult(
+            processingResult, new ScanSettings { SourceDirectory = this.sourceDirectory, FilterBaseImageComponents = true });
+
+        // Only the non-base-image component should remain.
+        result.ComponentsFound.Should().HaveCount(1);
+        ((NpmComponent)result.ComponentsFound.Single().Component).Name.Should().Be("app-pkg");
+
+        // The dependency graph should not reference the filtered component.
+        var graphEntry = result.DependencyGraphs.Should().ContainSingle().Which;
+        var graph = graphEntry.Value.Graph;
+        graph.Should().ContainKey(retainedComponent.Component.Id);
+        graph.Should().NotContainKey(baseImageComponent.Component.Id);
+
+        // The retained component's edge set should not reference the removed component.
+        var retainedEdges = graph[retainedComponent.Component.Id];
+        retainedEdges?.Should().NotContain(baseImageComponent.Component.Id);
+
+        // Metadata sets should also be cleaned.
+        graphEntry.Value.ExplicitlyReferencedComponentIds.Should().NotContain(baseImageComponent.Component.Id);
+    }
+
+    [TestMethod]
+    public void FilterBaseImageComponents_DependencyGraphsUnchangedWhenFlagDisabled()
+    {
+        var filePath = Path.Join(this.sourceDirectory.FullName, "file1");
+        var singleFileRecorder = this.componentRecorder.CreateSingleFileComponentRecorder(filePath);
+
+        var retainedComponent = new DetectedComponent(new NpmComponent("app-pkg", "1.0.0"), containerDetailsId: 1, containerLayerId: 1);
+        var baseImageComponent = new DetectedComponent(new NpmComponent("base-pkg", "2.0.0"), containerDetailsId: 1, containerLayerId: 0);
+
+        singleFileRecorder.RegisterUsage(retainedComponent, isExplicitReferencedDependency: true);
+        singleFileRecorder.RegisterUsage(baseImageComponent, parentComponentId: retainedComponent.Component.Id);
+
+        var containerDetailsMap = new Dictionary<int, ContainerDetails>
+        {
+            [1] = new ContainerDetails
+            {
+                Id = 1,
+                Layers = [new DockerLayer { LayerIndex = 0, IsBaseImage = true }, new DockerLayer { LayerIndex = 1, IsBaseImage = false }],
+            },
+        };
+
+        var processingResult = new DetectorProcessingResult
+        {
+            ResultCode = ProcessingResultCode.Success,
+            ContainersDetailsMap = containerDetailsMap,
+            ComponentRecorders = [(this.componentDetectorMock.Object, this.componentRecorder)],
+        };
+
+        var result = (DefaultGraphScanResult)this.serviceUnderTest.GenerateScanResultFromProcessingResult(
+            processingResult, new ScanSettings { SourceDirectory = this.sourceDirectory, FilterBaseImageComponents = false });
+
+        // Both components should be present.
+        result.ComponentsFound.Should().HaveCount(2);
+
+        // The dependency graph should still contain both component IDs.
+        var graph = result.DependencyGraphs.Single().Value.Graph;
+        graph.Should().ContainKey(retainedComponent.Component.Id);
+        graph.Should().ContainKey(baseImageComponent.Component.Id);
     }
 }
