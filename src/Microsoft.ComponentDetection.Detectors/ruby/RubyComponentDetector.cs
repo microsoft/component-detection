@@ -220,16 +220,26 @@ public class RubyComponentDetector : FileComponentDetector
                         wasParentDependencyExcluded = false;
                         var splits = line.Trim().Split(" ");
                         name = splits[0].Trim();
-                        var version = splits[1][1..^1];
+                        var fullVersion = splits[1][1..^1];
                         TypedComponent newComponent;
 
-                        if (this.IsVersionRelative(version))
+                        if (this.IsVersionRelative(fullVersion))
                         {
-                            this.Logger.LogWarning("Found component with invalid version, name = {RubyComponentName} and version = {RubyComponentVersion}", name, version);
-                            singleFileComponentRecorder.RegisterPackageParseFailure($"{name} - {version}");
+                            this.Logger.LogWarning("Found component with invalid version, name = {RubyComponentName} and version = {RubyComponentVersion}", name, fullVersion);
+                            singleFileComponentRecorder.RegisterPackageParseFailure($"{name} - {fullVersion}");
                             wasParentDependencyExcluded = true;
                             continue;
                         }
+
+                        // Ruby version strings are formatted differently from pure semantic versioning.
+                        // Specifically, everything after the dash is the platform, not the pre-release version. For
+                        // example: "1.19.4-x86_64-linux-gnu". Ruby represents pre-release versions by placing a letter
+                        // in the main version string. For example: "2.0.0.rc1".
+                        // See: https://guides.rubygems.org/patterns/#prerelease-gems
+
+                        // Remove the platform from the version string (if it exists).
+                        var versionParts = fullVersion.Split("-", 2);
+                        var version = versionParts[0];
 
                         if (sectionType == SectionType.GEM || sectionType == SectionType.PATH)
                         {
