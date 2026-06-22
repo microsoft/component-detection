@@ -125,16 +125,13 @@ internal class CommandLineInvocationService : ICommandLineInvocationService
         return await this.ExecuteCommandAsync(command, additionalCandidateCommands, workingDirectory: null, CancellationToken.None, parameters);
     }
 
-    private static Task<CommandLineExecutionResult> RunProcessAsync(string fileName, string parameters, DirectoryInfo workingDirectory = null)
+    private static async Task<CommandLineExecutionResult> RunProcessAsync(
+        string fileName,
+        string parameters,
+        DirectoryInfo workingDirectory = null,
+        CancellationToken cancellationToken = default)
     {
-        return RunProcessAsync(fileName, parameters, workingDirectory, CancellationToken.None);
-    }
-
-    private static Task<CommandLineExecutionResult> RunProcessAsync(string fileName, string parameters, DirectoryInfo workingDirectory = null, CancellationToken cancellationToken = default)
-    {
-        var tcs = new TaskCompletionSource<CommandLineExecutionResult>();
-
-        if (fileName.EndsWith(".cmd") || fileName.EndsWith(".bat"))
+        if (fileName.EndsWith(".cmd", StringComparison.OrdinalIgnoreCase) || fileName.EndsWith(".bat", StringComparison.OrdinalIgnoreCase))
         {
             // If a script attempts to find its location using "%dp0", that can return the wrong path (current
             // working directory) unless the script is run via "cmd /C".  An example is "ant.bat".
@@ -142,7 +139,7 @@ internal class CommandLineInvocationService : ICommandLineInvocationService
             fileName = "cmd.exe";
         }
 
-        var process = new Process
+        using var process = new Process
         {
             StartInfo =
             {
@@ -153,7 +150,6 @@ internal class CommandLineInvocationService : ICommandLineInvocationService
                 RedirectStandardError = true,
                 RedirectStandardOutput = true,
             },
-            EnableRaisingEvents = true,
         };
 
         if (workingDirectory != null)
@@ -161,44 +157,38 @@ internal class CommandLineInvocationService : ICommandLineInvocationService
             process.StartInfo.WorkingDirectory = workingDirectory.FullName;
         }
 
-        var errorText = string.Empty;
-        var stdOutText = string.Empty;
-
-        var t1 = new Task(() =>
-        {
-            errorText = process.StandardError.ReadToEnd();
-        });
-        var t2 = new Task(() =>
-        {
-            stdOutText = process.StandardOutput.ReadToEnd();
-        });
-
-        process.Exited += (sender, args) =>
-        {
-            Task.WaitAll(t1, t2);
-            tcs.TrySetResult(new CommandLineExecutionResult { ExitCode = process.ExitCode, StdErr = errorText, StdOut = stdOutText });
-            process.Dispose();
-        };
-
         process.Start();
-        t1.Start();
-        t2.Start();
 
-        cancellationToken.Register(() =>
+        // Read both streams concurrently to avoid deadlocks if either fills its buffer.
+        var stdOutTask = process.StandardOutput.ReadToEndAsync(cancellationToken);
+        var stdErrTask = process.StandardError.ReadToEndAsync(cancellationToken);
+
+        try
+        {
+            await process.WaitForExitAsync(cancellationToken);
+        }
+        catch (OperationCanceledException)
         {
             try
             {
-                process.Kill();
+                process.Kill(entireProcessTree: true);
             }
             catch (InvalidOperationException)
             {
-                // swallow invalid operations, which indicate that there is no process associated with
-                // the process object, and therefore nothing to kill
-                // https://learn.microsoft.com/en-us/dotnet/api/system.diagnostics.process.kill?view=net-8.0#system-diagnostics-process-kill
-                return;
+                // Process already exited.
             }
-        });
 
-        return tcs.Task;
+            throw;
+        }
+
+        var stdOut = await stdOutTask;
+        var stdErr = await stdErrTask;
+
+        return new CommandLineExecutionResult
+        {
+            ExitCode = process.ExitCode,
+            StdOut = stdOut,
+            StdErr = stdErr,
+        };
     }
 }
