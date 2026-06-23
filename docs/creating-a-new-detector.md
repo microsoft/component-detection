@@ -54,7 +54,7 @@ New detectors progress through three stages before becoming default. Contributor
 | Stage | Interface | Behavior |
 |-------|-----------|----------|
 | **1. Default Off** | `IDefaultOffComponentDetector` | Must be explicitly enabled via `--DetectorArgs YourDetectorId=EnableIfDefaultOff`. Detector should be fully functional and produce correct output. |
-| **2. Experimental** | `IExperimentalDetector` | Runs automatically but output is NOT included in scan results. Used to measure performance impact. |
+| **2. Experimental** | `IExperimentalDetector` | Runs automatically but output is NOT included in scan results. Used to measure performance impact. Enabling experimental detectors via `--DetectorArgs YourDetectorId=EnableIfDefaultOff` will cause output to be included in scan results. |
 | **3. Default** | `IComponentDetector` | Fully integrated. Runs by default and output is included in results. Can be filtered via `--DetectorCategory` or `--DetectorFilters`. |
 
 ## Step 1: Define Your Component Type
