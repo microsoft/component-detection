@@ -731,9 +731,9 @@ public class DefaultGraphTranslationServiceTests
         graph.Should().ContainKey(retainedComponent.Component.Id);
         graph.Should().NotContainKey(baseImageComponent.Component.Id);
 
-        // The retained component's edge set should not reference the removed component.
+        // The retained component should be a leaf node (null edges) after its only dependency was pruned.
         var retainedEdges = graph[retainedComponent.Component.Id];
-        retainedEdges?.Should().NotContain(baseImageComponent.Component.Id);
+        retainedEdges.Should().BeNull();
 
         // Metadata sets should also be cleaned.
         graphEntry.Value.ExplicitlyReferencedComponentIds.Should().NotContain(baseImageComponent.Component.Id);

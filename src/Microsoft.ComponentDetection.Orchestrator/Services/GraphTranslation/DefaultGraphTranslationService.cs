@@ -141,9 +141,18 @@ internal class DefaultGraphTranslationService : IGraphTranslationService
             }
 
             // Remove references to removed IDs from remaining nodes' dependency sets.
-            foreach (var edges in graph.Values)
+            // Normalize empty edge sets to null for consistent leaf-node serialization.
+            foreach (var nodeId in graph.Keys.ToList())
             {
-                edges?.RemoveWhere(id => !retainedIds.Contains(id));
+                var edges = graph[nodeId];
+                if (edges != null)
+                {
+                    edges.RemoveWhere(id => !retainedIds.Contains(id));
+                    if (edges.Count == 0)
+                    {
+                        graph[nodeId] = null;
+                    }
+                }
             }
 
             // Clean up metadata sets.
