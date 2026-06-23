@@ -54,10 +54,29 @@ public class NuGetComponentDetector : FileComponentDetector
         {
             await this.ProcessAdditionalDirectoryAsync(processRequest, ignoreNugetConfig);
         }
+        else if ("paket.lock".Equals(stream.Pattern, StringComparison.OrdinalIgnoreCase) && IsPaketDetectorEnabled(detectorArgs))
+        {
+            // The dedicated Paket detector is enabled and will process this file, so skip it here
+            // to avoid double-processing the same paket.lock with the legacy parser below.
+            this.Logger.LogDebug("Skipping paket.lock at {Location} because the Paket detector is enabled and will process it.", stream.Location);
+        }
         else
         {
             await this.ProcessFileAsync(processRequest);
         }
+    }
+
+    /// <summary>
+    /// Determines whether the dedicated Paket detector has been explicitly enabled via detector args
+    /// (e.g. <c>--DetectorArgs Paket=EnableIfDefaultOff</c>). When enabled, the NuGet detector defers
+    /// paket.lock handling to it; otherwise the NuGet detector parses paket.lock with its legacy parser.
+    /// </summary>
+    private static bool IsPaketDetectorEnabled(IDictionary<string, string> detectorArgs)
+    {
+        return detectorArgs != null
+            && detectorArgs.TryGetValue(Paket.PaketComponentDetector.DetectorId, out var value)
+            && (value.Equals("EnableIfDefaultOff", StringComparison.OrdinalIgnoreCase)
+                || value.Equals("Enable", StringComparison.OrdinalIgnoreCase));
     }
 
     private async Task ProcessAdditionalDirectoryAsync(ProcessRequest processRequest, bool ignoreNugetConfig)
