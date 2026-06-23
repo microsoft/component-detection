@@ -46,6 +46,7 @@ internal class DefaultGraphTranslationService : IGraphTranslationService
         {
             componentsToOutput = FilterOutBaseImageComponents(componentsToOutput, detectorProcessingResult.ContainersDetailsMap);
             PruneFilteredComponentsFromGraphs(dependencyGraphs, componentsToOutput);
+            PruneFilteredComponentReferrers(componentsToOutput);
         }
 
         return new DefaultGraphScanResult
@@ -159,6 +160,22 @@ internal class DefaultGraphTranslationService : IGraphTranslationService
             graphWithMetadata.ExplicitlyReferencedComponentIds?.RemoveWhere(id => !retainedIds.Contains(id));
             graphWithMetadata.DevelopmentDependencies?.RemoveWhere(id => !retainedIds.Contains(id));
             graphWithMetadata.Dependencies?.RemoveWhere(id => !retainedIds.Contains(id));
+        }
+    }
+
+    /// <summary>
+    /// Removes references to filtered-out components from the DependencyRoots and AncestralDependencyRoots
+    /// of retained components, so that TopLevelReferrers and AncestralReferrers in the output don't
+    /// reference components that were removed from ComponentsFound.
+    /// </summary>
+    private static void PruneFilteredComponentReferrers(List<DetectedComponent> retainedComponents)
+    {
+        var retainedIds = new HashSet<string>(retainedComponents.Select(c => c.Component.Id));
+
+        foreach (var component in retainedComponents)
+        {
+            component.DependencyRoots?.RemoveWhere(root => !retainedIds.Contains(root.Id));
+            component.AncestralDependencyRoots?.RemoveWhere(root => !retainedIds.Contains(root.Id));
         }
     }
 

@@ -778,4 +778,48 @@ public class DefaultGraphTranslationServiceTests
         graph.Should().ContainKey(retainedComponent.Component.Id);
         graph.Should().ContainKey(baseImageComponent.Component.Id);
     }
+
+    [TestMethod]
+    public void FilterBaseImageComponents_PrunesReferrersToFilteredComponents()
+    {
+        var filePath = Path.Join(this.sourceDirectory.FullName, "file1");
+        var singleFileRecorder = this.componentRecorder.CreateSingleFileComponentRecorder(filePath);
+
+        // base-pkg is a root that depends on child-pkg (non-base-image).
+        var baseImageComponent = new DetectedComponent(new NpmComponent("base-pkg", "1.0.0"), containerDetailsId: 1, containerLayerId: 0);
+        var childComponent = new DetectedComponent(new NpmComponent("child-pkg", "1.0.0"), containerDetailsId: 1, containerLayerId: 1);
+
+        singleFileRecorder.RegisterUsage(baseImageComponent, isExplicitReferencedDependency: true);
+        singleFileRecorder.RegisterUsage(childComponent, parentComponentId: baseImageComponent.Component.Id);
+
+        var containerDetailsMap = new Dictionary<int, ContainerDetails>
+        {
+            [1] = new ContainerDetails
+            {
+                Id = 1,
+                Layers = [new DockerLayer { LayerIndex = 0, IsBaseImage = true }, new DockerLayer { LayerIndex = 1, IsBaseImage = false }],
+            },
+        };
+
+        var processingResult = new DetectorProcessingResult
+        {
+            ResultCode = ProcessingResultCode.Success,
+            ContainersDetailsMap = containerDetailsMap,
+            ComponentRecorders = [(this.componentDetectorMock.Object, this.componentRecorder)],
+        };
+
+        var result = this.serviceUnderTest.GenerateScanResultFromProcessingResult(
+            processingResult, new ScanSettings { SourceDirectory = this.sourceDirectory, FilterBaseImageComponents = true });
+
+        // Only child-pkg should remain (base-pkg is exclusively from base image layer).
+        result.ComponentsFound.Should().HaveCount(1);
+        var child = result.ComponentsFound.Single();
+        ((NpmComponent)child.Component).Name.Should().Be("child-pkg");
+
+        // TopLevelReferrers should not reference the filtered base-image component.
+        child.TopLevelReferrers?.Should().NotContain(c => c.Id == baseImageComponent.Component.Id);
+
+        // AncestralReferrers should not reference the filtered base-image component.
+        child.AncestralReferrers?.Should().NotContain(c => c.Id == baseImageComponent.Component.Id);
+    }
 }
