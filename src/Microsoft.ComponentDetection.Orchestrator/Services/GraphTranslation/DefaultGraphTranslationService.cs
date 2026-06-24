@@ -105,6 +105,12 @@ internal class DefaultGraphTranslationService : IGraphTranslationService
                 return false;
             }
 
+            if (layerIndices == null)
+            {
+                // No layer indices for this container detail - keep the component.
+                return false;
+            }
+
             foreach (var layerIndex in layerIndices)
             {
                 if (!layersByIndex.TryGetValue(layerIndex, out var layer) || !layer.IsBaseImage)
