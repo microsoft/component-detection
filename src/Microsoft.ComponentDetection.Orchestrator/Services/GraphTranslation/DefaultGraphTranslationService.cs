@@ -105,7 +105,7 @@ internal class DefaultGraphTranslationService : IGraphTranslationService
                 return false;
             }
 
-            if (layerIndices == null)
+            if (layerIndices == null || !layerIndices.Any())
             {
                 // No layer indices for this container detail - keep the component.
                 return false;
