@@ -429,8 +429,9 @@ internal class LinuxScanner : ILinuxScanner
             return (null, []);
         }
 
-        // Collect layer IDs from the artifact's locations.
+        // Collect layer IDs from the artifact's locations, filtering out entries with null/empty layer IDs.
         var locationLayerIds = artifact.Locations?
+            .Where(location => !string.IsNullOrEmpty(location.Path) && !string.IsNullOrEmpty(location.LayerId))
             .Select(location => (location.Path, location.LayerId))
             .ToList() ?? [];
 
@@ -440,7 +441,8 @@ internal class LinuxScanner : ILinuxScanner
         {
             foreach (var file in artifact.Metadata.Files)
             {
-                var filePath = file.FileFile?.Path;
+                // The File union type can be either a FileFile object or a plain string path.
+                var filePath = file.FileFile?.Path ?? file.String;
                 if (!string.IsNullOrEmpty(filePath) && filePathToLayerId.TryGetValue(filePath, out var layerId))
                 {
                     locationLayerIds.Add((filePath, layerId));
@@ -464,6 +466,7 @@ internal class LinuxScanner : ILinuxScanner
         // Fall back to database path layer IDs if no other locations are available.
         var allLayerIds = locationLayerIds
             .Select(loc => loc.LayerId)
+            .Where(id => !string.IsNullOrEmpty(id))
             .Distinct()
             .ToList();
         return (component, allLayerIds);
