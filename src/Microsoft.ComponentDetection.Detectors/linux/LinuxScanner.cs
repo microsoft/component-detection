@@ -30,6 +30,21 @@ internal class LinuxScanner : ILinuxScanner
 
     private static readonly IList<string> ScopeSquashedParameter = ["--scope", "squashed"];
 
+    /// <summary>
+    /// Well-known package manager database paths whose layer attribution should be ignored
+    /// when determining which layer a system package belongs to. These files are shared across
+    /// all packages managed by the same package manager and get updated whenever any package is
+    /// installed or removed, causing unrelated packages to appear as modified in later layers.
+    /// </summary>
+    private static readonly HashSet<string> PackageManagerDatabasePaths = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "/var/lib/dpkg/status",
+        "/lib/apk/db/installed",
+        "/var/lib/rpm/Packages",
+        "/var/lib/rpm/Packages.db",
+        "/var/lib/rpm/rpmdb.sqlite",
+    };
+
     private static readonly SemaphoreSlim ContainerSemaphore = new SemaphoreSlim(2);
 
     /// <summary>
@@ -179,11 +194,16 @@ internal class LinuxScanner : ILinuxScanner
             }
         }
 
+        // Build a file path → layerID map from the top-level files listing.
+        // This allows us to determine layer attribution for files owned by a package
+        // even when the artifact's locations only reference the package manager database.
+        var filePathToLayerId = BuildFilePathToLayerMap(syftOutput.Files);
+
         // Create components using only enabled factories
         var componentsWithLayers = validArtifacts
             .DistinctBy(artifact => (artifact.Name, artifact.Version, artifact.Type))
             .Select(artifact =>
-                this.CreateComponentWithLayers(artifact, syftOutput.Distro, enabledFactories)
+                this.CreateComponentWithLayers(artifact, syftOutput.Distro, enabledFactories, filePathToLayerId)
             )
             .Where(result => result.Component != null)
             .Select(result => (Component: result.Component!, result.LayerIds))
@@ -388,7 +408,8 @@ internal class LinuxScanner : ILinuxScanner
     private (TypedComponent? Component, IEnumerable<string> LayerIds) CreateComponentWithLayers(
         ArtifactElement artifact,
         Distro distro,
-        HashSet<IArtifactComponentFactory> enabledFactories
+        HashSet<IArtifactComponentFactory> enabledFactories,
+        Dictionary<string, string> filePathToLayerId
     )
     {
         if (!this.artifactTypeToFactoryLookup.TryGetValue(artifact.Type, out var factory))
@@ -408,12 +429,93 @@ internal class LinuxScanner : ILinuxScanner
             return (null, []);
         }
 
-        var layerIds = artifact.Locations?.Select(location => location.LayerId).Distinct() ?? [];
-        return (component, layerIds);
+        // Collect layer IDs from the artifact's locations.
+        var locationLayerIds = artifact.Locations?
+            .Select(location => (location.Path, location.LayerId))
+            .ToList() ?? [];
+
+        // Also consult the metadata files property to find additional owned files,
+        // and look up their layer IDs from the top-level file listing.
+        if (artifact.Metadata?.Files != null)
+        {
+            foreach (var file in artifact.Metadata.Files)
+            {
+                var filePath = file.FileFile?.Path;
+                if (!string.IsNullOrEmpty(filePath) && filePathToLayerId.TryGetValue(filePath, out var layerId))
+                {
+                    locationLayerIds.Add((filePath, layerId));
+                }
+            }
+        }
+
+        // Exclude well-known package manager database paths from layer attribution,
+        // unless they are the only known locations for this component.
+        var nonDbLayerIds = locationLayerIds
+            .Where(loc => !IsPackageManagerDatabasePath(loc.Path))
+            .Select(loc => loc.LayerId)
+            .Distinct()
+            .ToList();
+
+        if (nonDbLayerIds.Count > 0)
+        {
+            return (component, nonDbLayerIds);
+        }
+
+        // Fall back to database path layer IDs if no other locations are available.
+        var allLayerIds = locationLayerIds
+            .Select(loc => loc.LayerId)
+            .Distinct()
+            .ToList();
+        return (component, allLayerIds);
     }
 
     /// <summary>
     /// Clears the syft run cache. Intended for test isolation only.
     /// </summary>
     internal static void ResetCache() => SyftRunCache.Clear();
+
+    /// <summary>
+    /// Builds a dictionary mapping file paths to their layer IDs from the top-level
+    /// files listing in the syft output. This enables layer attribution for files
+    /// owned by a package even when the artifact's locations only reference the
+    /// package manager database.
+    /// </summary>
+    private static Dictionary<string, string> BuildFilePathToLayerMap(FileElement[] files)
+    {
+        var map = new Dictionary<string, string>(StringComparer.Ordinal);
+        if (files == null)
+        {
+            return map;
+        }
+
+        foreach (var file in files)
+        {
+            if (file.Location != null && !string.IsNullOrEmpty(file.Location.Path) && !string.IsNullOrEmpty(file.Location.LayerId))
+            {
+                map.TryAdd(file.Location.Path, file.Location.LayerId);
+            }
+        }
+
+        return map;
+    }
+
+    /// <summary>
+    /// Determines whether a file path is a well-known package manager database file
+    /// that should be excluded from layer attribution.
+    /// </summary>
+    private static bool IsPackageManagerDatabasePath(string path)
+    {
+        if (string.IsNullOrEmpty(path))
+        {
+            return false;
+        }
+
+        if (PackageManagerDatabasePaths.Contains(path))
+        {
+            return true;
+        }
+
+        // Cover any file under /var/lib/rpm/ (RPM database can use multiple files)
+        return path.StartsWith("/var/lib/rpm/", StringComparison.OrdinalIgnoreCase);
+    }
 }

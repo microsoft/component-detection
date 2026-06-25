@@ -97,6 +97,10 @@ public class LinuxScannerTests
                     "type":"deb",
                     "locations": [
                         {
+                            "path": "/usr/bin/test",
+                            "layerID": "sha256:f95fc50d21d981f1efe1f04109c2c3287c271794f5d9e4fdf9888851a174a971"
+                        },
+                        {
                             "path": "/var/lib/dpkg/status",
                             "layerID": "sha256:f95fc50d21d981f1efe1f04109c2c3287c271794f5d9e4fdf9888851a174a971"
                         }
@@ -1465,5 +1469,187 @@ public class LinuxScannerTests
         syftCompletionSource.SetResult((SyftOutputNoAuthorOrLicense, string.Empty));
         var result1 = await task1;
         result1.Should().NotBeEmpty();
+    }
+
+    [TestMethod]
+    public void TestLinuxScanner_ProcessSyftOutput_ExcludesPackageManagerDatabasePathsFromLayerAttribution()
+    {
+        // Simulates a scenario where a package (curl) is installed in layer1,
+        // but the dpkg status file is also modified in layer2 by a different package install.
+        // curl should only be attributed to layer1.
+        var syftOutputJson = """
+            {
+                "distro": { "id": "ubuntu", "versionID": "22.04" },
+                "artifacts": [
+                    {
+                        "name": "curl",
+                        "version": "7.81.0",
+                        "type": "deb",
+                        "locations": [
+                            {
+                                "path": "/usr/bin/curl",
+                                "layerID": "sha256:layer1"
+                            },
+                            {
+                                "path": "/var/lib/dpkg/status",
+                                "layerID": "sha256:layer2"
+                            }
+                        ]
+                    }
+                ],
+                "source": {
+                    "id": "sha256:abc",
+                    "name": "test-image",
+                    "type": "image",
+                    "version": "sha256:abc"
+                }
+            }
+            """;
+        var syftOutput = SyftOutput.FromJson(syftOutputJson);
+        var containerLayers = new List<DockerLayer>
+        {
+            new() { DiffId = "sha256:layer1", LayerIndex = 0, IsBaseImage = true },
+            new() { DiffId = "sha256:layer2", LayerIndex = 1, IsBaseImage = false },
+        };
+        var enabledTypes = new HashSet<ComponentType> { ComponentType.Linux };
+
+        var result = this.linuxScanner.ProcessSyftOutput(syftOutput, containerLayers, enabledTypes).ToList();
+
+        // curl should only appear in layer1, not layer2
+        var layer1Entry = result.FirstOrDefault(r => r.DockerLayer.DiffId == "sha256:layer1");
+        var layer2Entry = result.FirstOrDefault(r => r.DockerLayer.DiffId == "sha256:layer2");
+
+        layer1Entry.Should().NotBeNull();
+        layer1Entry.Components.Should().ContainSingle();
+        ((LinuxComponent)layer1Entry.Components.First()).Name.Should().Be("curl");
+
+        // layer2 should have no components (or not exist in results)
+        layer2Entry?.Components.Should().BeEmpty();
+    }
+
+    [TestMethod]
+    public void TestLinuxScanner_ProcessSyftOutput_PackageWithOnlyDatabasePath_FallsBackToDatabaseLayer()
+    {
+        // If a package only has the database path as its location (no real file paths
+        // and no metadata files), the database path layer is used as a fallback.
+        var syftOutputJson = """
+            {
+                "distro": { "id": "alpine", "versionID": "3.18" },
+                "artifacts": [
+                    {
+                        "name": "musl",
+                        "version": "1.2.4",
+                        "type": "apk",
+                        "locations": [
+                            {
+                                "path": "/lib/apk/db/installed",
+                                "layerID": "sha256:layer1"
+                            }
+                        ]
+                    }
+                ],
+                "source": {
+                    "id": "sha256:abc",
+                    "name": "test-image",
+                    "type": "image",
+                    "version": "sha256:abc"
+                }
+            }
+            """;
+        var syftOutput = SyftOutput.FromJson(syftOutputJson);
+        var containerLayers = new List<DockerLayer>
+        {
+            new() { DiffId = "sha256:layer1", LayerIndex = 0, IsBaseImage = true },
+        };
+        var enabledTypes = new HashSet<ComponentType> { ComponentType.Linux };
+
+        var result = this.linuxScanner.ProcessSyftOutput(syftOutput, containerLayers, enabledTypes).ToList();
+
+        // The component should fall back to the database path's layer
+        var layer1Entry = result.FirstOrDefault(r => r.DockerLayer.DiffId == "sha256:layer1");
+        layer1Entry.Should().NotBeNull();
+        layer1Entry.Components.Should().ContainSingle();
+        ((LinuxComponent)layer1Entry.Components.First()).Name.Should().Be("musl");
+    }
+
+    [TestMethod]
+    public void TestLinuxScanner_ProcessSyftOutput_UsesMetadataFilesForLayerAttribution()
+    {
+        // Simulates a scenario where a package (curl) only has the package DB in its
+        // artifact locations, but has owned files in metadata.files. The top-level files[]
+        // listing provides the layer mapping for those owned files. The component should
+        // be attributed to the layer of its owned files, not the DB layer.
+        var syftOutputJson = """
+            {
+                "distro": { "id": "mariner", "versionID": "3.0" },
+                "artifacts": [
+                    {
+                        "name": "curl",
+                        "version": "8.11.1",
+                        "type": "rpm",
+                        "locations": [
+                            {
+                                "path": "/var/lib/rpm/rpmdb.sqlite",
+                                "layerID": "sha256:layer2"
+                            }
+                        ],
+                        "metadata": {
+                            "files": [
+                                { "path": "/usr/bin/curl" },
+                                { "path": "/usr/lib/libcurl.so" }
+                            ]
+                        }
+                    }
+                ],
+                "files": [
+                    {
+                        "id": "file1",
+                        "location": {
+                            "path": "/usr/bin/curl",
+                            "layerID": "sha256:layer1"
+                        }
+                    },
+                    {
+                        "id": "file2",
+                        "location": {
+                            "path": "/usr/lib/libcurl.so",
+                            "layerID": "sha256:layer1"
+                        }
+                    },
+                    {
+                        "id": "file3",
+                        "location": {
+                            "path": "/var/lib/rpm/rpmdb.sqlite",
+                            "layerID": "sha256:layer2"
+                        }
+                    }
+                ],
+                "source": {
+                    "id": "sha256:abc",
+                    "name": "test-image",
+                    "type": "image",
+                    "version": "sha256:abc"
+                }
+            }
+            """;
+        var syftOutput = SyftOutput.FromJson(syftOutputJson);
+        var containerLayers = new List<DockerLayer>
+        {
+            new() { DiffId = "sha256:layer1", LayerIndex = 0, IsBaseImage = true },
+            new() { DiffId = "sha256:layer2", LayerIndex = 1, IsBaseImage = false },
+        };
+        var enabledTypes = new HashSet<ComponentType> { ComponentType.Linux };
+
+        var result = this.linuxScanner.ProcessSyftOutput(syftOutput, containerLayers, enabledTypes).ToList();
+
+        // curl should be attributed to layer1 (where its real files are), not layer2 (DB layer)
+        var layer1Entry = result.FirstOrDefault(r => r.DockerLayer.DiffId == "sha256:layer1");
+        var layer2Entry = result.FirstOrDefault(r => r.DockerLayer.DiffId == "sha256:layer2");
+
+        layer1Entry.Should().NotBeNull();
+        layer1Entry.Components.Should().ContainSingle();
+        ((LinuxComponent)layer1Entry.Components.First()).Name.Should().Be("curl");
+
+        layer2Entry?.Components.Should().BeEmpty();
     }
 }

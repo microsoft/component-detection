@@ -44,7 +44,19 @@ internal class DefaultGraphTranslationService : IGraphTranslationService
         var componentsToOutput = mergedComponents;
         if (settings.FilterBaseImageComponents)
         {
-            componentsToOutput = FilterOutBaseImageComponents(componentsToOutput, detectorProcessingResult.ContainersDetailsMap);
+            var originalCount = mergedComponents.Count;
+            componentsToOutput = this.FilterOutBaseImageComponents(componentsToOutput, detectorProcessingResult.ContainersDetailsMap);
+            var filteredCount = originalCount - componentsToOutput.Count;
+
+            if (filteredCount > 0)
+            {
+                this.logger.LogInformation("Filtered out {FilteredCount} of {TotalCount} components that originate exclusively from base image layers. {RetainedCount} components remain.", filteredCount, originalCount, componentsToOutput.Count);
+            }
+            else
+            {
+                this.logger.LogInformation("Base image component filtering is enabled but no components were filtered out ({TotalCount} total).", originalCount);
+            }
+
             PruneFilteredComponentsFromGraphs(dependencyGraphs, componentsToOutput);
             PruneFilteredComponentReferrers(componentsToOutput);
         }
@@ -67,7 +79,7 @@ internal class DefaultGraphTranslationService : IGraphTranslationService
     /// <param name="components">The list of detected components to filter.</param>
     /// <param name="containerDetailsMap">The map of container details with layer information.</param>
     /// <returns>A filtered list of components excluding those exclusively from base image layers.</returns>
-    internal static List<DetectedComponent> FilterOutBaseImageComponents(
+    internal List<DetectedComponent> FilterOutBaseImageComponents(
         List<DetectedComponent> components,
         Dictionary<int, ContainerDetails> containerDetailsMap)
     {
@@ -86,7 +98,20 @@ internal class DefaultGraphTranslationService : IGraphTranslationService
             }
         }
 
-        return components.Where(component => !IsExclusivelyFromBaseImage(component, layerLookup)).ToList();
+        var retained = new List<DetectedComponent>();
+        foreach (var component in components)
+        {
+            if (IsExclusivelyFromBaseImage(component, layerLookup))
+            {
+                this.logger.LogDebug("Filtering out component {ComponentId} because all associated layers are from the base image.", component.Component.Id);
+            }
+            else
+            {
+                retained.Add(component);
+            }
+        }
+
+        return retained;
     }
 
     private static bool IsExclusivelyFromBaseImage(DetectedComponent component, Dictionary<int, Dictionary<int, DockerLayer>> layerLookup)
