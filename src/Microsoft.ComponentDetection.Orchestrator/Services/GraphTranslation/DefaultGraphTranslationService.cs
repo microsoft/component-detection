@@ -94,7 +94,7 @@ internal class DefaultGraphTranslationService : IGraphTranslationService
         {
             if (details.Layers != null)
             {
-                layerLookup[id] = details.Layers.ToDictionary(l => l.LayerIndex);
+                layerLookup[id] = details.Layers.GroupBy(l => l.LayerIndex).ToDictionary(g => g.Key, g => g.First());
             }
         }
 

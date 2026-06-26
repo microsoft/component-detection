@@ -1652,4 +1652,70 @@ public class LinuxScannerTests
 
         layer2Entry?.Components.Should().BeEmpty();
     }
+
+    [TestMethod]
+    public void TestLinuxScanner_ProcessSyftOutput_HandlesMultipleLayersWithSameDiffId()
+    {
+        // When layers have the same content (e.g., empty layers), they share the same DiffId.
+        // The scanner should handle this without throwing and correctly attribute components.
+        var syftOutputJson = """
+            {
+                "distro": { "id": "ubuntu", "versionID": "22.04" },
+                "artifacts": [
+                    {
+                        "name": "curl",
+                        "version": "7.81.0",
+                        "type": "deb",
+                        "locations": [
+                            {
+                                "path": "/usr/bin/curl",
+                                "layerID": "sha256:duplicated-layer"
+                            }
+                        ]
+                    },
+                    {
+                        "name": "wget",
+                        "version": "1.21",
+                        "type": "deb",
+                        "locations": [
+                            {
+                                "path": "/usr/bin/wget",
+                                "layerID": "sha256:unique-layer"
+                            }
+                        ]
+                    }
+                ],
+                "source": {
+                    "id": "sha256:abc",
+                    "name": "test-image",
+                    "type": "image",
+                    "version": "sha256:abc"
+                }
+            }
+            """;
+        var syftOutput = SyftOutput.FromJson(syftOutputJson);
+
+        // Two layers share the same DiffId ("sha256:duplicated-layer") but have different indexes
+        var containerLayers = new List<DockerLayer>
+        {
+            new() { DiffId = "sha256:duplicated-layer", LayerIndex = 0, IsBaseImage = true },
+            new() { DiffId = "sha256:duplicated-layer", LayerIndex = 1, IsBaseImage = true },
+            new() { DiffId = "sha256:unique-layer", LayerIndex = 2, IsBaseImage = false },
+        };
+        var enabledTypes = new HashSet<ComponentType> { ComponentType.Linux };
+
+        var result = this.linuxScanner.ProcessSyftOutput(syftOutput, containerLayers, enabledTypes).ToList();
+
+        // Should not throw; should produce entries for the two distinct DiffIds
+        result.Should().HaveCount(2);
+
+        var duplicatedLayerEntry = result.First(r => r.DockerLayer.DiffId == "sha256:duplicated-layer");
+        duplicatedLayerEntry.DockerLayer.LayerIndex.Should().Be(0, "the first occurrence of the duplicate DiffId should be used");
+        duplicatedLayerEntry.Components.Should().ContainSingle();
+        ((LinuxComponent)duplicatedLayerEntry.Components.First()).Name.Should().Be("curl");
+
+        var uniqueLayerEntry = result.First(r => r.DockerLayer.DiffId == "sha256:unique-layer");
+        uniqueLayerEntry.Components.Should().ContainSingle();
+        ((LinuxComponent)uniqueLayerEntry.Components.First()).Name.Should().Be("wget");
+    }
 }
