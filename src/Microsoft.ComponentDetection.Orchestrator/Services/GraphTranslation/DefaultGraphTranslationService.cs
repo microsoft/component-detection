@@ -42,7 +42,7 @@ internal class DefaultGraphTranslationService : IGraphTranslationService
         ReconcileDependencyGraphIds(dependencyGraphs, mergedComponents);
 
         var componentsToOutput = mergedComponents;
-        if (settings.FilterBaseImageComponents)
+        if (settings.ExcludeBaseImageComponents)
         {
             var originalCount = mergedComponents.Count;
             componentsToOutput = this.FilterOutBaseImageComponents(componentsToOutput, detectorProcessingResult.ContainersDetailsMap);

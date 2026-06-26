@@ -566,7 +566,7 @@ public class DefaultGraphTranslationServiceTests
     }
 
     [TestMethod]
-    public void FilterBaseImageComponents_RemovesComponentsExclusivelyFromBaseImageLayers()
+    public void ExcludeBaseImageComponents_RemovesComponentsExclusivelyFromBaseImageLayers()
     {
         var singleFileRecorder = this.componentRecorder.CreateSingleFileComponentRecorder(Path.Join(this.sourceDirectory.FullName, "file1"));
 
@@ -590,13 +590,13 @@ public class DefaultGraphTranslationServiceTests
         };
 
         var result = this.serviceUnderTest.GenerateScanResultFromProcessingResult(
-            processingResult, new ScanSettings { SourceDirectory = this.sourceDirectory, FilterBaseImageComponents = true });
+            processingResult, new ScanSettings { SourceDirectory = this.sourceDirectory, ExcludeBaseImageComponents = true });
 
         result.ComponentsFound.Should().BeEmpty();
     }
 
     [TestMethod]
-    public void FilterBaseImageComponents_RetainsComponentsWithMixedLayers()
+    public void ExcludeBaseImageComponents_RetainsComponentsWithMixedLayers()
     {
         var singleFileRecorder = this.componentRecorder.CreateSingleFileComponentRecorder(Path.Join(this.sourceDirectory.FullName, "file1"));
 
@@ -621,14 +621,14 @@ public class DefaultGraphTranslationServiceTests
         };
 
         var result = this.serviceUnderTest.GenerateScanResultFromProcessingResult(
-            processingResult, new ScanSettings { SourceDirectory = this.sourceDirectory, FilterBaseImageComponents = true });
+            processingResult, new ScanSettings { SourceDirectory = this.sourceDirectory, ExcludeBaseImageComponents = true });
 
         result.ComponentsFound.Should().HaveCount(1);
         ((NpmComponent)result.ComponentsFound.Single().Component).Name.Should().Be("mixed-pkg");
     }
 
     [TestMethod]
-    public void FilterBaseImageComponents_RetainsComponentsWithNoContainerReferences()
+    public void ExcludeBaseImageComponents_RetainsComponentsWithNoContainerReferences()
     {
         var singleFileRecorder = this.componentRecorder.CreateSingleFileComponentRecorder(Path.Join(this.sourceDirectory.FullName, "file1"));
 
@@ -652,14 +652,14 @@ public class DefaultGraphTranslationServiceTests
         };
 
         var result = this.serviceUnderTest.GenerateScanResultFromProcessingResult(
-            processingResult, new ScanSettings { SourceDirectory = this.sourceDirectory, FilterBaseImageComponents = true });
+            processingResult, new ScanSettings { SourceDirectory = this.sourceDirectory, ExcludeBaseImageComponents = true });
 
         result.ComponentsFound.Should().HaveCount(1);
         ((NpmComponent)result.ComponentsFound.Single().Component).Name.Should().Be("fs-pkg");
     }
 
     [TestMethod]
-    public void FilterBaseImageComponents_NoOpWhenFlagIsDisabled()
+    public void ExcludeBaseImageComponents_NoOpWhenFlagIsDisabled()
     {
         var singleFileRecorder = this.componentRecorder.CreateSingleFileComponentRecorder(Path.Join(this.sourceDirectory.FullName, "file1"));
 
@@ -683,14 +683,14 @@ public class DefaultGraphTranslationServiceTests
         };
 
         var result = this.serviceUnderTest.GenerateScanResultFromProcessingResult(
-            processingResult, new ScanSettings { SourceDirectory = this.sourceDirectory, FilterBaseImageComponents = false });
+            processingResult, new ScanSettings { SourceDirectory = this.sourceDirectory, ExcludeBaseImageComponents = false });
 
         result.ComponentsFound.Should().HaveCount(1);
         ((NpmComponent)result.ComponentsFound.Single().Component).Name.Should().Be("base-pkg");
     }
 
     [TestMethod]
-    public void FilterBaseImageComponents_PrunesFilteredComponentsFromDependencyGraphs()
+    public void ExcludeBaseImageComponents_PrunesFilteredComponentsFromDependencyGraphs()
     {
         var filePath = Path.Join(this.sourceDirectory.FullName, "file1");
         var singleFileRecorder = this.componentRecorder.CreateSingleFileComponentRecorder(filePath);
@@ -719,7 +719,7 @@ public class DefaultGraphTranslationServiceTests
         };
 
         var result = (DefaultGraphScanResult)this.serviceUnderTest.GenerateScanResultFromProcessingResult(
-            processingResult, new ScanSettings { SourceDirectory = this.sourceDirectory, FilterBaseImageComponents = true });
+            processingResult, new ScanSettings { SourceDirectory = this.sourceDirectory, ExcludeBaseImageComponents = true });
 
         // Only the non-base-image component should remain.
         result.ComponentsFound.Should().HaveCount(1);
@@ -740,7 +740,7 @@ public class DefaultGraphTranslationServiceTests
     }
 
     [TestMethod]
-    public void FilterBaseImageComponents_DependencyGraphsUnchangedWhenFlagDisabled()
+    public void ExcludeBaseImageComponents_DependencyGraphsUnchangedWhenFlagDisabled()
     {
         var filePath = Path.Join(this.sourceDirectory.FullName, "file1");
         var singleFileRecorder = this.componentRecorder.CreateSingleFileComponentRecorder(filePath);
@@ -768,7 +768,7 @@ public class DefaultGraphTranslationServiceTests
         };
 
         var result = (DefaultGraphScanResult)this.serviceUnderTest.GenerateScanResultFromProcessingResult(
-            processingResult, new ScanSettings { SourceDirectory = this.sourceDirectory, FilterBaseImageComponents = false });
+            processingResult, new ScanSettings { SourceDirectory = this.sourceDirectory, ExcludeBaseImageComponents = false });
 
         // Both components should be present.
         result.ComponentsFound.Should().HaveCount(2);
@@ -780,7 +780,7 @@ public class DefaultGraphTranslationServiceTests
     }
 
     [TestMethod]
-    public void FilterBaseImageComponents_PrunesReferrersToFilteredComponents()
+    public void ExcludeBaseImageComponents_PrunesReferrersToFilteredComponents()
     {
         var filePath = Path.Join(this.sourceDirectory.FullName, "file1");
         var singleFileRecorder = this.componentRecorder.CreateSingleFileComponentRecorder(filePath);
@@ -809,7 +809,7 @@ public class DefaultGraphTranslationServiceTests
         };
 
         var result = this.serviceUnderTest.GenerateScanResultFromProcessingResult(
-            processingResult, new ScanSettings { SourceDirectory = this.sourceDirectory, FilterBaseImageComponents = true });
+            processingResult, new ScanSettings { SourceDirectory = this.sourceDirectory, ExcludeBaseImageComponents = true });
 
         // Only child-pkg should remain (base-pkg is exclusively from base image layer).
         result.ComponentsFound.Should().HaveCount(1);
