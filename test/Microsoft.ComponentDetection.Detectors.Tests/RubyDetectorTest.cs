@@ -405,6 +405,41 @@ PATH
         this.AssertRubyComponentNameAndVersion(detectedComponents, name: "test2", version: "1.0.0");
     }
 
+    [TestMethod]
+    public async Task TestRubyDetector_StripPlatformAsync()
+    {
+        var gemFileLockContent = @"GEM
+  remote: https://rubygems.org/
+  specs:
+    nokogiri (1.19.4-aarch64-linux-gnu)
+      racc (~> 1.4)
+    nokogiri (1.19.4-aarch64-linux-musl)
+      racc (~> 1.4)
+    nokogiri (1.19.4-arm-linux-gnu)
+      racc (~> 1.4)
+    nokogiri (1.19.4-arm-linux-musl)
+      racc (~> 1.4)
+    nokogiri (1.19.4-arm64-darwin)
+      racc (~> 1.4)
+    nokogiri (1.19.4-x86_64-darwin)
+      racc (~> 1.4)
+    nokogiri (1.19.4-x86_64-linux-gnu)
+      racc (~> 1.4)
+    nokogiri (1.19.4-x86_64-linux-musl)
+      racc (~> 1.4)";
+
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
+            .WithFile("1Gemfile.lock", gemFileLockContent)
+            .ExecuteDetectorAsync();
+
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+
+        var detectedComponents = componentRecorder.GetDetectedComponents();
+        detectedComponents.Should().HaveCount(1);
+
+        this.AssertRubyComponentNameAndVersion(detectedComponents, "nokogiri", "1.19.4");
+    }
+
     private void AssertRubyComponentNameAndVersion(IEnumerable<DetectedComponent> detectedComponents, string name, string version)
     {
         detectedComponents.SingleOrDefault(c =>
