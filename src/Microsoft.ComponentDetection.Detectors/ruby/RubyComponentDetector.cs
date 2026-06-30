@@ -70,7 +70,7 @@ public class RubyComponentDetector : FileComponentDetector
 
     public override IEnumerable<ComponentType> SupportedComponentTypes { get; } = [ComponentType.RubyGems];
 
-    public override int Version { get; } = 3;
+    public override int Version { get; } = 4;
 
     public override bool NeedsAutomaticRootDependencyCalculation => true;
 
