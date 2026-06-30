@@ -23,7 +23,7 @@ First, let's get to know the file structure.
 
 ## [.github/workflows](.github/workflows)
 All CI / CD is handled through github actions. Most are self-explanatory, but a few interesting ones exist:
-* [snapshot-verify.yml](.github/workflows/snapshot-verify.yml) -- This is essentially an "end to end" test, using the componentdetection-verification repo as a baseline. It looks at scan output captured from [snapshot-publish.yml](./github/workflows/snapshot-publish.yml) and compares it to the output being created by the changes in the current PR. Because of the end to end nature of the test, this workflow can be a little less stable (e.g. components detected can change for ecosystems that don't have locked deps).
+* [snapshot-verify.yml](.github/workflows/snapshot-verify.yml) -- This is essentially an "end to end" test, using the componentdetection-verification repo as a baseline. It looks at scan output captured from [snapshot-publish.yml](.github/workflows/snapshot-publish.yml) and compares it to the output being created by the changes in the current PR. Because of the end to end nature of the test, this workflow can be a little less stable (e.g. components detected can change for ecosystems that don't have locked deps).
 
 ## [src](src)
 All dotnet core code that is used to run component detection.
