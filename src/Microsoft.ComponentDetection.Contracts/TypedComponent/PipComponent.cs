@@ -34,6 +34,14 @@ public class PipComponent : TypedComponent
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     [JsonPropertyName("license")]
     public string? License { get; set; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    [JsonPropertyName("mD5")]
+    public string? Md5 { get; set; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    [JsonPropertyName("sha256")]
+    public string? Sha256 { get; set; }
 #nullable disable
 
     [JsonIgnore]
@@ -43,5 +51,18 @@ public class PipComponent : TypedComponent
     public override PackageURL PackageUrl => new PackageURL("pypi", null, this.Name, this.Version, null, null);
 
     [SuppressMessage("Usage", "CA1308:Normalize String to Uppercase", Justification = "Casing cannot be overwritten.")]
-    protected override string ComputeBaseId() => $"{this.Name} {this.Version} - {this.Type}".ToLowerInvariant();
+    protected override string ComputeBaseId()
+    {
+        var digestSuffix = string.Empty;
+        if (!string.IsNullOrEmpty(this.Sha256))
+        {
+            digestSuffix = $" {this.Sha256}";
+        }
+        else if (!string.IsNullOrEmpty(this.Md5))
+        {
+            digestSuffix = $" {this.Md5}";
+        }
+
+        return $"{this.Name} {this.Version}{digestSuffix} - {this.Type}".ToLowerInvariant();
+    }
 }
