@@ -1,5 +1,4 @@
 <Project Sdk="Microsoft.NET.Sdk">
-
     <ItemGroup>
         <InternalsVisibleTo Include="Microsoft.ComponentDetection.Common.Tests" />
         <InternalsVisibleTo Include="Microsoft.ComponentDetection.Orchestrator" />
@@ -20,5 +19,4 @@
     <ItemGroup Label="Package References">
         <ProjectReference Include="..\Microsoft.ComponentDetection.Contracts\Microsoft.ComponentDetection.Contracts.csproj" />
     </ItemGroup>
-
 </Project>

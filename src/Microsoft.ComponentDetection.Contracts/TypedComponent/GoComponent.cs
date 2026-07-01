@@ -59,7 +59,7 @@ public class GoComponent : TypedComponent, IEquatable<GoComponent>
         var lastSlash = this.Name.LastIndexOf('/');
         if (lastSlash > 0)
         {
-            return (this.Name.Substring(0, lastSlash), this.Name.Substring(lastSlash + 1));
+            return (this.Name[..lastSlash], this.Name[(lastSlash + 1)..]);
         }
 
         return (null, this.Name);
