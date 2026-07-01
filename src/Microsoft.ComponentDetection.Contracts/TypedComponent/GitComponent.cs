@@ -100,7 +100,7 @@ public class GitComponent : TypedComponent
         var repoSegment = segments[1];
         if (repoSegment.EndsWith(DotGitSuffix, StringComparison.OrdinalIgnoreCase))
         {
-            repoSegment = repoSegment.Substring(0, repoSegment.Length - DotGitSuffix.Length);
+            repoSegment = repoSegment[..^DotGitSuffix.Length];
         }
 
         if (string.IsNullOrEmpty(ownerSegment) || string.IsNullOrEmpty(repoSegment))
