@@ -72,7 +72,6 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IExperimentService, ExperimentService>();
         services.AddSingleton<IExperimentProcessor, DefaultExperimentProcessor>();
         services.AddSingleton<IExperimentConfiguration, SimplePipExperiment>();
-        services.AddSingleton<IExperimentConfiguration, UvLockDetectorExperiment>();
         services.AddSingleton<IExperimentConfiguration, LinuxApplicationLayerExperiment>();
         services.AddSingleton<IExperimentConfiguration, MSBuildBinaryLogExperiment>();
 
