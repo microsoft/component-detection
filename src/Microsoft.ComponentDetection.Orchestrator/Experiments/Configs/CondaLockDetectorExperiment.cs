@@ -1,8 +1,8 @@
 namespace Microsoft.ComponentDetection.Orchestrator.Experiments.Configs;
 
 using Microsoft.ComponentDetection.Contracts;
+using Microsoft.ComponentDetection.Detectors.CondaLock;
 using Microsoft.ComponentDetection.Detectors.Pip;
-using Microsoft.ComponentDetection.Detectors.Poetry;
 
 /// <summary>
 /// Experiment to validate CondaLockComponentDetector against PipReportComponentDetector.
