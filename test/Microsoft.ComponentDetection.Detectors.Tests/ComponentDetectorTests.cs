@@ -72,4 +72,13 @@ public class ComponentDetectorTests
         uvLockDetector.Should().NotBeNull("because UvLockComponentDetector should be registered");
         uvLockDetector.Should().BeAssignableTo<IExperimentalDetector>("because UvLockComponentDetector should implement IExperimentalDetector");
     }
+
+    [TestMethod]
+    public void CondaLockComponentDetector_ImplementsIExperimentalDetector()
+    {
+        var condaLockDetector = this.detectors.SingleOrDefault(d => d.Id == "CondaLock");
+
+        condaLockDetector.Should().NotBeNull("because CondaLockComponentDetector should be registered");
+        condaLockDetector.Should().BeAssignableTo<IExperimentalDetector>("because CondaLockComponentDetector should implement IExperimentalDetector");
+    }
 }
