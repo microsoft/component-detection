@@ -45,7 +45,7 @@ The Paket detector parses `paket.lock` files to extract:
 - Dependency relationships between packages as represented in the lock file
 - Development dependency classification based on Paket group names
 
-The detector does not authoritatively distinguish which packages were explicitly requested (from `paket.dependencies`) versus brought in transitively; it approximates this by treating packages that appear as dependencies of other packages as transitive.
+When a companion `paket.dependencies` file is present next to `paket.lock`, the detector uses it to identify explicitly declared NuGet packages; otherwise it falls back to a lock-graph heuristic (packages that appear as dependencies of other packages are treated as transitive).
 
 Currently, the detector focuses on the `NUGET` section of the lock file, which contains NuGet package dependencies. Other dependency types (GITHUB, HTTP, GIT) are not currently supported.
 
