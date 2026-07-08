@@ -74,7 +74,7 @@ public class NuGetComponentDetector : FileComponentDetector
     private static bool IsPaketDetectorEnabled(IDictionary<string, string> detectorArgs)
     {
         return detectorArgs != null
-            && detectorArgs.TryGetValue(Paket.PaketComponentDetector.DetectorId, out var value)
+            && detectorArgs.TryGetValue(Microsoft.ComponentDetection.Detectors.Paket.PaketComponentDetector.DetectorId, out var value)
             && (value.Equals("EnableIfDefaultOff", StringComparison.OrdinalIgnoreCase)
                 || value.Equals("Enable", StringComparison.OrdinalIgnoreCase));
     }

@@ -38,6 +38,12 @@ NUGET
     NUnit (4.3.2)
 ```
 
+## Enabling the Detector
+
+This detector is currently **DefaultOff** and must be explicitly enabled by passing `--DetectorArgs Paket=EnableIfDefaultOff` (see [enabling default off detectors](../enable-default-off.md)).
+
+When the Paket detector is enabled, the NuGet detector automatically skips `paket.lock` files so the same file is not processed twice; when it is not enabled, the NuGet detector continues to handle `paket.lock` with its legacy parser.
+
 ## Paket Detector
 
 The Paket detector parses `paket.lock` files to extract:
@@ -59,6 +65,7 @@ The detector:
 5. Records all packages as NuGet components
 6. Establishes parent-child relationships between packages and their dependencies
 7. Classifies packages as development dependencies based on their group name
+8. Classifies packages as direct (explicitly referenced) using the declarations in the companion `paket.dependencies` file when present, falling back to the lock-graph heuristic otherwise
 
 ## Development Dependency Classification
 
@@ -77,9 +84,9 @@ When the same package appears in multiple groups (e.g., `FSharp.Core` in both `B
 
 ## Known Limitations
 
-- This detector is currently **DefaultOff** and must be explicitly enabled
+- This detector is currently **DefaultOff** and must be explicitly enabled with `--DetectorArgs Paket=EnableIfDefaultOff` (see [Enabling the Detector](#enabling-the-detector))
 - Only NuGet dependencies from the `NUGET` section are detected
 - GitHub, HTTP, and Git dependencies are not currently supported
-- Without cross-referencing the `paket.dependencies` file, the detector cannot reliably distinguish between direct and transitive dependencies; it uses the dependency graph within the lock file to approximate this
+- Direct vs. transitive classification is authoritative only when a readable `paket.dependencies` file is present next to `paket.lock`; when it is missing or unreadable, the detector falls back to approximating this from the dependency graph within the lock file, which cannot reliably distinguish a direct dependency that is also pulled in transitively
 - Development dependency classification is based on group names only; it does not cross-reference `paket.references` files to verify which packages are actually used by test vs. production projects (planned for a future iteration)
 - The detector assumes the lock file format follows the standard Paket conventions
