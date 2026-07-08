@@ -255,7 +255,7 @@ public sealed class PaketComponentDetector : FileComponentDetector, IDefaultOffC
                     // belong to this group until the next GROUP line.
                     if (trimmed.StartsWith("GROUP ", StringComparison.OrdinalIgnoreCase) && trimmed.Length > 6)
                     {
-                        currentGroupName = trimmed[6..].Trim();
+                        currentGroupName = NormalizeGroupName(trimmed[6..].Trim());
                         currentSection = string.Empty;
                         currentPackageName = null;
                     }
