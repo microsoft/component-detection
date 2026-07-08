@@ -54,3 +54,15 @@ For example:
 
 - Windows container scanning is not supported
 - Multiplatform images are not supported
+
+## Excluding Base Image Components
+
+When scanning container images, many detected components may originate from the base image rather than from layers added by the user's Dockerfile. The `--ExcludeBaseImageComponents` flag filters out components that exist exclusively in base image layers, so only components introduced by the user's own layers are reported.
+
+```sh
+--ExcludeBaseImageComponents
+```
+
+A component is excluded only if **all** of its associated container layers are marked as base image layers. If a component appears in at least one non-base-image layer, it is retained.
+
+This flag has no effect on non-container scans (i.e., directory-based detection).

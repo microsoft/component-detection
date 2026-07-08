@@ -23,8 +23,7 @@ First, let's get to know the file structure.
 
 ## [.github/workflows](.github/workflows)
 All CI / CD is handled through github actions. Most are self-explanatory, but a few interesting ones exist:
-* [test-linux.yml](.github/workflows/test-linux.yml) -- This is used specifically to test the linux detector, which must be run on *nix variant systems until tern supports windows in a first class way.
-* [verify-snapshot.yml](.github/workflows/verify-snapshot.yml) -- This is essentially an "end to end" test, using the componentdetection-verification repo as a baseline. It looks at scan output captured from [publish-release-snapshot.yml](./github/workflows/publish-release-snapshot.yml) and compares it to the output being created by the changes in the current PR. Because of the end to end nature of the test, this workflow can be a little less stable (e.g. components detected can change for ecosystems that don't have locked deps).
+* [snapshot-verify.yml](.github/workflows/snapshot-verify.yml) -- This is essentially an "end to end" test, using the componentdetection-verification repo as a baseline. It looks at scan output captured from [snapshot-publish.yml](.github/workflows/snapshot-publish.yml) and compares it to the output being created by the changes in the current PR. Because of the end to end nature of the test, this workflow can be a little less stable (e.g. components detected can change for ecosystems that don't have locked deps).
 
 ## [src](src)
 All dotnet core code that is used to run component detection.
@@ -57,7 +56,7 @@ Please see [creating a new detector](./docs/creating-a-new-detector.md).
 
 ### Style
 
-Analysis rulesets are defined in [analyzers.ruleset](analyzers.ruleset) and validated by our PR builds.
+Analysis rulesets are defined in [.editorconfig](.editorconfig) and validated by our PR builds.
 
 ### Testing
 

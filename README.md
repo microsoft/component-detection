@@ -66,7 +66,7 @@ For a complete feature overview refer to [feature-overview.md](docs/feature-over
 
 ## Getting Started
 
-To clone and run this application, you'll need [Git](https://git-scm.com) and [.NET 6](https://aka.ms/download-dotnet) installed on your computer. From your command line:
+To clone and run this application, you'll need [Git](https://git-scm.com) and [.NET 8](https://aka.ms/download-dotnet) installed on your computer. From your command line:
 
 ```bash
 # Clone this repository

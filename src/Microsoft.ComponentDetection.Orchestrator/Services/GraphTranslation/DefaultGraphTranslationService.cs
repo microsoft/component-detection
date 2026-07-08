@@ -41,13 +41,173 @@ internal class DefaultGraphTranslationService : IGraphTranslationService
 
         ReconcileDependencyGraphIds(dependencyGraphs, mergedComponents);
 
+        var componentsToOutput = mergedComponents;
+        if (settings.ExcludeBaseImageComponents)
+        {
+            var originalCount = mergedComponents.Count;
+            componentsToOutput = this.FilterOutBaseImageComponents(componentsToOutput, detectorProcessingResult.ContainersDetailsMap);
+            var filteredCount = originalCount - componentsToOutput.Count;
+
+            if (filteredCount > 0)
+            {
+                this.logger.LogInformation("Filtered out {FilteredCount} of {TotalCount} components that originate exclusively from base image layers. {RetainedCount} components remain.", filteredCount, originalCount, componentsToOutput.Count);
+            }
+            else
+            {
+                this.logger.LogInformation("Base image component filtering is enabled but no components were filtered out ({TotalCount} total).", originalCount);
+            }
+
+            PruneFilteredComponentsFromGraphs(dependencyGraphs, componentsToOutput);
+            PruneFilteredComponentReferrers(componentsToOutput);
+        }
+
         return new DefaultGraphScanResult
         {
-            ComponentsFound = mergedComponents.Select(x => this.ConvertToContract(x)).ToList(),
+            ComponentsFound = componentsToOutput.Select(x => this.ConvertToContract(x)).ToList(),
             ContainerDetailsMap = detectorProcessingResult.ContainersDetailsMap,
             DependencyGraphs = dependencyGraphs,
             SourceDirectory = settings.SourceDirectory.ToString(),
         };
+    }
+
+    /// <summary>
+    /// Filters out components that originate exclusively from base image layers.
+    /// A component is removed only if it has container layer references and every referenced
+    /// layer across all containers has <see cref="DockerLayer.IsBaseImage"/> set to true.
+    /// Components with no container references or with at least one non-base-image layer are retained.
+    /// </summary>
+    /// <param name="components">The list of detected components to filter.</param>
+    /// <param name="containerDetailsMap">The map of container details with layer information.</param>
+    /// <returns>A filtered list of components excluding those exclusively from base image layers.</returns>
+    internal List<DetectedComponent> FilterOutBaseImageComponents(
+        List<DetectedComponent> components,
+        Dictionary<int, ContainerDetails> containerDetailsMap)
+    {
+        if (containerDetailsMap == null || containerDetailsMap.Count == 0)
+        {
+            return components;
+        }
+
+        // Build an indexed lookup: containerDetailId → (layerIndex → DockerLayer)
+        var layerLookup = new Dictionary<int, Dictionary<int, DockerLayer>>();
+        foreach (var (id, details) in containerDetailsMap)
+        {
+            if (details.Layers != null)
+            {
+                layerLookup[id] = details.Layers.GroupBy(l => l.LayerIndex).ToDictionary(g => g.Key, g => g.First());
+            }
+        }
+
+        var retained = new List<DetectedComponent>();
+        foreach (var component in components)
+        {
+            if (IsExclusivelyFromBaseImage(component, layerLookup))
+            {
+                this.logger.LogDebug("Filtering out component {ComponentId} because all associated layers are from the base image.", component.Component.Id);
+            }
+            else
+            {
+                retained.Add(component);
+            }
+        }
+
+        return retained;
+    }
+
+    private static bool IsExclusivelyFromBaseImage(DetectedComponent component, Dictionary<int, Dictionary<int, DockerLayer>> layerLookup)
+    {
+        // Components without container layer references are not from a container scan - keep them.
+        if (component.ContainerLayerIds == null || component.ContainerLayerIds.Count == 0)
+        {
+            return false;
+        }
+
+        foreach (var (containerDetailId, layerIndices) in component.ContainerLayerIds)
+        {
+            if (!layerLookup.TryGetValue(containerDetailId, out var layersByIndex))
+            {
+                // If we can't resolve the container details, assume it's not a base image component.
+                return false;
+            }
+
+            if (layerIndices == null || !layerIndices.Any())
+            {
+                // No layer indices for this container detail - keep the component.
+                return false;
+            }
+
+            foreach (var layerIndex in layerIndices)
+            {
+                if (!layersByIndex.TryGetValue(layerIndex, out var layer) || !layer.IsBaseImage)
+                {
+                    // Layer not found or not from base image. Keep this component.
+                    return false;
+                }
+            }
+        }
+
+        return true;
+    }
+
+    /// <summary>
+    /// Removes component IDs from dependency graphs that are no longer present in the output components list.
+    /// </summary>
+    private static void PruneFilteredComponentsFromGraphs(DependencyGraphCollection graphs, List<DetectedComponent> retainedComponents)
+    {
+        if (graphs == null || graphs.Count == 0)
+        {
+            return;
+        }
+
+        var retainedIds = new HashSet<string>(retainedComponents.Select(c => c.Component.Id));
+
+        foreach (var graphWithMetadata in graphs.Values)
+        {
+            var graph = graphWithMetadata.Graph;
+
+            // Remove nodes that are no longer in retained components.
+            var idsToRemove = graph.Keys.Where(id => !retainedIds.Contains(id)).ToList();
+            foreach (var id in idsToRemove)
+            {
+                graph.Remove(id);
+            }
+
+            // Remove references to removed IDs from remaining nodes' dependency sets.
+            // Normalize empty edge sets to null for consistent leaf-node serialization.
+            foreach (var nodeId in graph.Keys.ToList())
+            {
+                var edges = graph[nodeId];
+                if (edges != null)
+                {
+                    edges.RemoveWhere(id => !retainedIds.Contains(id));
+                    if (edges.Count == 0)
+                    {
+                        graph[nodeId] = null;
+                    }
+                }
+            }
+
+            // Clean up metadata sets.
+            graphWithMetadata.ExplicitlyReferencedComponentIds?.RemoveWhere(id => !retainedIds.Contains(id));
+            graphWithMetadata.DevelopmentDependencies?.RemoveWhere(id => !retainedIds.Contains(id));
+            graphWithMetadata.Dependencies?.RemoveWhere(id => !retainedIds.Contains(id));
+        }
+    }
+
+    /// <summary>
+    /// Removes references to filtered-out components from the DependencyRoots and AncestralDependencyRoots
+    /// of retained components, so that TopLevelReferrers and AncestralReferrers in the output don't
+    /// reference components that were removed from ComponentsFound.
+    /// </summary>
+    private static void PruneFilteredComponentReferrers(List<DetectedComponent> retainedComponents)
+    {
+        var retainedIds = new HashSet<string>(retainedComponents.Select(c => c.Component.Id));
+
+        foreach (var component in retainedComponents)
+        {
+            component.DependencyRoots?.RemoveWhere(root => !retainedIds.Contains(root.Id));
+            component.AncestralDependencyRoots?.RemoveWhere(root => !retainedIds.Contains(root.Id));
+        }
     }
 
     private static ConcurrentHashSet<string> MergeTargetFrameworks(ConcurrentHashSet<string> left, ConcurrentHashSet<string> right)
