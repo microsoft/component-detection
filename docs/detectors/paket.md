@@ -7,7 +7,7 @@ Paket Detection depends on the following to successfully run:
 - One or more `paket.lock` files.
 - The Paket detector looks for [`paket.lock`][1] files.
 
-[1]: https://github.com/microsoft/component-detection/blob/main/src/Microsoft.ComponentDetection.Detectors/paket/PaketComponentDetector.cs
+[1]: ../../src/Microsoft.ComponentDetection.Detectors/paket/PaketComponentDetector.cs
 
 ## Detection Strategy
 
