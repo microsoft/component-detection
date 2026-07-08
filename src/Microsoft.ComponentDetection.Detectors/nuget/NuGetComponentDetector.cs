@@ -73,8 +73,21 @@ public class NuGetComponentDetector : FileComponentDetector
     /// </summary>
     private static bool IsPaketDetectorEnabled(IDictionary<string, string> detectorArgs)
     {
-        return detectorArgs != null
-            && detectorArgs.TryGetValue(Microsoft.ComponentDetection.Detectors.Paket.PaketComponentDetector.DetectorId, out var value)
+        if (detectorArgs == null)
+        {
+            return false;
+        }
+
+        // detectorArgs is a case-sensitive dictionary, but detector enablement is evaluated
+        // case-insensitively (ScanExecutionService builds ExplicitlyEnabledDetectorIds with
+        // OrdinalIgnoreCase). Match the key case-insensitively so a lowercase override such as
+        // `--DetectorArgs paket=EnableIfDefaultOff` does not enable Paket yet still let NuGet
+        // double-process the same paket.lock.
+        var value = detectorArgs
+            .FirstOrDefault(kvp => string.Equals(kvp.Key, Microsoft.ComponentDetection.Detectors.Paket.PaketComponentDetector.DetectorId, StringComparison.OrdinalIgnoreCase))
+            .Value;
+
+        return value != null
             && (value.Equals("EnableIfDefaultOff", StringComparison.OrdinalIgnoreCase)
                 || value.Equals("Enable", StringComparison.OrdinalIgnoreCase));
     }
