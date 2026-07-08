@@ -50,11 +50,13 @@ public class NuGetComponentDetector : FileComponentDetector
         var stream = processRequest.ComponentStream;
         var ignoreNugetConfig = detectorArgs.TryGetValue("NuGet.IncludeRepositoryPaths", out var includeRepositoryPathsValue) && includeRepositoryPathsValue.Equals(bool.FalseString, StringComparison.OrdinalIgnoreCase);
 
+        var paketDetectorEnabled = IsPaketDetectorEnabled(detectorArgs);
+
         if (NugetConfigFileName.Equals(stream.Pattern, StringComparison.OrdinalIgnoreCase))
         {
-            await this.ProcessAdditionalDirectoryAsync(processRequest, ignoreNugetConfig);
+            await this.ProcessAdditionalDirectoryAsync(processRequest, ignoreNugetConfig, paketDetectorEnabled);
         }
-        else if ("paket.lock".Equals(stream.Pattern, StringComparison.OrdinalIgnoreCase) && IsPaketDetectorEnabled(detectorArgs))
+        else if ("paket.lock".Equals(stream.Pattern, StringComparison.OrdinalIgnoreCase) && paketDetectorEnabled)
         {
             // The dedicated Paket detector is enabled and will process this file, so skip it here
             // to avoid double-processing the same paket.lock with the legacy parser below.
@@ -87,12 +89,11 @@ public class NuGetComponentDetector : FileComponentDetector
             .FirstOrDefault(kvp => string.Equals(kvp.Key, Microsoft.ComponentDetection.Detectors.Paket.PaketComponentDetector.DetectorId, StringComparison.OrdinalIgnoreCase))
             .Value;
 
-        return value != null
-            && (value.Equals("EnableIfDefaultOff", StringComparison.OrdinalIgnoreCase)
-                || value.Equals("Enable", StringComparison.OrdinalIgnoreCase));
+        return string.Equals(value, "EnableIfDefaultOff", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(value, "Enable", StringComparison.OrdinalIgnoreCase);
     }
 
-    private async Task ProcessAdditionalDirectoryAsync(ProcessRequest processRequest, bool ignoreNugetConfig)
+    private async Task ProcessAdditionalDirectoryAsync(ProcessRequest processRequest, bool ignoreNugetConfig, bool paketDetectorEnabled)
     {
         var singleFileComponentRecorder = processRequest.SingleFileComponentRecorder;
         var stream = processRequest.ComponentStream;
@@ -101,6 +102,12 @@ public class NuGetComponentDetector : FileComponentDetector
         {
             var additionalPaths = this.GetRepositoryPathsFromNugetConfig(stream);
             var rootPath = new Uri(this.CurrentScanRequest.SourceDirectory.FullName + Path.DirectorySeparatorChar);
+
+            // Mirror OnFileFoundAsync: when the Paket detector is enabled it owns paket.lock, so exclude it
+            // from the additional-directory scan to avoid double-processing the same file with the legacy parser.
+            var searchPatterns = this.SearchPatterns.Where(sp =>
+                !NugetConfigFileName.Equals(sp)
+                && !(paketDetectorEnabled && "paket.lock".Equals(sp, StringComparison.OrdinalIgnoreCase)));
 
             foreach (var additionalPath in additionalPaths)
             {
@@ -112,7 +119,7 @@ public class NuGetComponentDetector : FileComponentDetector
 
                     this.Scanner.Initialize(additionalPath, (name, directoryName) => false, 1);
 
-                    await this.Scanner.GetFilteredComponentStreamObservable(additionalPath, this.SearchPatterns.Where(sp => !NugetConfigFileName.Equals(sp)), singleFileComponentRecorder.GetParentComponentRecorder())
+                    await this.Scanner.GetFilteredComponentStreamObservable(additionalPath, searchPatterns, singleFileComponentRecorder.GetParentComponentRecorder())
                         .ForEachAsync(async fi => await this.ProcessFileAsync(fi));
                 }
             }

@@ -12,6 +12,8 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 
 [TestClass]
+[TestCategory("Governance/All")]
+[TestCategory("Governance/ComponentDetection")]
 public class PaketComponentDetectorTests : BaseDetectorTest<PaketComponentDetector>
 {
     [TestMethod]
