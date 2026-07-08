@@ -81,7 +81,7 @@ public sealed class PaketComponentDetector : FileComponentDetector, IDefaultOffC
     public override IEnumerable<ComponentType> SupportedComponentTypes => [ComponentType.NuGet];
 
     /// <inheritdoc />
-    public override int Version => 2;
+    public override int Version => 1;
 
     /// <summary>
     /// Determines whether a Paket group name represents a development-time dependency group.
