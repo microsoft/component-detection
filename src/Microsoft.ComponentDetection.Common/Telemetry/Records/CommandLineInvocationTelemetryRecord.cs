@@ -21,7 +21,7 @@ internal class CommandLineInvocationTelemetryRecord : BaseDetectionTelemetryReco
     {
         this.ExitCode = result.ExitCode;
         var sanitizedError = result.StdErr?.RemoveSensitiveInformation();
-        this.StandardError = DiagnosticEnabled ? sanitizedError : this.TruncateToMaxLines(sanitizedError);
+        this.StandardError = DiagnosticEnabled ? sanitizedError : TruncateToMaxLines(sanitizedError);
         this.TrackCommon(path, parameters);
     }
 
@@ -38,5 +38,4 @@ internal class CommandLineInvocationTelemetryRecord : BaseDetectionTelemetryReco
         this.Parameters = parameters?.RemoveSensitiveInformation();
         this.StopExecutionTimer();
     }
-
 }

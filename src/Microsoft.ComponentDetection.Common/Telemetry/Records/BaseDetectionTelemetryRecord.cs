@@ -36,29 +36,6 @@ public abstract class BaseDetectionTelemetryRecord : IDetectionTelemetryRecord
         }
     }
 
-    public void Dispose()
-    {
-        this.Dispose(true);
-        GC.SuppressFinalize(this);
-    }
-
-    protected virtual void Dispose(bool disposing)
-    {
-        if (!this.disposedValue)
-        {
-            if (disposing)
-            {
-                this.StopExecutionTimer();
-                if (!this.IsDiagnostic || DiagnosticEnabled)
-                {
-                    TelemetryRelay.Instance.PostTelemetryRecord(this);
-                }
-            }
-
-            this.disposedValue = true;
-        }
-    }
-
     protected static string? TruncateToMaxLines(string? text)
     {
         if (string.IsNullOrEmpty(text))
@@ -82,5 +59,28 @@ public abstract class BaseDetectionTelemetryRecord : IDetectionTelemetryRecord
         }
 
         return text;
+    }
+
+    public void Dispose()
+    {
+        this.Dispose(true);
+        GC.SuppressFinalize(this);
+    }
+
+    protected virtual void Dispose(bool disposing)
+    {
+        if (!this.disposedValue)
+        {
+            if (disposing)
+            {
+                this.StopExecutionTimer();
+                if (!this.IsDiagnostic || DiagnosticEnabled)
+                {
+                    TelemetryRelay.Instance.PostTelemetryRecord(this);
+                }
+            }
+
+            this.disposedValue = true;
+        }
     }
 }

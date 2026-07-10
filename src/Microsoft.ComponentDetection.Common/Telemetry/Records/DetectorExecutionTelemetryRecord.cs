@@ -1,7 +1,5 @@
 namespace Microsoft.ComponentDetection.Common.Telemetry.Records;
 
-using System;
-
 internal class DetectorExecutionTelemetryRecord : BaseDetectionTelemetryRecord
 {
     private string? experimentalInformation;
@@ -21,9 +19,8 @@ internal class DetectorExecutionTelemetryRecord : BaseDetectionTelemetryRecord
     public string? ExperimentalInformation
     {
         get => this.experimentalInformation;
-        set => this.experimentalInformation = DiagnosticEnabled ? value : this.TruncateToMaxLines(value);
+        set => this.experimentalInformation = DiagnosticEnabled ? value : TruncateToMaxLines(value);
     }
 
     public string? AdditionalTelemetryDetails { get; set; }
-
 }
