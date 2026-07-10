@@ -5,8 +5,6 @@ using System.Linq;
 
 internal class DetectorExecutionTelemetryRecord : BaseDetectionTelemetryRecord
 {
-    private static readonly bool DiagnosticEnabled = string.Equals(Environment.GetEnvironmentVariable("AGENT_DIAGNOSTIC"), "True", StringComparison.OrdinalIgnoreCase) || string.Equals(Environment.GetEnvironmentVariable("SYSTEM_DEBUG"), "True", StringComparison.OrdinalIgnoreCase);
-
     private string? experimentalInformation;
 
     public override string RecordName => "DetectorExecution";

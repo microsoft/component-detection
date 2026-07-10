@@ -6,8 +6,6 @@ using Microsoft.ComponentDetection.Contracts;
 
 internal class CommandLineInvocationTelemetryRecord : BaseDetectionTelemetryRecord
 {
-    private static readonly bool DiagnosticEnabled = string.Equals(Environment.GetEnvironmentVariable("AGENT_DIAGNOSTIC"), "True", StringComparison.OrdinalIgnoreCase) || string.Equals(Environment.GetEnvironmentVariable("SYSTEM_DEBUG"), "True", StringComparison.OrdinalIgnoreCase);
-
     public override string RecordName => "CommandLineInvocation";
 
     public string? PathThatWasRan { get; set; }
