@@ -5,7 +5,7 @@ using System.Linq;
 
 internal class DetectorExecutionTelemetryRecord : BaseDetectionTelemetryRecord
 {
-    private static readonly bool DiagnosticEnabled = string.Equals(Environment.GetEnvironmentVariable("agent.diagnostic"), "True", StringComparison.OrdinalIgnoreCase) || string.Equals(Environment.GetEnvironmentVariable("System.Debug"), "True", StringComparison.OrdinalIgnoreCase);
+    private static readonly bool DiagnosticEnabled = string.Equals(Environment.GetEnvironmentVariable("agent_diagnostic"), "True", StringComparison.OrdinalIgnoreCase) || string.Equals(Environment.GetEnvironmentVariable("System_Debug"), "True", StringComparison.OrdinalIgnoreCase);
 
     private string? experimentalInformation;
 
