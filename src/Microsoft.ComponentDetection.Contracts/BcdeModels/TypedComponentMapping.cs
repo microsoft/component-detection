@@ -7,7 +7,7 @@ using Microsoft.ComponentDetection.Contracts.TypedComponent;
 
 /// <summary>
 /// Provides a shared mapping between component type discriminator strings and their corresponding concrete TypedComponent types.
-/// This mapping is used by both Newtonsoft.Json and System.Text.Json converters for polymorphic serialization.
+/// This mapping is used by System.Text.Json converters for polymorphic serialization.
 /// </summary>
 internal static class TypedComponentMapping
 {
