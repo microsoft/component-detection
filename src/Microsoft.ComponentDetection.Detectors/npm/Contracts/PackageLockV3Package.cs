@@ -9,6 +9,13 @@ using System.Text.Json.Serialization;
 internal sealed record PackageLockV3Package
 {
     /// <summary>
+    /// The package name. This is only present when the package name does not match the folder name in node_modules,
+    /// for example when a package is aliased via the <c>npm:@scope/name@version</c> syntax.
+    /// </summary>
+    [JsonPropertyName("name")]
+    public string? Name { get; init; }
+
+    /// <summary>
     /// The version found in package.json.
     /// </summary>
     [JsonPropertyName("version")]
@@ -80,6 +87,7 @@ internal sealed record PackageLockV3Package
     public string? License { get; init; }
 
     [JsonPropertyName("engines")]
+    [JsonConverter(typeof(PackageJsonEnginesConverter))]
     public IDictionary<string, string>? Engines { get; init; }
 
     [JsonPropertyName("dependencies")]

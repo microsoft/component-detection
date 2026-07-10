@@ -6,7 +6,7 @@ using System.IO;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.Extensions.Logging;
 
-public class SafeFileEnumerableFactory : ISafeFileEnumerableFactory
+internal class SafeFileEnumerableFactory : ISafeFileEnumerableFactory
 {
     private readonly IPathUtilityService pathUtilityService;
     private readonly ILogger<SafeFileEnumerableFactory> logger;

@@ -1,6 +1,7 @@
 #nullable disable
 namespace Microsoft.ComponentDetection.Contracts.Tests;
 
+using System;
 using System.Linq;
 using System.Text.Json;
 using System.Text.Json.Nodes;
@@ -117,5 +118,252 @@ public class ScanResultSerializationTests
         detector["version"].GetValue<int>().Should().Be(2);
         detector["isExperimental"].GetValue<bool>().Should().Be(true);
         detector["supportedComponentTypes"][0].GetValue<string>().Should().Be("Npm");
+    }
+
+    [TestMethod]
+    public void ScanResultSerialization_UnknownComponentType_IsSkipped()
+    {
+        // Simulate a ScanResult JSON with an unknown component type
+        // This tests forward compatibility when new component types are added
+        var scanResultJson = """
+            {
+                "resultCode": "Success",
+                "sourceDirectory": "D:\\test\\directory",
+                "componentsFound": [
+                    {
+                        "detectorId": "NpmDetectorId",
+                        "component": {
+                            "type": "Npm",
+                            "name": "KnownNpmComponent",
+                            "version": "1.0.0"
+                        },
+                        "locationsFoundAt": ["some/location"]
+                    },
+                    {
+                        "detectorId": "FutureDetectorId",
+                        "component": {
+                            "type": "FutureComponentType",
+                            "name": "UnknownComponent",
+                            "version": "2.0.0"
+                        },
+                        "locationsFoundAt": ["another/location"]
+                    }
+                ],
+                "detectorsInScan": []
+            }
+            """;
+
+        var result = JsonSerializer.Deserialize<ScanResult>(scanResultJson);
+
+        result.ResultCode.Should().Be(ProcessingResultCode.Success);
+        result.SourceDirectory.Should().Be("D:\\test\\directory");
+
+        // Both components are in the array, but the unknown one has a null Component
+        result.ComponentsFound.Should().HaveCount(2);
+
+        var knownComponent = result.ComponentsFound.First();
+        knownComponent.Component.Should().NotBeNull();
+        knownComponent.Component.Should().BeOfType<NpmComponent>();
+        ((NpmComponent)knownComponent.Component).Name.Should().Be("KnownNpmComponent");
+
+        var unknownComponent = result.ComponentsFound.Last();
+        unknownComponent.Component.Should().BeNull();
+        unknownComponent.DetectorId.Should().Be("FutureDetectorId");
+    }
+
+    [TestMethod]
+    public void ScanResultSerialization_UnknownTopLevelReferrer_IsNull()
+    {
+        // Test that unknown component types in TopLevelReferrers are handled gracefully
+        var scanResultJson = """
+            {
+                "resultCode": "Success",
+                "sourceDirectory": "D:\\test\\directory",
+                "componentsFound": [
+                    {
+                        "detectorId": "NpmDetectorId",
+                        "component": {
+                            "type": "Npm",
+                            "name": "ChildComponent",
+                            "version": "1.0.0"
+                        },
+                        "locationsFoundAt": ["some/location"],
+                        "topLevelReferrers": [
+                            {
+                                "type": "Npm",
+                                "name": "KnownParent",
+                                "version": "2.0.0"
+                            },
+                            {
+                                "type": "FutureComponentType",
+                                "name": "UnknownParent",
+                                "version": "3.0.0"
+                            }
+                        ]
+                    }
+                ],
+                "detectorsInScan": []
+            }
+            """;
+
+        var result = JsonSerializer.Deserialize<ScanResult>(scanResultJson);
+
+        var component = result.ComponentsFound.First();
+        component.Component.Should().NotBeNull();
+
+        // TopLevelReferrers should contain both entries, with the unknown one being null
+        component.TopLevelReferrers.Should().HaveCount(2);
+        var referrers = component.TopLevelReferrers.ToList();
+
+        referrers[0].Should().NotBeNull();
+        referrers[0].Should().BeOfType<NpmComponent>();
+        ((NpmComponent)referrers[0]).Name.Should().Be("KnownParent");
+
+        referrers[1].Should().BeNull();
+    }
+
+    [TestMethod]
+    public void ScanResultSerialization_AllUnknownComponents_StillDeserializes()
+    {
+        // Edge case: all components are unknown types
+        var scanResultJson = """
+            {
+                "resultCode": "Success",
+                "sourceDirectory": "D:\\test\\directory",
+                "componentsFound": [
+                    {
+                        "detectorId": "FutureDetector1",
+                        "component": {
+                            "type": "FutureType1",
+                            "name": "Component1",
+                            "version": "1.0.0"
+                        },
+                        "locationsFoundAt": ["location1"]
+                    },
+                    {
+                        "detectorId": "FutureDetector2",
+                        "component": {
+                            "type": "FutureType2",
+                            "name": "Component2",
+                            "version": "2.0.0"
+                        },
+                        "locationsFoundAt": ["location2"]
+                    }
+                ],
+                "detectorsInScan": []
+            }
+            """;
+
+        var result = JsonSerializer.Deserialize<ScanResult>(scanResultJson);
+
+        result.Should().NotBeNull();
+        result.ResultCode.Should().Be(ProcessingResultCode.Success);
+        result.ComponentsFound.Should().HaveCount(2);
+
+        // All components should be null, but the ScannedComponent wrapper should still exist
+        foreach (var scannedComponent in result.ComponentsFound)
+        {
+            scannedComponent.Component.Should().BeNull();
+            scannedComponent.DetectorId.Should().NotBeNullOrEmpty();
+        }
+    }
+
+    [TestMethod]
+    public void ScanResultSerialization_WithLicensesConcludedAndSuppliers_RoundTrips()
+    {
+        this.scanResultUnderTest.ComponentsFound =
+        [
+            new ScannedComponent
+            {
+                Component = new NpmComponent("TestComponent", "1.0.0"),
+                DetectorId = "TestDetector",
+                LocationsFoundAt = ["some/path"],
+                LicensesConcluded = ["MIT", "Apache-2.0"],
+                Suppliers =
+                [
+                    new ActorInfo { Name = "Contoso", Type = "Organization" },
+                    new ActorInfo { Name = "Alice", Email = "alice@contoso.com", Type = "Person" },
+                ],
+            },
+        ];
+
+        var serializedResult = JsonSerializer.Serialize(this.scanResultUnderTest);
+        var actual = JsonSerializer.Deserialize<ScanResult>(serializedResult);
+
+        var component = actual.ComponentsFound.First();
+        component.LicensesConcluded.Should().BeEquivalentTo(["MIT", "Apache-2.0"]);
+        component.Suppliers.Should().HaveCount(2);
+        component.Suppliers.First().Name.Should().Be("Contoso");
+        component.Suppliers.First().Type.Should().Be("Organization");
+        component.Suppliers.Last().Email.Should().Be("alice@contoso.com");
+    }
+
+    [TestMethod]
+    public void ScanResultSerialization_WithoutNewFields_StillDeserializes()
+    {
+        var scanResultJson = """
+            {
+                "resultCode": "Success",
+                "sourceDirectory": "D:\\test",
+                "componentsFound": [
+                    {
+                        "detectorId": "NpmDetector",
+                        "component": {
+                            "type": "Npm",
+                            "name": "OldComponent",
+                            "version": "1.0.0"
+                        },
+                        "locationsFoundAt": ["path"]
+                    }
+                ],
+                "detectorsInScan": []
+            }
+            """;
+
+        var result = JsonSerializer.Deserialize<ScanResult>(scanResultJson);
+
+        var component = result.ComponentsFound.First();
+        component.DetectorId.Should().Be("NpmDetector");
+        component.LicensesConcluded.Should().BeNull();
+        component.Suppliers.Should().BeNull();
+    }
+
+    [TestMethod]
+    public void ScanResultSerialization_NullNewFields_OmittedFromJson()
+    {
+        var serializedResult = JsonSerializer.Serialize(this.scanResultUnderTest);
+        var json = JsonNode.Parse(serializedResult);
+        var foundComponent = json["componentsFound"][0];
+
+        foundComponent["licensesConcluded"].Should().BeNull();
+        foundComponent["suppliers"].Should().BeNull();
+    }
+
+    [TestMethod]
+    public void ScanResultSerialization_PopulatedNewFields_ExpectedJsonFormat()
+    {
+        this.scanResultUnderTest.ComponentsFound =
+        [
+            new ScannedComponent
+            {
+                Component = new NpmComponent("TestComponent", "1.0.0"),
+                DetectorId = "TestDetector",
+                LocationsFoundAt = ["some/path"],
+                LicensesConcluded = ["MIT"],
+                Suppliers =
+                [
+                    new ActorInfo { Name = "Contoso", Type = "Organization", Url = new Uri("https://contoso.com") },
+                ],
+            },
+        ];
+
+        var serializedResult = JsonSerializer.Serialize(this.scanResultUnderTest);
+        var json = JsonNode.Parse(serializedResult);
+        var foundComponent = json["componentsFound"][0];
+
+        foundComponent["licensesConcluded"][0].GetValue<string>().Should().Be("MIT");
+        foundComponent["suppliers"][0]["name"].GetValue<string>().Should().Be("Contoso");
+        foundComponent["suppliers"][0]["type"].GetValue<string>().Should().Be("Organization");
+        foundComponent["suppliers"][0]["url"].GetValue<string>().Should().Be("https://contoso.com");
     }
 }

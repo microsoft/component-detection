@@ -19,12 +19,14 @@ using Moq;
 [TestClass]
 [TestCategory("Governance/All")]
 [TestCategory("Governance/ComponentDetection")]
-public class PnpmDetectorTests : BaseDetectorTest<PnpmComponentDetectorFactory>
+public class PnpmDetectorTests
 {
+    private readonly DetectorTestUtilityBuilder<PnpmComponentDetectorFactory> detectorTestUtility = new();
+
     public PnpmDetectorTests()
     {
         var componentRecorder = new ComponentRecorder(enableManualTrackingOfExplicitReferences: false);
-        this.DetectorTestUtility.WithScanRequest(
+        this.detectorTestUtility.WithScanRequest(
             new ScanRequest(
                 new DirectoryInfo(Path.GetTempPath()),
                 null,
@@ -32,7 +34,7 @@ public class PnpmDetectorTests : BaseDetectorTest<PnpmComponentDetectorFactory>
                 new Dictionary<string, string>(),
                 null,
                 componentRecorder));
-        this.DetectorTestUtility.AddServiceMock(new Mock<ILogger<FileComponentDetector>>());
+        this.detectorTestUtility.AddServiceMock(new Mock<ILogger<FileComponentDetector>>());
     }
 
     [TestMethod]
@@ -77,7 +79,7 @@ registry: 'https://test/registry'
 shrinkwrapMinorVersion: 7
 shrinkwrapVersion: 3";
 
-        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile("shrinkwrap1.yaml", yamlFile)
             .ExecuteDetectorAsync();
 
@@ -175,7 +177,7 @@ registry: 'https://test/registry'
 shrinkwrapMinorVersion: 7
 shrinkwrapVersion: 3";
 
-        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile("shrinkwrap1.yaml", yamlFile1)
             .WithFile("shrinkwrap2.yaml", yamlFile2)
             .ExecuteDetectorAsync();
@@ -221,7 +223,7 @@ registry: 'https://test/registry'
 shrinkwrapMinorVersion: 7
 shrinkwrapVersion: 3";
 
-        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile("shrinkwrap1.yaml", yamlFile1)
             .ExecuteDetectorAsync();
 
@@ -250,7 +252,7 @@ shrinkwrapVersion: 3";
                   /strict-uri-encode/1.1.0:
                     dev: true";
 
-        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile("shrinkwrap1.yaml", yamlFile1)
             .ExecuteDetectorAsync();
 
@@ -281,7 +283,7 @@ shrinkwrapVersion: 3";
                       shared-non-dev-dep: 0.1.2
                     dev: true";
 
-        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile("shrinkwrap1.yaml", yamlFile1)
             .ExecuteDetectorAsync();
 
@@ -296,7 +298,7 @@ shrinkwrapVersion: 3";
         // This is a clearly malformed Yaml. We expect parsing it to "succeed" but find no components
         var yamlFile1 = @"dependencies";
 
-        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile("shrinkwrap1.yaml", yamlFile1)
             .ExecuteDetectorAsync();
 
@@ -326,7 +328,7 @@ packages:
   /test/1.0.0:
     dev: true";
 
-        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile("shrinkwrap1.yaml", yamlFile)
             .ExecuteDetectorAsync();
 
@@ -376,7 +378,7 @@ packages:
   /nth-check/2.0.0:
     resolution: {integrity: sha1-G7T22scAcvwxPoyc0UF7UHTAoSU=} ";
 
-        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile("shrinkwrap1.yaml", yamlFile)
             .ExecuteDetectorAsync();
 
@@ -416,7 +418,7 @@ packages:
     dev: false
 ";
 
-        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile("pnpm-lock.yaml", yamlFile)
             .ExecuteDetectorAsync();
 
@@ -440,7 +442,7 @@ packages:
   /strict-uri-encode/1.1.0:
     dev: true";
 
-        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile("pnpm-lock.yaml", yamlFile)
             .ExecuteDetectorAsync();
 
@@ -472,7 +474,7 @@ packages:
     dev: false
 ";
 
-        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile("pnpm-lock.yaml", yamlFile)
             .ExecuteDetectorAsync();
 
@@ -514,7 +516,7 @@ packages:
     dev: false
 ";
 
-        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile("pnpm-lock.yaml", yamlFile)
             .ExecuteDetectorAsync();
 
@@ -555,7 +557,7 @@ packages:
     dev: false
 ";
 
-        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile("pnpm-lock.yaml", yamlFile)
             .ExecuteDetectorAsync();
 
@@ -596,7 +598,7 @@ packages:
     dev: false
 ";
 
-        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile("pnpm-lock.yaml", yamlFile)
             .ExecuteDetectorAsync();
 
@@ -642,7 +644,7 @@ snapshots:
   sampleIndirectDependency@3.3.3: {}
 ";
 
-        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile("pnpm-lock.yaml", yamlFile)
             .ExecuteDetectorAsync();
 
@@ -694,7 +696,7 @@ snapshots:
   sampleIndirectDependency@3.3.3: {}
 ";
 
-        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile("pnpm-lock.yaml", yamlFile)
             .ExecuteDetectorAsync();
 
@@ -756,7 +758,7 @@ snapshots:
   'file://../sampleFile@link:../': {}
 ";
 
-        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile("pnpm-lock.yaml", yamlFile)
             .ExecuteDetectorAsync();
 
@@ -838,7 +840,7 @@ snapshots:
   sampleIndirectDevDependency@5.5.5: {}
 ";
 
-        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile("pnpm-lock.yaml", yamlFile)
             .ExecuteDetectorAsync();
 
@@ -922,7 +924,7 @@ snapshots:
   sampleHttpDependency@https://samplePackage/tar.gz/32f550d3b3bdb1b781aabe100683311cd982c98e': {}
 ";
 
-        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile("pnpm-lock.yaml", yamlFile)
             .ExecuteDetectorAsync();
 
@@ -993,7 +995,7 @@ snapshots:
   sample@https://samplePackage/tar.gz/32f550d3b3bdb1b781aabe100683311cd982c98e': {}
 ";
 
-        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile("pnpm-lock.yaml", yamlFile)
             .ExecuteDetectorAsync();
 
@@ -1037,7 +1039,7 @@ importers:
         version: link:SampleLinkDependency
 ";
 
-        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile("pnpm-lock.yaml", yamlFile)
             .ExecuteDetectorAsync();
 

@@ -1,0 +1,5 @@
+apiVersion: v2
+name: my-app
+description: A sample Helm chart
+version: 0.1.0
+appVersion: "1.0.0"

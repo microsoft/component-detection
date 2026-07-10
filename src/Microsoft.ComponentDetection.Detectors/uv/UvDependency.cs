@@ -1,6 +1,6 @@
 namespace Microsoft.ComponentDetection.Detectors.Uv;
 
-public class UvDependency
+internal class UvDependency
 {
     public required string Name { get; init; }
 

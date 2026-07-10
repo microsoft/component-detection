@@ -15,7 +15,7 @@ using Microsoft.Extensions.Logging;
 /// <summary>
 /// Detector for Cargo SBOM (.cargo-sbom.json) files.
 /// </summary>
-public class RustSbomParser : IRustSbomParser
+internal class RustSbomParser : IRustSbomParser
 {
     private const string CratesIoSource = "registry+https://github.com/rust-lang/crates.io-index";
 
@@ -265,7 +265,7 @@ public class RustSbomParser : IRustSbomParser
 
         if (!ownersApplied)
         {
-            this.logger.LogWarning("Falling back to SBOM recorder for {Id} because no ownership found", id);
+            this.logger.LogDebug("Falling back to SBOM recorder for {Id} because no ownership found", id);
 
             // Fallback to SBOM recorder if no ownership info
             fallbackRecorder.RegisterUsage(

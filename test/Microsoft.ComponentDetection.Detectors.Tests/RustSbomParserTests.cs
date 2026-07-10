@@ -824,7 +824,7 @@ public class RustSbomParserTests
         // Verify logger warning was called
         this.logger.Verify(
             x => x.Log(
-                LogLevel.Warning,
+                LogLevel.Debug,
                 It.IsAny<EventId>(),
                 It.Is<It.IsAnyType>((v, t) => v.ToString().Contains("Falling back to SBOM recorder")),
                 It.IsAny<Exception>(),
@@ -847,7 +847,7 @@ public class RustSbomParserTests
         // Verify logger warning was called
         this.logger.Verify(
             x => x.Log(
-                LogLevel.Warning,
+                LogLevel.Debug,
                 It.IsAny<EventId>(),
                 It.Is<It.IsAnyType>((v, t) => v.ToString().Contains("Falling back to SBOM recorder")),
                 It.IsAny<Exception>(),

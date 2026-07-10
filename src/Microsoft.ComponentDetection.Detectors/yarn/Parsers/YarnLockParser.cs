@@ -7,7 +7,7 @@ using System.Linq;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.Extensions.Logging;
 
-public class YarnLockParser : IYarnLockParser
+internal class YarnLockParser : IYarnLockParser
 {
     private const string VersionString = "version";
 

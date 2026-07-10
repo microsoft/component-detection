@@ -49,5 +49,5 @@ public class CondaComponent : TypedComponent
     [JsonIgnore]
     public override ComponentType Type => ComponentType.Conda;
 
-    protected override string ComputeId() => $"{this.Name} {this.Version} {this.Build} {this.Channel} {this.Subdir} {this.Namespace} {this.Url} {this.MD5} - {this.Type}";
+    protected override string ComputeBaseId() => $"{this.Name} {this.Version} {this.Build} {this.Channel} {this.Subdir} {this.Namespace} {this.Url} {this.MD5} - {this.Type}";
 }

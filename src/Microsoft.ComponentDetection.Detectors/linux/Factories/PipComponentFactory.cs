@@ -1,4 +1,3 @@
-#nullable disable
 namespace Microsoft.ComponentDetection.Detectors.Linux.Factories;
 
 using System.Collections.Generic;
@@ -8,13 +7,16 @@ using Microsoft.ComponentDetection.Detectors.Linux.Contracts;
 /// <summary>
 /// Factory for creating <see cref="PipComponent"/> instances from Python package artifacts.
 /// </summary>
-public class PipComponentFactory : ArtifactComponentFactoryBase
+internal class PipComponentFactory : ArtifactComponentFactoryBase
 {
+    /// <inheritdoc/>
+    public override ComponentType SupportedComponentType => ComponentType.Pip;
+
     /// <inheritdoc/>
     public override IEnumerable<string> SupportedArtifactTypes => ["python"];
 
     /// <inheritdoc/>
-    public override TypedComponent CreateComponent(ArtifactElement artifact, Distro distro)
+    public override TypedComponent? CreateComponent(ArtifactElement artifact, Distro distro)
     {
         if (artifact == null)
         {
@@ -33,6 +35,7 @@ public class PipComponentFactory : ArtifactComponentFactoryBase
             name: artifact.Name,
             version: artifact.Version,
             author: author,
-            license: license);
+            license: license
+        );
     }
 }

@@ -9,11 +9,11 @@ using System.Reactive.Linq;
 using System.Reactive.Threading.Tasks;
 using System.Threading;
 using System.Threading.Tasks;
-using global::DotNet.Globbing;
 using Microsoft.ComponentDetection.Common.Telemetry.Records;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.Internal;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
+using Microsoft.Extensions.FileSystemGlobbing;
 using Microsoft.Extensions.Logging;
 using Tomlyn;
 using Tomlyn.Model;
@@ -252,8 +252,6 @@ public class RustSbomDetector : FileComponentDetector
         var normDirectory = this.pathUtilityService.NormalizePath(directory);
         var fileName = Path.GetFileName(location);
 
-        this.Logger.LogInformation("Processing file: {Location}", normLocation);
-
         // Determine file kind
         FileKind fileKind;
         if (fileName.Equals(CargoTomlFileName, this.pathComparison))
@@ -272,7 +270,7 @@ public class RustSbomDetector : FileComponentDetector
         // Check if directory should be skipped
         if (this.ShouldSkip(directory, fileKind, location))
         {
-            this.Logger.LogInformation("Skipping file due to skip rules: {Location}", normLocation);
+            this.Logger.LogDebug("Skipping file due to skip rules: {Location}", normLocation);
 
             // Increment skip counters
             switch (fileKind)
@@ -410,9 +408,9 @@ public class RustSbomDetector : FileComponentDetector
 
             var relativePath = this.GetRelativePath(rule.Root, normalizedDir);
 
-            // Match against include globs
-            var matchesInclude = rule.IncludeGlobs.Any(g =>
-                g.IsMatch(relativePath) || g.IsMatch(normalizedFullPath));
+            // Match against include globs (try both relative and full path)
+            var matchesInclude = rule.IncludeMatcher.Match(relativePath).HasMatches
+                || rule.IncludeMatcher.Match(normalizedFullPath).HasMatches;
 
             if (!matchesInclude)
             {
@@ -420,8 +418,8 @@ public class RustSbomDetector : FileComponentDetector
             }
 
             // Match against exclude globs
-            var matchesExclude = rule.ExcludeGlobs.Any(g =>
-                g.IsMatch(relativePath) || g.IsMatch(normalizedFullPath));
+            var matchesExclude = rule.ExcludeMatcher.Match(relativePath).HasMatches
+                || rule.ExcludeMatcher.Match(normalizedFullPath).HasMatches;
 
             if (matchesExclude)
             {
@@ -443,7 +441,7 @@ public class RustSbomDetector : FileComponentDetector
     /// <param name="excludes">Collection of glob patterns to exclude workspace members (e.g., "examples/*", "tests/*").</param>
     /// <remarks>
     /// This method normalizes all paths and patterns for cross-platform compatibility.
-    /// On Windows, patterns are evaluated case-insensitively, while on other platforms they are case-sensitive.
+    /// Patterns are always evaluated case-insensitively.
     /// The glob rule is used to determine whether files in descendant directories should be skipped during detection.
     /// </remarks>
     private void AddGlobRule(string root, IEnumerable<string> includes, IEnumerable<string> excludes)
@@ -452,26 +450,18 @@ public class RustSbomDetector : FileComponentDetector
         var includesList = includes?.ToList() ?? [];
         var excludesList = excludes?.ToList() ?? [];
 
-        var globOptions = new GlobOptions
-        {
-            Evaluation = new EvaluationOptions
-            {
-                CaseInsensitive = true,
-            },
-        };
-
-        var includeGlobs = new List<Glob>();
+        var includeMatcher = new Matcher(StringComparison.OrdinalIgnoreCase);
         foreach (var pattern in includesList)
         {
             var normalizedPattern = this.pathUtilityService.NormalizePath(pattern);
-            includeGlobs.Add(Glob.Parse(normalizedPattern, globOptions));
+            includeMatcher.AddInclude(normalizedPattern);
         }
 
-        var excludeGlobs = new List<Glob>();
+        var excludeMatcher = new Matcher(StringComparison.OrdinalIgnoreCase);
         foreach (var pattern in excludesList)
         {
             var normalizedPattern = this.pathUtilityService.NormalizePath(pattern);
-            excludeGlobs.Add(Glob.Parse(normalizedPattern, globOptions));
+            excludeMatcher.AddInclude(normalizedPattern);
         }
 
         var rule = new GlobRule
@@ -479,8 +469,8 @@ public class RustSbomDetector : FileComponentDetector
             Root = normalizedRoot,
             Includes = includesList,
             Excludes = excludesList,
-            IncludeGlobs = includeGlobs,
-            ExcludeGlobs = excludeGlobs,
+            IncludeMatcher = includeMatcher,
+            ExcludeMatcher = excludeMatcher,
         };
 
         this.visitedGlobRules.Add(rule);
@@ -776,8 +766,8 @@ public class RustSbomDetector : FileComponentDetector
 
         public List<string> Excludes { get; set; }
 
-        public List<Glob> IncludeGlobs { get; set; }
+        public Matcher IncludeMatcher { get; set; }
 
-        public List<Glob> ExcludeGlobs { get; set; }
+        public Matcher ExcludeMatcher { get; set; }
     }
 }

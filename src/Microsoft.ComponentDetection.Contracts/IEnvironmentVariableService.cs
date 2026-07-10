@@ -19,7 +19,7 @@ public interface IEnvironmentVariableService
     /// </summary>
     /// <param name="name">Name of the environment variable.</param>
     /// <returns>Returns a string of the environment variable value.</returns>
-    string GetEnvironmentVariable(string name);
+    string? GetEnvironmentVariable(string name);
 
     /// <summary>
     /// Returns the value of an environment variable which is formatted as a delimited list.

@@ -1,6 +1,6 @@
 namespace Microsoft.ComponentDetection.Common.Telemetry.Records;
 
-public class LinuxContainerDetectorImageDetectionFailed : BaseDetectionTelemetryRecord
+internal class LinuxContainerDetectorImageDetectionFailed : BaseDetectionTelemetryRecord
 {
     public override string RecordName => "LinuxContainerDetectorImageDetectionFailed";
 

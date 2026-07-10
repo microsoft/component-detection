@@ -1,6 +1,6 @@
 namespace Microsoft.ComponentDetection.Common.Telemetry.Records;
 
-public class FailedParsingFileRecord : BaseDetectionTelemetryRecord
+internal class FailedParsingFileRecord : BaseDetectionTelemetryRecord
 {
     public override string RecordName => "FailedParsingFile";
 

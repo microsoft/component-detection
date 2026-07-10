@@ -1,6 +1,6 @@
 namespace Microsoft.ComponentDetection.Common.Telemetry.Records;
 
-public class RustGraphTelemetryRecord : BaseDetectionTelemetryRecord
+internal class RustGraphTelemetryRecord : BaseDetectionTelemetryRecord
 {
     public override string RecordName => "RustGraph";
 

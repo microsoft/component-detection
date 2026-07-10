@@ -5,10 +5,13 @@ using Microsoft.ComponentDetection.Common.Telemetry;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Detectors.CocoaPods;
 using Microsoft.ComponentDetection.Detectors.Conan;
+using Microsoft.ComponentDetection.Detectors.CondaLock;
+using Microsoft.ComponentDetection.Detectors.DockerCompose;
 using Microsoft.ComponentDetection.Detectors.Dockerfile;
 using Microsoft.ComponentDetection.Detectors.DotNet;
 using Microsoft.ComponentDetection.Detectors.Go;
 using Microsoft.ComponentDetection.Detectors.Gradle;
+using Microsoft.ComponentDetection.Detectors.Helm;
 using Microsoft.ComponentDetection.Detectors.Ivy;
 using Microsoft.ComponentDetection.Detectors.Linux;
 using Microsoft.ComponentDetection.Detectors.Linux.Factories;
@@ -65,7 +68,6 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IScanExecutionService, ScanExecutionService>();
         services.AddSingleton<IDetectorProcessingService, DetectorProcessingService>();
         services.AddSingleton<IDetectorRestrictionService, DetectorRestrictionService>();
-        services.AddSingleton<IArgumentHelper, ArgumentHelper>();
 
         // Experiments
         services.AddSingleton<IExperimentService, ExperimentService>();
@@ -73,6 +75,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IExperimentConfiguration, SimplePipExperiment>();
         services.AddSingleton<IExperimentConfiguration, UvLockDetectorExperiment>();
         services.AddSingleton<IExperimentConfiguration, LinuxApplicationLayerExperiment>();
+        services.AddSingleton<IExperimentConfiguration, MSBuildBinaryLogExperiment>();
 
         // Detectors
         // CocoaPods
@@ -83,6 +86,9 @@ public static class ServiceCollectionExtensions
 
         // Conda
         services.AddSingleton<IComponentDetector, CondaLockComponentDetector>();
+
+        // Docker Compose
+        services.AddSingleton<IComponentDetector, DockerComposeComponentDetector>();
 
         // Dockerfile
         services.AddSingleton<IComponentDetector, DockerfileComponentDetector>();
@@ -97,6 +103,9 @@ public static class ServiceCollectionExtensions
         // Gradle
         services.AddSingleton<IComponentDetector, GradleComponentDetector>();
 
+        // Helm
+        services.AddSingleton<IComponentDetector, HelmComponentDetector>();
+
         // Ivy
         services.AddSingleton<IComponentDetector, IvyDetector>();
 
@@ -106,6 +115,12 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IArtifactComponentFactory, NpmComponentFactory>();
         services.AddSingleton<IArtifactComponentFactory, PipComponentFactory>();
         services.AddSingleton<IArtifactComponentFactory, DotnetComponentFactory>();
+        services.AddSingleton<IArtifactComponentFactory, RubyGemsComponentFactory>();
+        services.AddSingleton<IArtifactComponentFactory, GoComponentFactory>();
+        services.AddSingleton<IArtifactComponentFactory, CargoComponentFactory>();
+        services.AddSingleton<IArtifactComponentFactory, PodComponentFactory>();
+        services.AddSingleton<IArtifactComponentFactory, CondaComponentFactory>();
+        services.AddSingleton<IArtifactComponentFactory, MavenComponentFactory>();
         services.AddSingleton<IArtifactFilter, Mariner2ArtifactFilter>();
         services.AddSingleton<IComponentDetector, LinuxContainerDetector>();
         services.AddSingleton<IComponentDetector, LinuxApplicationLayerDetector>();
@@ -124,6 +139,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IComponentDetector, NuGetComponentDetector>();
         services.AddSingleton<IComponentDetector, NuGetPackagesConfigDetector>();
         services.AddSingleton<IComponentDetector, NuGetProjectModelProjectCentricComponentDetector>();
+        services.AddSingleton<IComponentDetector, MSBuildBinaryLogComponentDetector>();
 
         // PIP
         services.AddSingleton<IPyPiClient, PyPiClient>();

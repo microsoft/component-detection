@@ -6,7 +6,7 @@ using global::NuGet.Versioning;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 
-public class PnpmV5ParsingUtilities<T> : PnpmParsingUtilitiesBase<T>
+internal class PnpmV5ParsingUtilities<T> : PnpmParsingUtilitiesBase<T>
 where T : PnpmYaml
 {
     public override DetectedComponent CreateDetectedComponentFromPnpmPath(string pnpmPackagePath)

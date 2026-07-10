@@ -9,7 +9,7 @@ using System.Globalization;
 /// <summary>
 /// Converts a comma separated string of key value pairs to a dictionary.
 /// </summary>
-public class KeyValueDelimitedConverter : TypeConverter
+internal class KeyValueDelimitedConverter : TypeConverter
 {
     /// <inheritdoc />
     public override object ConvertFrom(ITypeDescriptorContext context, CultureInfo culture, object value)

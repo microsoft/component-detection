@@ -70,7 +70,7 @@ public class LinuxComponent : TypedComponent
         }
     }
 
-    protected override string ComputeId() => $"{this.Distribution} {this.Release} {this.Name} {this.Version} - {this.Type}";
+    protected override string ComputeBaseId() => $"{this.Distribution} {this.Release} {this.Name} {this.Version} - {this.Type}";
 
     private bool IsUbuntu()
     {

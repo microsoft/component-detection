@@ -1,6 +1,6 @@
 namespace Microsoft.ComponentDetection.Common.Telemetry.Records;
 
-public class SimplePypiCacheTelemetryRecord : BaseDetectionTelemetryRecord
+internal class SimplePypiCacheTelemetryRecord : BaseDetectionTelemetryRecord
 {
     public override string RecordName => "SimplePyPiCache";
 

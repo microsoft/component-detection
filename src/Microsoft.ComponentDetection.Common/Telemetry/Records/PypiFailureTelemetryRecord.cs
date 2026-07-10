@@ -2,7 +2,7 @@ namespace Microsoft.ComponentDetection.Common.Telemetry.Records;
 
 using System.Net;
 
-public class PypiFailureTelemetryRecord : BaseDetectionTelemetryRecord
+internal class PypiFailureTelemetryRecord : BaseDetectionTelemetryRecord
 {
     public override string RecordName => "PypiFailure";
 

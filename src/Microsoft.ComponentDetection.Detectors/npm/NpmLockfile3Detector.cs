@@ -38,7 +38,7 @@ public class NpmLockfile3Detector : NpmLockfileDetectorBase
 
     public override string Id => "NpmLockfile3";
 
-    public override int Version => 2;
+    public override int Version => 4;
 
     protected override bool IsSupportedLockfileVersion(int lockfileVersion) => lockfileVersion == 3;
 
@@ -83,7 +83,7 @@ public class NpmLockfile3Detector : NpmLockfileDetectorBase
         while (topLevelDependencies.Count > 0)
         {
             var (path, lockPackage, _) = topLevelDependencies.Dequeue();
-            var name = NpmComponentUtilities.GetModuleName(path);
+            var name = lockPackage.Name ?? NpmComponentUtilities.GetModuleName(path);
 
             var component = this.CreateComponent(name, lockPackage.Version, lockPackage.Integrity);
             if (component is null)
@@ -91,7 +91,11 @@ public class NpmLockfile3Detector : NpmLockfileDetectorBase
                 continue;
             }
 
-            var previouslyAddedComponents = new HashSet<string> { component.Id };
+            // Track component-parent pairs instead of just component IDs
+            var previouslyAddedComponentParents = new HashSet<(string ComponentId, string? ParentId)>
+            {
+                (component.Id, null),
+            };
             var subQueue = new Queue<(string Path, PackageLockV3Package Package, TypedComponent Parent)>();
 
             // Record the top-level component
@@ -104,15 +108,22 @@ public class NpmLockfile3Detector : NpmLockfileDetectorBase
             while (subQueue.Count > 0)
             {
                 var (subPath, subPackage, parentComponent) = subQueue.Dequeue();
-                var subName = NpmComponentUtilities.GetModuleName(subPath);
+                var subName = subPackage.Name ?? NpmComponentUtilities.GetModuleName(subPath);
 
                 var subComponent = this.CreateComponent(subName, subPackage.Version, subPackage.Integrity);
-                if (subComponent is null || previouslyAddedComponents.Contains(subComponent.Id))
+                if (subComponent is null)
                 {
                     continue;
                 }
 
-                previouslyAddedComponents.Add(subComponent.Id);
+                // Only skip if this exact component-parent relationship was already added
+                var componentParentPair = (subComponent.Id, parentComponent.Id);
+                if (previouslyAddedComponentParents.Contains(componentParentPair))
+                {
+                    continue;
+                }
+
+                previouslyAddedComponentParents.Add(componentParentPair);
 
                 this.RecordComponent(singleFileComponentRecorder, subComponent, subPackage.Dev ?? false, component, parentComponent.Id);
 

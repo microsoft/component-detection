@@ -18,21 +18,23 @@ using Moq;
 [TestClass]
 [TestCategory("Governance/All")]
 [TestCategory("Governance/ComponentDetection")]
-public class VcpkgComponentDetectorTests : BaseDetectorTest<VcpkgComponentDetector>
+public class VcpkgComponentDetectorTests
 {
+    private readonly DetectorTestUtilityBuilder<VcpkgComponentDetector> detectorTestUtility = new();
+
     private readonly Mock<ICommandLineInvocationService> mockCommandLineInvocationService;
     private readonly Mock<IEnvironmentVariableService> mockEnvironmentVariableService;
 
     public VcpkgComponentDetectorTests()
     {
         this.mockCommandLineInvocationService = new Mock<ICommandLineInvocationService>();
-        this.DetectorTestUtility.AddServiceMock(this.mockCommandLineInvocationService);
+        this.detectorTestUtility.AddServiceMock(this.mockCommandLineInvocationService);
 
         this.mockEnvironmentVariableService = new Mock<IEnvironmentVariableService>();
-        this.DetectorTestUtility.AddServiceMock(this.mockEnvironmentVariableService);
+        this.detectorTestUtility.AddServiceMock(this.mockEnvironmentVariableService);
 
         var componentRecorder = new ComponentRecorder(enableManualTrackingOfExplicitReferences: false);
-        this.DetectorTestUtility.WithScanRequest(
+        this.detectorTestUtility.WithScanRequest(
             new ScanRequest(
                 new DirectoryInfo(Path.GetTempPath()),
                 null,
@@ -65,7 +67,7 @@ public class VcpkgComponentDetectorTests : BaseDetectorTest<VcpkgComponentDetect
         }
     ]
 }";
-        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile("vcpkg.spdx.json", spdxFile)
             .ExecuteDetectorAsync();
 
@@ -122,7 +124,7 @@ public class VcpkgComponentDetectorTests : BaseDetectorTest<VcpkgComponentDetect
         }
     ]
 }";
-        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile("vcpkg.spdx.json", spdxFile)
             .ExecuteDetectorAsync();
 
@@ -149,11 +151,64 @@ public class VcpkgComponentDetectorTests : BaseDetectorTest<VcpkgComponentDetect
     }
 
     [TestMethod]
+    public async Task TestResourceWithSlashInNameProducesValidPackageUrlAsync()
+    {
+        var spdxFile = """
+            {
+                "SPDXID": "SPDXRef-DOCUMENT",
+                "documentNamespace": "https://spdx.org/spdxdocs/brotli-x64-windows",
+                "name": "brotli:x64-windows@1.0.9",
+                "packages": [
+                    {
+                        "name": "brotli",
+                        "SPDXID": "SPDXRef-port",
+                        "versionInfo": "1.0.9#0",
+                        "downloadLocation": "git+https://github.com/Microsoft/vcpkg#ports/brotli",
+                        "licenseConcluded": "NOASSERTION",
+                        "licenseDeclared": "NOASSERTION",
+                        "copyrightText": "NOASSERTION"
+                    },
+                    {
+                        "SPDXID": "SPDXRef-resource-1",
+                        "name": "google/brotli",
+                        "downloadLocation": "git+https://github.com/google/brotli@1.0.9",
+                        "licenseConcluded": "NOASSERTION",
+                        "licenseDeclared": "NOASSERTION",
+                        "copyrightText": "NOASSERTION"
+                    }
+                ]
+            }
+            """;
+        var (scanResult, componentRecorder) = await this
+            .detectorTestUtility.WithFile("vcpkg.spdx.json", spdxFile)
+            .ExecuteDetectorAsync();
+
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+
+        var detectedComponents = componentRecorder.GetDetectedComponents();
+        var components = detectedComponents.ToList();
+
+        components.Should().HaveCount(2);
+
+        var resourceComponent = (VcpkgComponent)components
+                .First(c => ((VcpkgComponent)c.Component).SPDXID == "SPDXRef-resource-1")
+                .Component;
+        resourceComponent.Name.Should().Be("google/brotli");
+        resourceComponent.Version.Should().Be("1.0.9");
+
+        // This was the bug: names with slashes caused MalformedPackageUrlException
+        var purl = resourceComponent.PackageUrl;
+        purl.Should().NotBeNull();
+        purl.ToString().Should().Contain("vcpkg");
+        purl.ToString().Should().Contain("brotli");
+    }
+
+    [TestMethod]
     public async Task TestBlankJsonAsync()
     {
         var spdxFile = "{}";
 
-        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile("vcpkg.spdx.json", spdxFile)
             .ExecuteDetectorAsync();
 
@@ -169,7 +224,7 @@ public class VcpkgComponentDetectorTests : BaseDetectorTest<VcpkgComponentDetect
     {
         var spdxFile = "invalidspdxfile";
 
-        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile("vcpkg.spdx.json", spdxFile)
             .ExecuteDetectorAsync();
 
@@ -205,7 +260,7 @@ public class VcpkgComponentDetectorTests : BaseDetectorTest<VcpkgComponentDetect
 }";
 
         // Empty manifest-info.json should not cause an exception
-        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile(CrossPlatformPath(Path.GetFullPath("vcpkg_installed\\packageLocation\\vcpkg.spdx.json")), spdxFile)
             .WithFile(CrossPlatformPath(Path.GetFullPath("vcpkg_installed\\vcpkg\\manifest-info.json")), string.Empty)
             .ExecuteDetectorAsync();
@@ -241,7 +296,7 @@ public class VcpkgComponentDetectorTests : BaseDetectorTest<VcpkgComponentDetect
 }";
 
         // Invalid JSON in manifest-info.json should not cause an exception
-        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile(CrossPlatformPath(Path.GetFullPath("vcpkg_installed\\packageLocation\\vcpkg.spdx.json")), spdxFile)
             .WithFile(CrossPlatformPath(Path.GetFullPath("vcpkg_installed\\vcpkg\\manifest-info.json")), "invalid json content")
             .ExecuteDetectorAsync();
@@ -285,7 +340,7 @@ public class VcpkgComponentDetectorTests : BaseDetectorTest<VcpkgComponentDetect
     ""manifest-path"": ""{t_pathToVcpkg.Replace("\\", "\\\\")}""
 }}";
 
-        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile(CrossPlatformPath(Path.GetFullPath("vcpkg_installed\\packageLocation\\vcpkg.spdx.json")), spdxFile)
             .WithFile(t_manifestPath, manifestFile)
             .ExecuteDetectorAsync();

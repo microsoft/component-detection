@@ -46,5 +46,5 @@ public class CargoComponent : TypedComponent
     [JsonPropertyName("packageUrl")]
     public override PackageURL PackageUrl => new PackageURL("cargo", string.Empty, this.Name, this.Version, null, string.Empty);
 
-    protected override string ComputeId() => $"{this.Name} {this.Version} - {this.Type}";
+    protected override string ComputeBaseId() => $"{this.Name} {this.Version} - {this.Type}";
 }

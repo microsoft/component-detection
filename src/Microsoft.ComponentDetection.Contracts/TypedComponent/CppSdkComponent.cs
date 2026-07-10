@@ -51,5 +51,5 @@ public class CppSdkComponent : TypedComponent
         }
     }
 
-    protected override string ComputeId() => $"{this.Name} {this.Version} - {this.Type}";
+    protected override string ComputeBaseId() => $"{this.Name} {this.Version} - {this.Type}";
 }

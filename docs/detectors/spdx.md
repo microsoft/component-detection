@@ -19,6 +19,8 @@ The detector:
   - Document name
   - SPDX version
   - Root element ID from `documentDescribes` (defaults to `SPDXRef-Document` if not specified)
+  - Creator tool from `creationInfo.creators` (e.g., `Tool: microsoft/sbom-tool-2.2.0`)
+  - Creator organization from `creationInfo.creators` (e.g., `Organization: Microsoft`)
 - Creates an `SpdxComponent` to represent the SPDX document
 
 The detector does not parse or register individual packages listed within the SPDX document; it only registers the SPDX document itself as a component.

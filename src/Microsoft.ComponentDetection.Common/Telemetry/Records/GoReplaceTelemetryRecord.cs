@@ -1,6 +1,6 @@
 namespace Microsoft.ComponentDetection.Common.Telemetry.Records;
 
-public class GoReplaceTelemetryRecord : BaseDetectionTelemetryRecord
+internal class GoReplaceTelemetryRecord : BaseDetectionTelemetryRecord
 {
     public override string RecordName => "GoReplace";
 

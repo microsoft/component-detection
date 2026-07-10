@@ -99,7 +99,7 @@ public class MavenCommandServiceTests
     }
 
     [TestMethod]
-    public async Task GenerateDependenciesFile_SuccessWithParentCancellationTokenAsync()
+    public async Task GenerateDependenciesFile_WhenCancellationRequested_ThrowsOperationCanceledExceptionAsync()
     {
         var cts = new CancellationTokenSource();
         var pomLocation = "Test/location";
@@ -111,25 +111,23 @@ public class MavenCommandServiceTests
             },
         };
 
+        // Set up the CLI mock to throw OperationCanceledException when called with a cancelled token
+        this.commandLineMock.Setup(x => x.ExecuteCommandAsync(
+                It.IsAny<string>(),
+                It.IsAny<string[]>(),
+                It.IsAny<CancellationToken>(),
+                It.IsAny<string[]>()))
+            .Returns<string, string[], CancellationToken, string[]>((_, _, ct, _) =>
+            {
+                ct.ThrowIfCancellationRequested();
+                return Task.FromResult(new CommandLineExecutionResult { ExitCode = 0 });
+            });
+
         await cts.CancelAsync();
 
-        var bcdeMvnFileName = "bcde.mvndeps";
-        var cliParameters = new[] { "dependency:tree", "-B", $"-DoutputFile={bcdeMvnFileName}", "-DoutputType=text", $"-f{pomLocation}" };
-
-        this.commandLineMock.Setup(x => x.ExecuteCommandAsync(
-                MavenCommandService.PrimaryCommand,
-                MavenCommandService.AdditionalValidCommands,
-                It.Is<CancellationToken>(x => x.IsCancellationRequested), // We just care that this is cancelled, not the actual output
-                It.Is<string[]>(y => this.ShouldBeEquivalentTo(y, cliParameters))))
-            .ReturnsAsync(new CommandLineExecutionResult
-            {
-                ExitCode = 0,
-            })
-            .Verifiable();
-
-        await this.mavenCommandService.GenerateDependenciesFileAsync(processRequest, cts.Token);
-
-        this.commandLineMock.Verify();
+        // When cancellation is already requested, the method should propagate OperationCanceledException
+        var action = async () => await this.mavenCommandService.GenerateDependenciesFileAsync(processRequest, cts.Token);
+        await action.Should().ThrowAsync<OperationCanceledException>();
     }
 
     [TestMethod]
@@ -258,6 +256,44 @@ public class MavenCommandServiceTests
         this.mavenCommandService.ParseDependenciesFile(processRequest);
 
         Mock.Verify(this.parserServiceMock);
+    }
+
+    [TestMethod]
+    public async Task GenerateDependenciesFile_FailedResult_NotCachedAsync()
+    {
+        // Arrange
+        var pomLocation = "Test/location";
+        var cliInvocationCount = 0;
+
+        var bcdeMvnFileName = "bcde.mvndeps";
+        var cliParameters = new[] { "dependency:tree", "-B", $"-DoutputFile={bcdeMvnFileName}", "-DoutputType=text", $"-f{pomLocation}" };
+
+        this.commandLineMock.Setup(x => x.ExecuteCommandAsync(
+                MavenCommandService.PrimaryCommand,
+                MavenCommandService.AdditionalValidCommands,
+                It.IsAny<CancellationToken>(),
+                It.Is<string[]>(y => this.ShouldBeEquivalentTo(y, cliParameters))))
+            .ReturnsAsync(() =>
+            {
+                Interlocked.Increment(ref cliInvocationCount);
+                return new CommandLineExecutionResult { ExitCode = 1, StdErr = "Build failed" };
+            });
+
+        var processRequest = new ProcessRequest
+        {
+            ComponentStream = new ComponentStream { Location = pomLocation },
+            SingleFileComponentRecorder = new Mock<ISingleFileComponentRecorder>().Object,
+        };
+
+        // Act: First call - should fail
+        var result1 = await this.mavenCommandService.GenerateDependenciesFileAsync(processRequest);
+        result1.Success.Should().BeFalse();
+        cliInvocationCount.Should().Be(1);
+
+        // Second call - should retry (not use cached failure)
+        var result2 = await this.mavenCommandService.GenerateDependenciesFileAsync(processRequest);
+        result2.Success.Should().BeFalse();
+        cliInvocationCount.Should().Be(2, "failed results should not be cached, allowing retries");
     }
 
     protected bool ShouldBeEquivalentTo<T>(IEnumerable<T> result, IEnumerable<T> expected)
