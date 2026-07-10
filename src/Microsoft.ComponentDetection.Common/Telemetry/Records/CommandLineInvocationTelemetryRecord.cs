@@ -1,7 +1,7 @@
 namespace Microsoft.ComponentDetection.Common.Telemetry.Records;
 
 using System;
-using System.Linq;
+using System.IO;
 using Microsoft.ComponentDetection.Contracts;
 
 internal class CommandLineInvocationTelemetryRecord : BaseDetectionTelemetryRecord
@@ -47,12 +47,23 @@ internal class CommandLineInvocationTelemetryRecord : BaseDetectionTelemetryReco
             return error;
         }
 
-        var lines = error.Split(["\r\n", "\r", "\n"], StringSplitOptions.None);
-        if (lines.Length <= 10)
+        var lines = new System.Collections.Generic.List<string>();
+        using (var reader = new StringReader(error))
         {
-            return error;
+            string? line;
+            while ((line = reader.ReadLine()) != null)
+            {
+                if (lines.Count >= 10)
+                {
+                    // More than 10 lines exist, truncate
+                    return string.Join(Environment.NewLine, lines);
+                }
+
+                lines.Add(line);
+            }
         }
 
-        return string.Join(Environment.NewLine, lines.Take(10));
+        // EOF reached with <= 10 lines, return original
+        return error;
     }
 }

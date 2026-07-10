@@ -2,20 +2,22 @@ namespace Microsoft.ComponentDetection.Common.Telemetry.Records;
 
 using System;
 using System.Diagnostics;
+using System.Text.Json.Serialization;
 using Microsoft.ComponentDetection.Common.Telemetry.Attributes;
 
 public abstract class BaseDetectionTelemetryRecord : IDetectionTelemetryRecord
 {
-    protected static readonly bool DiagnosticEnabled = string.Equals(Environment.GetEnvironmentVariable("AGENT_DIAGNOSTIC"), "True", StringComparison.OrdinalIgnoreCase) || string.Equals(Environment.GetEnvironmentVariable("SYSTEM_DEBUG"), "True", StringComparison.OrdinalIgnoreCase);
-
     private readonly Stopwatch stopwatch = new Stopwatch();
 
     private bool disposedValue;
 
     protected BaseDetectionTelemetryRecord() => this.stopwatch.Start();
 
+    internal static bool DiagnosticEnabled { get; set; } = string.Equals(Environment.GetEnvironmentVariable("AGENT_DIAGNOSTIC"), "True", StringComparison.OrdinalIgnoreCase) || string.Equals(Environment.GetEnvironmentVariable("SYSTEM_DEBUG"), "True", StringComparison.OrdinalIgnoreCase);
+
     public abstract string RecordName { get; }
 
+    [JsonIgnore]
     public virtual bool IsDiagnostic { get; }
 
     [Metric]

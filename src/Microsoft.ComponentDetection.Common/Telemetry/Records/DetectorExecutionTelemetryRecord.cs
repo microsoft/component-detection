@@ -1,7 +1,7 @@
 namespace Microsoft.ComponentDetection.Common.Telemetry.Records;
 
 using System;
-using System.Linq;
+using System.IO;
 
 internal class DetectorExecutionTelemetryRecord : BaseDetectionTelemetryRecord
 {
@@ -34,12 +34,23 @@ internal class DetectorExecutionTelemetryRecord : BaseDetectionTelemetryRecord
             return text;
         }
 
-        var lines = text.Split(["\r\n", "\r", "\n"], StringSplitOptions.None);
-        if (lines.Length <= 10)
+        var lines = new System.Collections.Generic.List<string>();
+        using (var reader = new StringReader(text))
         {
-            return text;
+            string? line;
+            while ((line = reader.ReadLine()) != null)
+            {
+                if (lines.Count >= 10)
+                {
+                    // More than 10 lines exist, truncate
+                    return string.Join(Environment.NewLine, lines);
+                }
+
+                lines.Add(line);
+            }
         }
 
-        return string.Join(Environment.NewLine, lines.Take(10));
+        // EOF reached with <= 10 lines, return original
+        return text;
     }
 }
