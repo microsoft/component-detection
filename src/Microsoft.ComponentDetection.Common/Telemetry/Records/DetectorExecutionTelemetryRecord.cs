@@ -1,7 +1,14 @@
 namespace Microsoft.ComponentDetection.Common.Telemetry.Records;
 
+using System;
+using System.Linq;
+
 internal class DetectorExecutionTelemetryRecord : BaseDetectionTelemetryRecord
 {
+    private static readonly bool DiagnosticEnabled = string.Equals(Environment.GetEnvironmentVariable("agent.diagnostic"), "True", StringComparison.OrdinalIgnoreCase) || string.Equals(Environment.GetEnvironmentVariable("System.Debug"), "True", StringComparison.OrdinalIgnoreCase);
+
+    private string? experimentalInformation;
+
     public override string RecordName => "DetectorExecution";
 
     public string? DetectorId { get; set; }
@@ -14,7 +21,27 @@ internal class DetectorExecutionTelemetryRecord : BaseDetectionTelemetryRecord
 
     public bool IsExperimental { get; set; }
 
-    public string? ExperimentalInformation { get; set; }
+    public string? ExperimentalInformation
+    {
+        get => this.experimentalInformation;
+        set => this.experimentalInformation = DiagnosticEnabled ? value : this.TruncateToLast10Lines(value);
+    }
 
     public string? AdditionalTelemetryDetails { get; set; }
+
+    private string? TruncateToLast10Lines(string? text)
+    {
+        if (string.IsNullOrEmpty(text))
+        {
+            return text;
+        }
+
+        var lines = text.Split(["\r\n", "\r", "\n"], StringSplitOptions.None);
+        if (lines.Length <= 10)
+        {
+            return text;
+        }
+
+        return string.Join(Environment.NewLine, lines.TakeLast(10));
+    }
 }

@@ -1,10 +1,13 @@
 namespace Microsoft.ComponentDetection.Common.Telemetry.Records;
 
 using System;
+using System.Linq;
 using Microsoft.ComponentDetection.Contracts;
 
 internal class CommandLineInvocationTelemetryRecord : BaseDetectionTelemetryRecord
 {
+    private static readonly bool DiagnosticEnabled = string.Equals(Environment.GetEnvironmentVariable("agent.diagnostic"), "True", StringComparison.OrdinalIgnoreCase) || string.Equals(Environment.GetEnvironmentVariable("System.Debug"), "True", StringComparison.OrdinalIgnoreCase);
+
     public override string RecordName => "CommandLineInvocation";
 
     public string? PathThatWasRan { get; set; }
@@ -20,7 +23,8 @@ internal class CommandLineInvocationTelemetryRecord : BaseDetectionTelemetryReco
     internal void Track(CommandLineExecutionResult result, string path, string parameters)
     {
         this.ExitCode = result.ExitCode;
-        this.StandardError = result.StdErr?.RemoveSensitiveInformation();
+        var sanitizedError = result.StdErr?.RemoveSensitiveInformation();
+        this.StandardError = DiagnosticEnabled ? sanitizedError : this.TruncateStandardErrorTo10Lines(sanitizedError);
         this.TrackCommon(path, parameters);
     }
 
@@ -36,5 +40,21 @@ internal class CommandLineInvocationTelemetryRecord : BaseDetectionTelemetryReco
         this.PathThatWasRan = path;
         this.Parameters = parameters?.RemoveSensitiveInformation();
         this.StopExecutionTimer();
+    }
+
+    private string? TruncateStandardErrorTo10Lines(string? error)
+    {
+        if (string.IsNullOrEmpty(error))
+        {
+            return error;
+        }
+
+        var lines = error.Split(["\r\n", "\r", "\n"], StringSplitOptions.None);
+        if (lines.Length <= 10)
+        {
+            return error;
+        }
+
+        return string.Join(Environment.NewLine, lines.TakeLast(10));
     }
 }

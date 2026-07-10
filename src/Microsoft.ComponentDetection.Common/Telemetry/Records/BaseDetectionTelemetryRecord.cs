@@ -6,6 +6,8 @@ using Microsoft.ComponentDetection.Common.Telemetry.Attributes;
 
 public abstract class BaseDetectionTelemetryRecord : IDetectionTelemetryRecord
 {
+    private static readonly bool DiagnosticEnabled = string.Equals(Environment.GetEnvironmentVariable("agent.diagnostic"), "True", StringComparison.OrdinalIgnoreCase) || string.Equals(Environment.GetEnvironmentVariable("System.Debug"), "True", StringComparison.OrdinalIgnoreCase);
+
     private readonly Stopwatch stopwatch = new Stopwatch();
 
     private bool disposedValue;
@@ -13,6 +15,8 @@ public abstract class BaseDetectionTelemetryRecord : IDetectionTelemetryRecord
     protected BaseDetectionTelemetryRecord() => this.stopwatch.Start();
 
     public abstract string RecordName { get; }
+
+    public virtual bool IsDiagnostic { get; }
 
     [Metric]
     public TimeSpan? ExecutionTime { get; protected set; }
@@ -39,7 +43,10 @@ public abstract class BaseDetectionTelemetryRecord : IDetectionTelemetryRecord
             if (disposing)
             {
                 this.StopExecutionTimer();
-                TelemetryRelay.Instance.PostTelemetryRecord(this);
+                if (!this.IsDiagnostic || DiagnosticEnabled)
+                {
+                    TelemetryRelay.Instance.PostTelemetryRecord(this);
+                }
             }
 
             this.disposedValue = true;
