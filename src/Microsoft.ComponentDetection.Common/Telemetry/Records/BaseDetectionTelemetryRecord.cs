@@ -1,12 +1,16 @@
 namespace Microsoft.ComponentDetection.Common.Telemetry.Records;
 
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Text.Json.Serialization;
 using Microsoft.ComponentDetection.Common.Telemetry.Attributes;
 
 public abstract class BaseDetectionTelemetryRecord : IDetectionTelemetryRecord
 {
+    internal const int MaxNonDiagnosticLines = 10;
+
     private readonly Stopwatch stopwatch = new Stopwatch();
 
     private bool disposedValue;
@@ -53,5 +57,30 @@ public abstract class BaseDetectionTelemetryRecord : IDetectionTelemetryRecord
 
             this.disposedValue = true;
         }
+    }
+
+    protected static string? TruncateToMaxLines(string? text)
+    {
+        if (string.IsNullOrEmpty(text))
+        {
+            return text;
+        }
+
+        var lines = new List<string>();
+        using (var reader = new StringReader(text))
+        {
+            string? line;
+            while ((line = reader.ReadLine()) != null)
+            {
+                if (lines.Count >= MaxNonDiagnosticLines)
+                {
+                    return string.Join(Environment.NewLine, lines);
+                }
+
+                lines.Add(line);
+            }
+        }
+
+        return text;
     }
 }

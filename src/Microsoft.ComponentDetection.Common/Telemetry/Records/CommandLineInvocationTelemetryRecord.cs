@@ -1,7 +1,6 @@
 namespace Microsoft.ComponentDetection.Common.Telemetry.Records;
 
 using System;
-using System.IO;
 using Microsoft.ComponentDetection.Contracts;
 
 internal class CommandLineInvocationTelemetryRecord : BaseDetectionTelemetryRecord
@@ -22,7 +21,7 @@ internal class CommandLineInvocationTelemetryRecord : BaseDetectionTelemetryReco
     {
         this.ExitCode = result.ExitCode;
         var sanitizedError = result.StdErr?.RemoveSensitiveInformation();
-        this.StandardError = DiagnosticEnabled ? sanitizedError : this.TruncateStandardErrorTo10Lines(sanitizedError);
+        this.StandardError = DiagnosticEnabled ? sanitizedError : this.TruncateToMaxLines(sanitizedError);
         this.TrackCommon(path, parameters);
     }
 
@@ -40,30 +39,4 @@ internal class CommandLineInvocationTelemetryRecord : BaseDetectionTelemetryReco
         this.StopExecutionTimer();
     }
 
-    private string? TruncateStandardErrorTo10Lines(string? error)
-    {
-        if (string.IsNullOrEmpty(error))
-        {
-            return error;
-        }
-
-        var lines = new System.Collections.Generic.List<string>();
-        using (var reader = new StringReader(error))
-        {
-            string? line;
-            while ((line = reader.ReadLine()) != null)
-            {
-                if (lines.Count >= 10)
-                {
-                    // More than 10 lines exist, truncate
-                    return string.Join(Environment.NewLine, lines);
-                }
-
-                lines.Add(line);
-            }
-        }
-
-        // EOF reached with <= 10 lines, return original
-        return error;
-    }
 }
