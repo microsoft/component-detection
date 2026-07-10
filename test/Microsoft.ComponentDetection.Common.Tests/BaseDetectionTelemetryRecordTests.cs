@@ -89,6 +89,7 @@ public class BaseDetectionTelemetryRecordTests
 
         try
         {
+            // Disposal triggers the telemetry posting in BaseDetectionTelemetryRecord.Dispose()
             using (new NonDiagnosticTestRecord())
             {
             }
@@ -112,6 +113,7 @@ public class BaseDetectionTelemetryRecordTests
 
         try
         {
+            // Disposal triggers the telemetry posting in BaseDetectionTelemetryRecord.Dispose()
             using (new DiagnosticTestRecord())
             {
             }
