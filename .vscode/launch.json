@@ -11,7 +11,7 @@
             "preLaunchTask": "build",
             // If you have changed target frameworks, make sure to update the program path.
             "program": "${workspaceFolder}/src/Microsoft.ComponentDetection/bin/Debug/net8.0/Microsoft.ComponentDetection.dll",
-            "args": ["scan", "--Debug", "--Verbosity", "Verbose", "--Output", "${workspaceFolder}/scan-output", "--SourceDirectory", "${workspaceFolder}", "--DebugTelemetry"],
+            "args": ["scan", "--Debug", "--LogLevel", "Verbose", "--Output", "${workspaceFolder}/scan-output", "--SourceDirectory", "${workspaceFolder}", "--DebugTelemetry"],
             "cwd": "${workspaceFolder}/src/Microsoft.ComponentDetection",
             // For more information about the 'console' field, see https://aka.ms/VSCode-CS-LaunchJson-Console
             "console": "internalConsole",
