@@ -42,6 +42,6 @@ internal class DetectorExecutionTelemetryRecord : BaseDetectionTelemetryRecord
             return text;
         }
 
-        return string.Join(Environment.NewLine, lines.TakeLast(10));
+        return string.Join(Environment.NewLine, lines.Take(10));
     }
 }
