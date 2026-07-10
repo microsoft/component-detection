@@ -22,12 +22,12 @@ internal class DetectorExecutionTelemetryRecord : BaseDetectionTelemetryRecord
     public string? ExperimentalInformation
     {
         get => this.experimentalInformation;
-        set => this.experimentalInformation = DiagnosticEnabled ? value : this.TruncateToLast10Lines(value);
+        set => this.experimentalInformation = DiagnosticEnabled ? value : this.TruncateToFirst10Lines(value);
     }
 
     public string? AdditionalTelemetryDetails { get; set; }
 
-    private string? TruncateToLast10Lines(string? text)
+    private string? TruncateToFirst10Lines(string? text)
     {
         if (string.IsNullOrEmpty(text))
         {
