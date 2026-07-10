@@ -8,8 +8,10 @@ using System.Net;
 using System.Reflection;
 using System.Runtime.Serialization;
 using AwesomeAssertions;
+using Microsoft.ComponentDetection.Common.Telemetry;
 using Microsoft.ComponentDetection.Common.Telemetry.Records;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Moq;
 
 [TestClass]
 [TestCategory("Governance/All")]
@@ -74,5 +76,74 @@ public class BaseDetectionTelemetryRecordTests
                 }
             }
         }
+    }
+
+    [TestMethod]
+    public void NonDiagnosticRecord_IsAlwaysPosted_WhenDisposed()
+    {
+        var telemetryServiceMock = new Mock<ITelemetryService>();
+        var postedRecords = new List<IDetectionTelemetryRecord>();
+        telemetryServiceMock.Setup(x => x.PostRecord(It.IsAny<IDetectionTelemetryRecord>()))
+            .Callback<IDetectionTelemetryRecord>(postedRecords.Add);
+        TelemetryRelay.Instance.Init([telemetryServiceMock.Object]);
+
+        try
+        {
+            using (new NonDiagnosticTestRecord())
+            {
+            }
+
+            postedRecords.Should().ContainSingle();
+        }
+        finally
+        {
+            TelemetryRelay.Instance.Init([]);
+        }
+    }
+
+    [TestMethod]
+    public void DiagnosticRecord_PostingIsGatedOnDiagnosticsFlag()
+    {
+        var telemetryServiceMock = new Mock<ITelemetryService>();
+        var postedRecords = new List<IDetectionTelemetryRecord>();
+        telemetryServiceMock.Setup(x => x.PostRecord(It.IsAny<IDetectionTelemetryRecord>()))
+            .Callback<IDetectionTelemetryRecord>(postedRecords.Add);
+        TelemetryRelay.Instance.Init([telemetryServiceMock.Object]);
+
+        try
+        {
+            using (new DiagnosticTestRecord())
+            {
+            }
+
+            var diagnosticEnabled = (bool)typeof(BaseDetectionTelemetryRecord)
+                .GetField("DiagnosticEnabled", BindingFlags.NonPublic | BindingFlags.Static)
+                .GetValue(null);
+
+            if (diagnosticEnabled)
+            {
+                postedRecords.Should().ContainSingle("diagnostic records should be posted when diagnostics are enabled");
+            }
+            else
+            {
+                postedRecords.Should().BeEmpty("diagnostic records should be suppressed when diagnostics are disabled");
+            }
+        }
+        finally
+        {
+            TelemetryRelay.Instance.Init([]);
+        }
+    }
+
+    private sealed class NonDiagnosticTestRecord : BaseDetectionTelemetryRecord
+    {
+        public override string RecordName => "NonDiagnosticTestRecord";
+    }
+
+    private sealed class DiagnosticTestRecord : BaseDetectionTelemetryRecord
+    {
+        public override string RecordName => "DiagnosticTestRecord";
+
+        public override bool IsDiagnostic => true;
     }
 }
