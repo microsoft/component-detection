@@ -6,7 +6,7 @@ using Microsoft.ComponentDetection.Common.Telemetry.Attributes;
 
 public abstract class BaseDetectionTelemetryRecord : IDetectionTelemetryRecord
 {
-    private static readonly bool DiagnosticEnabled = string.Equals(Environment.GetEnvironmentVariable("agent_diagnostic"), "True", StringComparison.OrdinalIgnoreCase) || string.Equals(Environment.GetEnvironmentVariable("System_Debug"), "True", StringComparison.OrdinalIgnoreCase);
+    private static readonly bool DiagnosticEnabled = string.Equals(Environment.GetEnvironmentVariable("AGENT_DIAGNOSTIC"), "True", StringComparison.OrdinalIgnoreCase) || string.Equals(Environment.GetEnvironmentVariable("SYSTEM_DEBUG"), "True", StringComparison.OrdinalIgnoreCase);
 
     private readonly Stopwatch stopwatch = new Stopwatch();
 
