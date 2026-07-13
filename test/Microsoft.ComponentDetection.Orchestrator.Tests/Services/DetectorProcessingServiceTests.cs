@@ -61,6 +61,7 @@ public class DetectorProcessingServiceTests
         this.loggerMock = new Mock<ILogger<DetectorProcessingService>>();
         this.directoryWalkerFactory = new Mock<IObservableDirectoryWalkerFactory>();
         this.consoleMock = new Mock<IAnsiConsole>();
+
         this.serviceUnderTest =
             new DetectorProcessingService(this.directoryWalkerFactory.Object, this.experimentServiceMock.Object, this.loggerMock.Object, this.consoleMock.Object);
 
@@ -416,6 +417,38 @@ public class DetectorProcessingServiceTests
         args.DirectoryExclusionList = [@"**/Source/**", @"**/Source\**"];
         exclusionPredicate = this.serviceUnderTest.GenerateDirectoryExclusionPredicate(@"C:\somefake\dir", args.DirectoryExclusionList, args.DirectoryExclusionListObsolete, allowWindowsPaths: true, ignoreCase: true);
         exclusionPredicate(dn, dp).Should().BeTrue();
+    }
+
+    [TestMethod]
+    public void GenerateDirectoryExclusionPredicate_TrailingDoubleStarMatchesDirectoryItself()
+    {
+        // FileSystemGlobbing's ** does not match zero trailing segments,
+        // so the implementation adds a companion pattern (**/dir) alongside **/dir/**.
+        // This test verifies that the directory itself is excluded, not just its children.
+        var args = new ScanSettings
+        {
+            SourceDirectory = new DirectoryInfo(this.isWin ? @"C:\project" : "/tmp/project"),
+            DetectorArgs = new Dictionary<string, string>(),
+            DirectoryExclusionList = ["**/Source/**"],
+        };
+
+        var exclusionPredicate = this.serviceUnderTest.GenerateDirectoryExclusionPredicate(
+            args.SourceDirectory.FullName,
+            args.DirectoryExclusionList,
+            args.DirectoryExclusionListObsolete,
+            allowWindowsPaths: true,
+            ignoreCase: true);
+
+        // The directory itself (no trailing segment) should be excluded
+        var projectPath = this.isWin ? @"C:\project" : "/tmp/project";
+        exclusionPredicate("Source", projectPath).Should().BeTrue();
+
+        // A child under the directory should also be excluded
+        var sourcePath = this.isWin ? @"C:\project\Source" : "/tmp/project/Source";
+        exclusionPredicate("child", sourcePath).Should().BeTrue();
+
+        // An unrelated directory should not be excluded
+        exclusionPredicate("Other", projectPath).Should().BeFalse();
     }
 
     [TestMethod]

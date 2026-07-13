@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using System.Runtime.Serialization;
 
 [DataContract]
-public class PoetryPackage
+internal class PoetryPackage
 {
     [DataMember(Name = "name")]
     public string Name { get; set; }

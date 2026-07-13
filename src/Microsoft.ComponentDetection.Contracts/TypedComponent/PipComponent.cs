@@ -43,5 +43,5 @@ public class PipComponent : TypedComponent
     public override PackageURL PackageUrl => new PackageURL("pypi", null, this.Name, this.Version, null, null);
 
     [SuppressMessage("Usage", "CA1308:Normalize String to Uppercase", Justification = "Casing cannot be overwritten.")]
-    protected override string ComputeId() => $"{this.Name} {this.Version} - {this.Type}".ToLowerInvariant();
+    protected override string ComputeBaseId() => $"{this.Name} {this.Version} - {this.Type}".ToLowerInvariant();
 }

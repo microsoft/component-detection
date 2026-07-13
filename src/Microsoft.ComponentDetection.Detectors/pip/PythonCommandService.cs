@@ -11,7 +11,7 @@ using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.Extensions.Logging;
 
-public class PythonCommandService : IPythonCommandService
+internal class PythonCommandService : IPythonCommandService
 {
     private readonly ICommandLineInvocationService commandLineInvocationService;
     private readonly IPathUtilityService pathUtilityService;

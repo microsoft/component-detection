@@ -1,6 +1,6 @@
 namespace Microsoft.ComponentDetection.Common.Telemetry.Records;
 
-public class DockerServiceTelemetryRecord : BaseDetectionTelemetryRecord
+internal class DockerServiceTelemetryRecord : BaseDetectionTelemetryRecord
 {
     public override string RecordName => "DockerService";
 

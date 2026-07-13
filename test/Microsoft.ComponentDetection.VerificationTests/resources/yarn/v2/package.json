@@ -2,15 +2,15 @@
   "name": "component-detection",
   "version": "0.0.0",
   "dependencies": {
-    "express": "4.17.2",
+    "express": "4.22.1",
     "react": "17.0.2"
   },
   "devDependencies": {
-    "@types/react": "17.0.38",
-    "typescript": "4.5.5"
+    "@types/react": "17.0.91",
+    "typescript": "4.9.5"
   },
   "optionalDependencies": {
-    "re2": "1.17.3"
+    "re2": "1.23.3"
   },
   "packageManager": "yarn@3.1.1"
 }

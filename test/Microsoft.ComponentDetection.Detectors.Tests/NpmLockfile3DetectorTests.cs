@@ -18,8 +18,10 @@ using static Microsoft.ComponentDetection.Detectors.Tests.Utilities.TestUtilityE
 [TestClass]
 [TestCategory("Governance/All")]
 [TestCategory("Governance/ComponentDetection")]
-public class NpmLockfile3DetectorTests : BaseDetectorTest<NpmLockfile3Detector>
+public class NpmLockfile3DetectorTests
 {
+    private readonly DetectorTestUtilityBuilder<NpmLockfile3Detector> detectorTestUtility = new();
+
     private readonly string packageLockJsonFileName = "package-lock.json";
     private readonly string packageJsonFileName = "package.json";
     private readonly List<string> packageJsonSearchPattern = ["package.json"];
@@ -29,7 +31,7 @@ public class NpmLockfile3DetectorTests : BaseDetectorTest<NpmLockfile3Detector>
     public NpmLockfile3DetectorTests()
     {
         this.mockPathUtilityService = new Mock<IPathUtilityService>();
-        this.DetectorTestUtility.AddServiceMock(this.mockPathUtilityService);
+        this.detectorTestUtility.AddServiceMock(this.mockPathUtilityService);
     }
 
     [TestMethod]
@@ -41,7 +43,7 @@ public class NpmLockfile3DetectorTests : BaseDetectorTest<NpmLockfile3Detector>
         var (packageLockName, packageLockContents, packageLockPath) = NpmTestUtilities.GetWellFormedPackageLock3(this.packageLockJsonFileName, componentName0, version0);
         var (packageJsonName, packageJsonContents, packageJsonPath) = NpmTestUtilities.GetPackageJsonOneRoot(componentName0, version0);
 
-        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile(packageLockName, packageLockContents, this.packageLockJsonSearchPatterns, fileLocation: packageLockPath)
             .WithFile(packageJsonName, packageJsonContents, this.packageJsonSearchPattern, fileLocation: packageJsonPath)
             .ExecuteDetectorAsync();
@@ -80,7 +82,7 @@ public class NpmLockfile3DetectorTests : BaseDetectorTest<NpmLockfile3Detector>
 
         var packageJsonTemplate = string.Format(packagejson, componentName0, version0, componentName1, version1);
 
-        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile(packageLockName, packageLockContents, this.packageLockJsonSearchPatterns, fileLocation: packageLockPath)
             .WithFile(this.packageJsonFileName, packageJsonTemplate, this.packageJsonSearchPattern)
             .ExecuteDetectorAsync();
@@ -134,7 +136,7 @@ public class NpmLockfile3DetectorTests : BaseDetectorTest<NpmLockfile3Detector>
 
         var packageJsonTemplate = string.Format(packagejson, componentName0, version0, componentName1, version1);
 
-        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile(packageLockName, packageLockContents, this.packageLockJsonSearchPatterns, fileLocation: packageLockPath)
             .WithFile(this.packageJsonFileName, packageJsonTemplate, this.packageJsonSearchPattern)
             .ExecuteDetectorAsync();
@@ -187,7 +189,7 @@ public class NpmLockfile3DetectorTests : BaseDetectorTest<NpmLockfile3Detector>
 
         var packageJsonTemplate = string.Format(packagejson, componentName0, version0, componentName1, version1);
 
-        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile(packageLockName, packageLockContents, this.packageLockJsonSearchPatterns, fileLocation: packageLockPath)
             .WithFile(this.packageJsonFileName, packageJsonTemplate, this.packageJsonSearchPattern)
             .ExecuteDetectorAsync();
@@ -266,7 +268,7 @@ public class NpmLockfile3DetectorTests : BaseDetectorTest<NpmLockfile3Detector>
 
         var packageJsonTemplate = string.Format(packagejson, componentA.Name, componentA.Version);
 
-        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile(this.packageLockJsonFileName, packageLockTemplate, this.packageLockJsonSearchPatterns)
             .WithFile(this.packageJsonFileName, packageJsonTemplate, this.packageJsonSearchPattern)
             .ExecuteDetectorAsync();
@@ -301,7 +303,7 @@ public class NpmLockfile3DetectorTests : BaseDetectorTest<NpmLockfile3Detector>
                 ""version"": ""1.0.0""
             }";
 
-        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile(this.packageLockJsonFileName, packageLockJson, this.packageLockJsonSearchPatterns)
             .WithFile(this.packageJsonFileName, packageJsonContents, this.packageJsonSearchPattern)
             .ExecuteDetectorAsync();
@@ -330,7 +332,7 @@ public class NpmLockfile3DetectorTests : BaseDetectorTest<NpmLockfile3Detector>
                 }
             }";
 
-        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile(this.packageLockJsonFileName, packageLockJson, this.packageLockJsonSearchPatterns)
             .WithFile(this.packageJsonFileName, packageJsonContents, this.packageJsonSearchPattern)
             .ExecuteDetectorAsync();
@@ -359,7 +361,7 @@ public class NpmLockfile3DetectorTests : BaseDetectorTest<NpmLockfile3Detector>
 
         // Before the fix, this would throw a NullReferenceException because
         // packageLockJToken["packages"] returns null, and calling .Children<JProperty>() on null throws
-        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile(this.packageLockJsonFileName, packageLockJson, this.packageLockJsonSearchPatterns)
             .WithFile(this.packageJsonFileName, packageJsonContents, this.packageJsonSearchPattern)
             .ExecuteDetectorAsync();
@@ -439,7 +441,7 @@ public class NpmLockfile3DetectorTests : BaseDetectorTest<NpmLockfile3Detector>
             componentA.Name,
             componentA.Version);
 
-        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile(this.packageLockJsonFileName, packageLockTemplate, this.packageLockJsonSearchPatterns)
             .WithFile(this.packageJsonFileName, packageJsonTemplate, this.packageJsonSearchPattern)
             .ExecuteDetectorAsync();
@@ -549,7 +551,7 @@ public class NpmLockfile3DetectorTests : BaseDetectorTest<NpmLockfile3Detector>
             componentA.Name,
             componentA.Version);
 
-        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile(this.packageLockJsonFileName, packageLockTemplate, this.packageLockJsonSearchPatterns)
             .WithFile(this.packageJsonFileName, packageJsonTemplate, this.packageJsonSearchPattern)
             .ExecuteDetectorAsync();
@@ -595,5 +597,128 @@ public class NpmLockfile3DetectorTests : BaseDetectorTest<NpmLockfile3Detector>
         componentRecorder.IsDependencyOfExplicitlyReferencedComponents<NpmComponent>(
             componentCId,
             parentComponent => parentComponent.Name == componentA.Name).Should().BeTrue();
+    }
+
+    [TestMethod]
+    public async Task TestNpmDetector_PackageLockVersion3_AliasedScopedPackages_UsesRealNameAsync()
+    {
+        // Simulates npm aliases like "js-yaml": "npm:@zkochan/js-yaml@0.0.9"
+        // In the lockfile, the path key uses the alias name but the "name" field contains the real scoped package name.
+        var packageLockJson = @"{
+                ""name"": ""test"",
+                ""version"": ""0.0.0"",
+                ""lockfileVersion"": 3,
+                ""packages"": {
+                    """": {
+                        ""dependencies"": {
+                            ""js-yaml"": ""0.0.9"",
+                            ""ramda"": ""0.28.1""
+                        }
+                    },
+                    ""node_modules/js-yaml"": {
+                        ""name"": ""@zkochan/js-yaml"",
+                        ""version"": ""0.0.9"",
+                        ""resolved"": ""https://registry.npmjs.org/@zkochan/js-yaml/-/js-yaml-0.0.9.tgz"",
+                        ""integrity"": ""sha512-nAEMjKcB1LDrMyYnjNsDkxoewI2aexrwlT3UJeL+nlbd64FEQNmKgPGAYIieaLVgtpRiHE9OL6/rmHLlstQwnQ==""
+                    },
+                    ""node_modules/ramda"": {
+                        ""name"": ""@pnpm/ramda"",
+                        ""version"": ""0.28.1"",
+                        ""resolved"": ""https://registry.npmjs.org/@pnpm/ramda/-/ramda-0.28.1.tgz"",
+                        ""integrity"": ""sha512-W86pkk7P9PAfARThHaD4fIjJ8QJUGMB2OhlCFsrueciPqlYZvDg/w62BmRm7PghVQcxGLbYoPN4+iykzP+0jRQ==""
+                    }
+                }
+            }";
+
+        var packageJson = @"{
+                ""name"": ""test"",
+                ""version"": ""0.0.0"",
+                ""dependencies"": {
+                    ""js-yaml"": ""npm:@zkochan/js-yaml@0.0.9"",
+                    ""ramda"": ""npm:@pnpm/ramda@0.28.1""
+                }
+            }";
+
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
+            .WithFile(this.packageLockJsonFileName, packageLockJson, this.packageLockJsonSearchPatterns)
+            .WithFile(this.packageJsonFileName, packageJson, this.packageJsonSearchPattern)
+            .ExecuteDetectorAsync();
+
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+
+        var detectedComponents = componentRecorder.GetDetectedComponents().ToList();
+        detectedComponents.Should().HaveCount(2);
+
+        // Verify the real scoped package names are used, not the alias names
+        var jsYaml = detectedComponents.First(c => ((NpmComponent)c.Component).Name == "@zkochan/js-yaml");
+        ((NpmComponent)jsYaml.Component).Version.Should().Be("0.0.9");
+
+        var ramda = detectedComponents.First(c => ((NpmComponent)c.Component).Name == "@pnpm/ramda");
+        ((NpmComponent)ramda.Component).Version.Should().Be("0.28.1");
+
+        // Ensure the alias names are NOT used
+        detectedComponents.Should().NotContain(c => ((NpmComponent)c.Component).Name == "js-yaml");
+        detectedComponents.Should().NotContain(c => ((NpmComponent)c.Component).Name == "ramda");
+    }
+
+    [TestMethod]
+    public async Task TestNpmDetector_PackageLockVersion3_AliasedScopedPackageAsTransitiveDependency_UsesRealNameAsync()
+    {
+        // Tests that aliased scoped packages are correctly detected when they appear as transitive dependencies
+        var packageLockJson = @"{
+                ""name"": ""test"",
+                ""version"": ""0.0.0"",
+                ""lockfileVersion"": 3,
+                ""packages"": {
+                    """": {
+                        ""dependencies"": {
+                            ""my-package"": ""1.0.0""
+                        }
+                    },
+                    ""node_modules/my-package"": {
+                        ""version"": ""1.0.0"",
+                        ""resolved"": ""https://registry.npmjs.org/my-package/-/my-package-1.0.0.tgz"",
+                        ""integrity"": ""sha512-nAEMjKcB1LDrMyYnjNsDkxoewI2aexrwlT3UJeL+nlbd64FEQNmKgPGAYIieaLVgtpRiHE9OL6/rmHLlstQwnQ=="",
+                        ""dependencies"": {
+                            ""js-yaml"": ""0.0.9""
+                        }
+                    },
+                    ""node_modules/js-yaml"": {
+                        ""name"": ""@zkochan/js-yaml"",
+                        ""version"": ""0.0.9"",
+                        ""resolved"": ""https://registry.npmjs.org/@zkochan/js-yaml/-/js-yaml-0.0.9.tgz"",
+                        ""integrity"": ""sha512-W86pkk7P9PAfARThHaD4fIjJ8QJUGMB2OhlCFsrueciPqlYZvDg/w62BmRm7PghVQcxGLbYoPN4+iykzP+0jRQ==""
+                    }
+                }
+            }";
+
+        var packageJson = @"{
+                ""name"": ""test"",
+                ""version"": ""0.0.0"",
+                ""dependencies"": {
+                    ""my-package"": ""1.0.0""
+                }
+            }";
+
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
+            .WithFile(this.packageLockJsonFileName, packageLockJson, this.packageLockJsonSearchPatterns)
+            .WithFile(this.packageJsonFileName, packageJson, this.packageJsonSearchPattern)
+            .ExecuteDetectorAsync();
+
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+
+        var detectedComponents = componentRecorder.GetDetectedComponents().ToList();
+        detectedComponents.Should().HaveCount(2);
+
+        // The aliased transitive dependency should use the real scoped name
+        var jsYaml = detectedComponents.First(c => ((NpmComponent)c.Component).Name == "@zkochan/js-yaml");
+        ((NpmComponent)jsYaml.Component).Version.Should().Be("0.0.9");
+
+        // The alias name should NOT be present
+        detectedComponents.Should().NotContain(c => ((NpmComponent)c.Component).Name == "js-yaml");
+
+        // my-package should be detected normally
+        var myPackage = detectedComponents.First(c => ((NpmComponent)c.Component).Name == "my-package");
+        ((NpmComponent)myPackage.Component).Version.Should().Be("1.0.0");
     }
 }

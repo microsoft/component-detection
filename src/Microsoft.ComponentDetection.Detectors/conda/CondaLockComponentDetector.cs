@@ -1,5 +1,4 @@
-#nullable disable
-namespace Microsoft.ComponentDetection.Detectors.Poetry;
+namespace Microsoft.ComponentDetection.Detectors.CondaLock;
 
 using System;
 using System.Collections.Generic;
@@ -9,7 +8,6 @@ using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.Internal;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
-using Microsoft.ComponentDetection.Detectors.CondaLock;
 using Microsoft.ComponentDetection.Detectors.CondaLock.Contracts;
 using Microsoft.Extensions.Logging;
 using YamlDotNet.Serialization;

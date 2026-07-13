@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="MSTest.Sdk">
 
     <ItemGroup Label="Project References">
         <ProjectReference Include="..\..\src\Microsoft.ComponentDetection.Orchestrator\Microsoft.ComponentDetection.Orchestrator.csproj" />
@@ -8,6 +8,7 @@
     <ItemGroup Label="Package References">
         <PackageReference Include="AwesomeAssertions.Analyzers" PrivateAssets="all" />
         <PackageReference Include="Microsoft.Extensions.Logging" />
+        <PackageReference Include="MSBuild.StructuredLogger" />
         <PackageReference Include="NuGet.ProjectModel" />
         <PackageReference Include="NuGet.Versioning" />
         <PackageReference Include="SemanticVersioning" />
@@ -16,8 +17,6 @@
         <PackageReference Include="packageurl-dotnet" />
         <PackageReference Include="Tomlyn.Signed" />
         <PackageReference Include="YamlDotNet" />
-        <PackageReference Include="MSTest.TestAdapter" />
-        <PackageReference Include="Microsoft.NET.Test.Sdk" />
     </ItemGroup>
 
     <ItemGroup>

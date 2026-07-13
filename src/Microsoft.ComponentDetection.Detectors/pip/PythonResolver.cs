@@ -12,7 +12,7 @@ using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.Extensions.Logging;
 using MoreLinq;
 
-public class PythonResolver : PythonResolverBase, IPythonResolver
+internal class PythonResolver : PythonResolverBase, IPythonResolver
 {
     private static readonly JsonSerializerOptions JsonSerializerOptions = new()
     {

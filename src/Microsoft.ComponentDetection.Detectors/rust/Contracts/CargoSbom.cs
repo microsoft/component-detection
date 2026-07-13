@@ -14,7 +14,7 @@ using System.Text.Json.Serialization;
 /// <summary>
 /// Type of dependency.
 /// </summary>
-public enum SbomKind
+internal enum SbomKind
 {
     /// <summary>
     /// A dependency linked to the artifact produced by this crate.
@@ -35,7 +35,7 @@ public enum SbomKind
 /// <summary>
 /// Represents the Cargo Software Bill of Materials (SBOM).
 /// </summary>
-public class CargoSbom
+internal class CargoSbom
 {
     /// <summary>
     /// Gets or sets the version of the SBOM.
@@ -67,7 +67,7 @@ public class CargoSbom
 /// <summary>
 /// Represents a crate in the SBOM.
 /// </summary>
-public class SbomCrate
+internal class SbomCrate
 {
     /// <summary>
     /// Gets or sets the Cargo Package ID specification.
@@ -93,7 +93,7 @@ public class SbomCrate
 /// <summary>
 /// Represents a dependency of a crate.
 /// </summary>
-public class SbomDependency
+internal class SbomDependency
 {
     /// <summary>
     /// Gets or sets the index into the crates array.
@@ -109,7 +109,7 @@ public class SbomDependency
 /// <summary>
 /// Represents information about rustc used to perform the compilation.
 /// </summary>
-public class Rustc
+internal class Rustc
 {
     /// <summary>
     /// Gets or sets the compiler version.

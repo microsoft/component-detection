@@ -21,23 +21,25 @@ using Moq;
 [TestClass]
 [TestCategory("Governance/All")]
 [TestCategory("Governance/ComponentDetection")]
-public class NuGetComponentDetectorTests : BaseDetectorTest<NuGetComponentDetector>
+public class NuGetComponentDetectorTests
 {
     private static readonly IEnumerable<string> DetectorSearchPattern =
         ["*.nupkg", "*.nuspec", "nuget.config", "paket.lock"];
+
+    private readonly DetectorTestUtilityBuilder<NuGetComponentDetector> detectorTestUtility = new();
 
     private readonly Mock<ILogger<NuGetComponentDetector>> mockLogger;
 
     public NuGetComponentDetectorTests()
     {
         this.mockLogger = new Mock<ILogger<NuGetComponentDetector>>();
-        this.DetectorTestUtility.AddServiceMock(this.mockLogger);
+        this.detectorTestUtility.AddServiceMock(this.mockLogger);
     }
 
     [TestMethod]
     public async Task TestNuGetDetectorWithNoFiles_ReturnsSuccessfullyAsync()
     {
-        var (scanResult, componentRecorder) = await this.DetectorTestUtility.ExecuteDetectorAsync();
+        var (scanResult, componentRecorder) = await this.detectorTestUtility.ExecuteDetectorAsync();
 
         scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
         componentRecorder.GetDetectedComponents().Should().BeEmpty();
@@ -51,7 +53,7 @@ public class NuGetComponentDetectorTests : BaseDetectorTest<NuGetComponentDetect
         var testAuthors = new string[] { "author 1", "author 2" };
         var nuspec = NugetTestUtilities.GetValidNuspec(testComponentName, testVersion, testAuthors);
 
-        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile("*.nuspec", nuspec)
             .ExecuteDetectorAsync();
 
@@ -73,7 +75,7 @@ public class NuGetComponentDetectorTests : BaseDetectorTest<NuGetComponentDetect
         var testAuthors = new string[] { "author 1" };
         var nuspec = NugetTestUtilities.GetValidNuspec(testComponentName, testVersion, testAuthors);
 
-        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile("*.nuspec", nuspec)
             .ExecuteDetectorAsync();
 
@@ -92,7 +94,7 @@ public class NuGetComponentDetectorTests : BaseDetectorTest<NuGetComponentDetect
     {
         var nupkg = await NugetTestUtilities.ZipNupkgComponentAsync("test.nupkg", NugetTestUtilities.GetRandomValidNuspec());
 
-        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile("test.nupkg", nupkg)
             .ExecuteDetectorAsync();
 
@@ -106,7 +108,7 @@ public class NuGetComponentDetectorTests : BaseDetectorTest<NuGetComponentDetect
         var nuspec = NugetTestUtilities.GetRandomValidNuSpecComponent();
         var nupkg = await NugetTestUtilities.ZipNupkgComponentAsync("test.nupkg", NugetTestUtilities.GetRandomValidNuspec());
 
-        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile("test.nuspec", nuspec)
             .WithFile("test.nupkg", nupkg)
             .ExecuteDetectorAsync();
@@ -150,7 +152,7 @@ NUGET
     log4net (1.2.10)
             ";
 
-        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile("paket.lock", paketLock)
             .AddServiceMock(this.mockLogger)
             .ExecuteDetectorAsync();
@@ -178,7 +180,7 @@ NUGET
         var malformedNupkg = await NugetTestUtilities.ZipNupkgComponentAsync("malformed.nupkg", NugetTestUtilities.GetRandomMalformedNuPkgComponent());
         var nuspec = NugetTestUtilities.GetRandomValidNuSpecComponent();
 
-        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile("test.nuspec", nuspec)
             .WithFile("test.nupkg", validNupkg)
             .WithFile("malformed.nupkg", malformedNupkg)
@@ -277,7 +279,7 @@ NUGET
     {
         var nupkg = await NugetTestUtilities.ZipNupkgComponentAsync("Newtonsoft.Json.nupkg", NugetTestUtilities.GetValidNuspec("Newtonsoft.Json", "9.0.1", ["JamesNK"]));
 
-        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile("Newtonsoft.Json.nupkg", nupkg)
             .ExecuteDetectorAsync();
 

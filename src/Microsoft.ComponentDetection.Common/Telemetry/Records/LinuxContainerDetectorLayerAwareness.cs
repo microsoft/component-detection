@@ -1,6 +1,6 @@
 namespace Microsoft.ComponentDetection.Common.Telemetry.Records;
 
-public class LinuxContainerDetectorLayerAwareness : BaseDetectionTelemetryRecord
+internal class LinuxContainerDetectorLayerAwareness : BaseDetectionTelemetryRecord
 {
     public override string RecordName => "LinuxContainerDetectorLayerAwareness";
 

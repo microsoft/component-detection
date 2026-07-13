@@ -4,7 +4,7 @@ namespace Microsoft.ComponentDetection.Detectors.Maven;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.Extensions.Logging;
 
-public class MavenStyleDependencyGraphParserService : IMavenStyleDependencyGraphParserService
+internal class MavenStyleDependencyGraphParserService : IMavenStyleDependencyGraphParserService
 {
     private readonly ILogger logger;
 

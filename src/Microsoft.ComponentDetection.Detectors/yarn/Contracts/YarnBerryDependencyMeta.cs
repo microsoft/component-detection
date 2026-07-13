@@ -6,7 +6,7 @@ using YamlDotNet.Serialization;
 /// <summary>
 /// Represents the metadata of a dependency in the yarn.lock file for yarn v2+ (berry).
 /// </summary>
-public sealed record YarnBerryDependencyMeta
+internal sealed record YarnBerryDependencyMeta
 {
     /// <summary>
     /// Whether the dependency is pre-built.

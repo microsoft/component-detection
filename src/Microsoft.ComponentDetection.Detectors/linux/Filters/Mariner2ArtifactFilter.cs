@@ -14,7 +14,7 @@ using Microsoft.ComponentDetection.Detectors.Linux.Contracts;
 /// but Mariner 2.0 no longer receives non-security updates and is deprecated as of July 2025.
 /// Related Syft PR: https://github.com/anchore/syft/pull/3008.
 /// </summary>
-public class Mariner2ArtifactFilter : IArtifactFilter
+internal class Mariner2ArtifactFilter : IArtifactFilter
 {
     /// <inheritdoc/>
     public IEnumerable<ArtifactElement> Filter(IEnumerable<ArtifactElement> artifacts, Distro distro)

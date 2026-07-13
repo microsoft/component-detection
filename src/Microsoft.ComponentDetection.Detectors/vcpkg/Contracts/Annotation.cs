@@ -4,7 +4,7 @@ namespace Microsoft.ComponentDetection.Detectors.Vcpkg.Contracts;
 using System;
 using System.Text.Json.Serialization;
 
-public class Annotation
+internal class Annotation
 {
     [JsonPropertyName("annotationDate")]
     public DateTime Date { get; set; }

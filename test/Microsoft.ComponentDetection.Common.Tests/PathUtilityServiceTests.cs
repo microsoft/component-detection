@@ -32,4 +32,15 @@ public class PathUtilityServiceTests
 
         normalizedPath.Should().Be(expectedPath);
     }
+
+    [TestMethod]
+    public void MatchesPattern_IsForwardedToPatternMatchingUtility()
+    {
+        var service = new PathUtilityService(new NullLogger<PathUtilityService>());
+
+#pragma warning disable CS0618 // Type or member is obsolete
+        service.MatchesPattern("*.json", "package.json").Should().BeTrue();
+        service.MatchesPattern("*.json", "package.yaml").Should().BeFalse();
+#pragma warning restore CS0618 // Type or member is obsolete
+    }
 }

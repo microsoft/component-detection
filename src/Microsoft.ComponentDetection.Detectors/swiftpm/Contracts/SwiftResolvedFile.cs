@@ -7,7 +7,7 @@ using System.Text.Json.Serialization;
 /// <summary>
 /// Represents a Swift Package Manager component.
 /// </summary>
-public class SwiftResolvedFile
+internal class SwiftResolvedFile
 {
     [JsonPropertyName("pins")]
     public IList<SwiftDependency> Pins { get; set; }
@@ -15,7 +15,7 @@ public class SwiftResolvedFile
     [JsonPropertyName("version")]
     public int Version { get; set; }
 
-    public class SwiftDependency
+    internal class SwiftDependency
     {
         // The name of the package
         [JsonPropertyName("identity")]
@@ -34,7 +34,7 @@ public class SwiftResolvedFile
         [JsonPropertyName("state")]
         public SwiftState State { get; set; }
 
-        public class SwiftState
+        internal class SwiftState
         {
             // The commit hash of the package.
             [JsonPropertyName("revision")]

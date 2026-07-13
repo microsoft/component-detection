@@ -2,7 +2,7 @@ namespace Microsoft.ComponentDetection.Common;
 
 using System;
 
-public class ConsoleWritingService : IConsoleWritingService
+internal class ConsoleWritingService : IConsoleWritingService
 {
     public void Write(string content)
     {

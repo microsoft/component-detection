@@ -5,7 +5,7 @@ using System;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.Extensions.Logging;
 
-public class GoParserFactory : IGoParserFactory
+internal class GoParserFactory : IGoParserFactory
 {
     private readonly IFileUtilityService fileUtilityService;
     private readonly ICommandLineInvocationService commandLineInvocationService;

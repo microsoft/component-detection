@@ -4,7 +4,7 @@ namespace Microsoft.ComponentDetection.Detectors.Pnpm;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 
-public class PnpmV9ParsingUtilities<T> : PnpmParsingUtilitiesBase<T>
+internal class PnpmV9ParsingUtilities<T> : PnpmParsingUtilitiesBase<T>
 where T : PnpmYaml
 {
     public override DetectedComponent CreateDetectedComponentFromPnpmPath(string pnpmPackagePath)

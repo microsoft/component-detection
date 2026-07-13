@@ -7,15 +7,17 @@ using System.Threading.Tasks;
 using AwesomeAssertions;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
-using Microsoft.ComponentDetection.Detectors.Poetry;
+using Microsoft.ComponentDetection.Detectors.CondaLock;
 using Microsoft.ComponentDetection.TestsUtilities;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 [TestClass]
 [TestCategory("Governance/All")]
 [TestCategory("Governance/ComponentDetection")]
-public class CondaLockComponentDetectorTests : BaseDetectorTest<CondaLockComponentDetector>
+public class CondaLockComponentDetectorTests
 {
+    private readonly DetectorTestUtilityBuilder<CondaLockComponentDetector> detectorTestUtility = new();
+
     [TestMethod]
     public async Task CondaComponentDetector_TestCondaLockFileAsync()
     {
@@ -83,7 +85,7 @@ package:
   optional: false
 ";
 
-        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile("conda-lock.yml", condaLockContent)
             .ExecuteDetectorAsync();
 

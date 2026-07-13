@@ -1,4 +1,3 @@
-#nullable disable
 namespace Microsoft.ComponentDetection.Detectors.Linux.Factories;
 
 using System.Collections.Generic;
@@ -10,6 +9,11 @@ using Microsoft.ComponentDetection.Detectors.Linux.Contracts;
 /// </summary>
 public interface IArtifactComponentFactory
 {
+    /// <summary>
+    /// Gets the component type that this factory produces.
+    /// </summary>
+    public ComponentType SupportedComponentType { get; }
+
     /// <summary>
     /// Gets the artifact types (e.g., "npm", "apk", "deb") that this factory can handle.
     /// </summary>
@@ -25,5 +29,5 @@ public interface IArtifactComponentFactory
     /// <param name="artifact">The artifact element from Syft output.</param>
     /// <param name="distro">The distribution information from Syft output.</param>
     /// <returns>A TypedComponent instance, or null if the artifact cannot be processed.</returns>
-    public TypedComponent CreateComponent(ArtifactElement artifact, Distro distro);
+    public TypedComponent? CreateComponent(ArtifactElement artifact, Distro distro);
 }

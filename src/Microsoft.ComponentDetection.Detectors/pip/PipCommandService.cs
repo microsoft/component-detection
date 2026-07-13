@@ -13,7 +13,7 @@ using Microsoft.ComponentDetection.Common.Telemetry.Records;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.Extensions.Logging;
 
-public class PipCommandService : IPipCommandService
+internal class PipCommandService : IPipCommandService
 {
     private const string PipReportDisableFastDepsEnvVar = "PipReportDisableFastDeps";
     private const string PipReportIgnoreFileLevelIndexUrlEnvVar = "PipReportIgnoreFileLevelIndexUrl";

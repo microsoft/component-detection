@@ -1,6 +1,6 @@
 namespace Microsoft.ComponentDetection.Common.Telemetry.Records;
 
-public class PipReportSkipTelemetryRecord : BaseDetectionTelemetryRecord
+internal class PipReportSkipTelemetryRecord : BaseDetectionTelemetryRecord
 {
     public override string RecordName => "PipReportSkip";
 

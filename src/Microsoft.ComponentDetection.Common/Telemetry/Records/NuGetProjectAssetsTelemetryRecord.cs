@@ -2,7 +2,7 @@ namespace Microsoft.ComponentDetection.Common.Telemetry.Records;
 
 using System;
 
-public class NuGetProjectAssetsTelemetryRecord : IDetectionTelemetryRecord, IDisposable
+internal class NuGetProjectAssetsTelemetryRecord : IDetectionTelemetryRecord, IDisposable
 {
     private bool disposedValue;
 

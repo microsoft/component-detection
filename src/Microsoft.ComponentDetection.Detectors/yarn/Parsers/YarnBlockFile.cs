@@ -40,7 +40,7 @@ using System.Threading.Tasks;
 ///   {key}: "{value}"
 ///   ...
 /// </summary>
-public class YarnBlockFile : IYarnBlockFile
+internal class YarnBlockFile : IYarnBlockFile
 {
     private static readonly Regex YarnV1Regex = new Regex("(.*)\\s\"(.*)\"", RegexOptions.Compiled);
 

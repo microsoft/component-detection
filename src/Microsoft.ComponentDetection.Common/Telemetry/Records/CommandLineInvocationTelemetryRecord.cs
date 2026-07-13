@@ -3,7 +3,7 @@ namespace Microsoft.ComponentDetection.Common.Telemetry.Records;
 using System;
 using Microsoft.ComponentDetection.Contracts;
 
-public class CommandLineInvocationTelemetryRecord : BaseDetectionTelemetryRecord
+internal class CommandLineInvocationTelemetryRecord : BaseDetectionTelemetryRecord
 {
     public override string RecordName => "CommandLineInvocation";
 

@@ -1,10 +1,7 @@
-<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="MSTest.Sdk">
 
     <PropertyGroup>
-        <IsTestProject>true</IsTestProject>
-        <TestProjectType>UnitTest</TestProjectType>
         <ProjectGuid>{95c8e34e-5895-4c7e-8c7e-c300a114a1e5}</ProjectGuid>
-        <OutputType>Library</OutputType>
         <OutputPath>./bin</OutputPath>
         <RootNamespace>Microsoft.ComponentDetection.VerificationTests</RootNamespace>
         <AssemblyName>Microsoft.ComponentDetection.VerificationTests</AssemblyName>
@@ -12,17 +9,8 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <!--<PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.11.1" />
-        <PackageReference Include="MSTest.TestAdapter" Version="1.1.18" />
-        <PackageReference Include="MSTest.TestFramework" Version="1.1.18" />
-        IF TESTING LOCALLY, UNCOMMENT ABOVE AND COMMENT BELOW -->
-        <PackageReference Include="Microsoft.NET.Test.Sdk" />
-        <PackageReference Include="MSTest.TestAdapter" />
-        <PackageReference Include="MSTest.TestFramework" />
         <PackageReference Include="AwesomeAssertions" />
         <PackageReference Include="Microsoft.Extensions.Logging" />
-        <PackageReference Include="MSTest.TestFramework"/>
-        <PackageReference Include="MSTest.Analyzers "/>
         <PackageReference Include="Newtonsoft.Json.Schema" />
         <PackageReference Include="packageurl-dotnet" />
         <PackageReference Include="System.Threading.Tasks.Dataflow" />

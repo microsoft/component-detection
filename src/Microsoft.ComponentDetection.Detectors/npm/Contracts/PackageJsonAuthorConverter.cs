@@ -9,7 +9,7 @@ using System.Text.RegularExpressions;
 /// Converts the author field in a package.json file, which can be either a string or an object.
 /// String format: "Name &lt;email&gt; (url)" where email and url are optional.
 /// </summary>
-public sealed partial class PackageJsonAuthorConverter : JsonConverter<PackageJsonAuthor?>
+internal sealed partial class PackageJsonAuthorConverter : JsonConverter<PackageJsonAuthor?>
 {
     // Matches: Name <email> (url) where email and url are optional
     // Examples:

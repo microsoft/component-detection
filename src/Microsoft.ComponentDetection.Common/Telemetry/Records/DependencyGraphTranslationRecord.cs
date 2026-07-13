@@ -2,7 +2,7 @@ namespace Microsoft.ComponentDetection.Common.Telemetry.Records;
 
 using System;
 
-public class DependencyGraphTranslationRecord : BaseDetectionTelemetryRecord
+internal class DependencyGraphTranslationRecord : BaseDetectionTelemetryRecord
 {
     public override string RecordName => "DependencyGraphTranslationRecord";
 

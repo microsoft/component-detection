@@ -6,7 +6,7 @@ using System.IO;
 using Tomlyn;
 using Tomlyn.Model;
 
-public class UvLock
+internal class UvLock
 {
     // a list of packages with their dependencies
     public List<UvPackage> Packages { get; set; } = [];
