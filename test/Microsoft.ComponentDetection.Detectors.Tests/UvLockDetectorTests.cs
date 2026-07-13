@@ -307,7 +307,7 @@ version = '0.4.0'
 name = 'coverage'
 version = '7.0.0'
 ";
-        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile("uv.lock", uvLock)
             .ExecuteDetectorAsync();
 
@@ -354,7 +354,7 @@ dependencies = [
 name = 'pluggy'
 version = '1.5.0'
 ";
-        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile("uv.lock", uvLock)
             .ExecuteDetectorAsync();
 
@@ -409,7 +409,7 @@ version = '8.1.0'
 name = 'pluggy'
 version = '1.5.0'
 ";
-        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile("uv.lock", uvLock)
             .ExecuteDetectorAsync();
 
@@ -442,7 +442,7 @@ name = 'httpx'
 version = '0.27.0'
 source = { git = 'https://github.com/encode/httpx?tag=0.27.0#abc123def456abc123def456abc123def456abcd' }
 ";
-        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile("uv.lock", uvLock)
             .ExecuteDetectorAsync();
 
@@ -453,7 +453,7 @@ source = { git = 'https://github.com/encode/httpx?tag=0.27.0#abc123def456abc123d
         var component = detected.First().Component;
         component.Should().BeOfType<GitComponent>();
         var gitComponent = (GitComponent)component;
-        gitComponent.RepositoryUrl.Should().Be(new System.Uri("https://github.com/encode/httpx"));
+        gitComponent.RepositoryUrl.Should().Be(new Uri("https://github.com/encode/httpx"));
         gitComponent.CommitHash.Should().Be("abc123def456abc123def456abc123def456abcd");
     }
 
@@ -482,7 +482,7 @@ name = 'httpx'
 version = '0.27.0'
 source = { git = 'https://github.com/encode/httpx?tag=0.27.0#aabbccdd11223344aabbccdd11223344aabbccdd' }
 ";
-        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile("uv.lock", uvLock)
             .ExecuteDetectorAsync();
 
@@ -497,6 +497,6 @@ source = { git = 'https://github.com/encode/httpx?tag=0.27.0#aabbccdd11223344aab
         gitComponents.Should().ContainSingle();
 
         ((PipComponent)pipComponents.First().Component).Name.Should().Be("requests");
-        ((GitComponent)gitComponents.First().Component).RepositoryUrl.Should().Be(new System.Uri("https://github.com/encode/httpx"));
+        ((GitComponent)gitComponents.First().Component).RepositoryUrl.Should().Be(new Uri("https://github.com/encode/httpx"));
     }
 }

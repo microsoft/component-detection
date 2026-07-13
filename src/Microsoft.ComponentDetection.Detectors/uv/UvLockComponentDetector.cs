@@ -145,6 +145,7 @@ public class UvLockComponentDetector : FileComponentDetector, IExperimentalDetec
                         {
                             depComponent = new PipComponent(depPkg.Name, depPkg.Version);
                         }
+
                         singleFileComponentRecorder.RegisterUsage(new DetectedComponent(depComponent), parentComponentId: component.Id, isDevelopmentDependency: isDev);
                     }
                     else
