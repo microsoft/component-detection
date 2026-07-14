@@ -536,4 +536,60 @@ version = '2.0.0'
         detected.Select(d => ((PipComponent)d.Component).Version)
             .Should().BeEquivalentTo(["1.0.0", "2.0.0"]);
     }
+
+    [TestMethod]
+    public async Task TestUvLockDetector_RecursiveDependency_DoesNotHangOrThrowAsync()
+    {
+        // Packages can reference each other cyclically (a -> b -> a). The detector must
+        // terminate and not throw when traversing such a cycle.
+        var uvLock = @"[[package]]
+name = 'myproject'
+version = '0.1.0'
+source = { virtual = '.' }
+dependencies = [
+    { name = 'a' },
+]
+[package.metadata]
+requires-dist = [
+    { name = 'a' },
+]
+[[package]]
+name = 'a'
+version = '1.0.0'
+dependencies = [
+    { name = 'b' },
+]
+[[package]]
+name = 'b'
+version = '2.0.0'
+dependencies = [
+    { name = 'a' },
+]
+";
+
+        var executeTask = this.detectorTestUtility
+            .WithFile("uv.lock", uvLock)
+            .ExecuteDetectorAsync();
+
+        // Guard against an infinite loop: the detection must complete promptly.
+        var completed = await Task.WhenAny(executeTask, Task.Delay(TimeSpan.FromSeconds(30)));
+        completed.Should().Be(executeTask, "the detector should terminate on a cyclic dependency graph");
+
+        var (scanResult, componentRecorder) = await executeTask;
+
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+        var detected = componentRecorder.GetDetectedComponents().ToList();
+
+        detected.Should().HaveCount(2);
+        detected.Select(d => ((PipComponent)d.Component).Name)
+            .Should().BeEquivalentTo(["a", "b"]);
+
+        var graph = componentRecorder.GetDependencyGraphsByLocation().Values.First();
+        var aId = new PipComponent("a", "1.0.0").Id;
+        var bId = new PipComponent("b", "2.0.0").Id;
+
+        // The cycle is preserved in the graph without causing a hang.
+        graph.GetDependenciesForComponent(aId).Should().BeEquivalentTo([bId]);
+        graph.GetDependenciesForComponent(bId).Should().BeEquivalentTo([aId]);
+    }
 }
