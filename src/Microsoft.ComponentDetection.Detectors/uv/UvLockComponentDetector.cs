@@ -160,7 +160,7 @@ public class UvLockComponentDetector : FileComponentDetector, IExperimentalDetec
             var prodRoots = rootPackage?.Dependencies.Select(d => d.Name) ?? [];
             var prodTransitive = GetTransitivePackages(prodRoots, uvLock.Packages);
             var devTransitive = GetTransitivePackages(devRootNames, uvLock.Packages);
-            var devOnlyPackages = new HashSet<string>(devTransitive.Except(prodTransitive), StringComparer.OrdinalIgnoreCase);
+            var devOnlyPackages = new HashSet<string>(devTransitive.Except(prodTransitive, StringComparer.OrdinalIgnoreCase), StringComparer.OrdinalIgnoreCase);
 
             foreach (var pkg in uvLock.Packages)
             {
