@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.Internal;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
+using Microsoft.ComponentDetection.Detectors.Pip;
 using Microsoft.Extensions.Logging;
 
 public class UvLockComponentDetector : FileComponentDetector, IExperimentalDetector
@@ -79,6 +80,53 @@ public class UvLockComponentDetector : FileComponentDetector, IExperimentalDetec
         return visited;
     }
 
+    /// <summary>
+    /// Resolves the concrete package a dependency refers to. A package name can appear
+    /// more than once in a uv.lock (e.g. when resolution markers select different versions
+    /// per platform), so when multiple candidates share the name the dependency's version
+    /// specifier is used to pick the matching package.
+    /// </summary>
+    /// <param name="dep">The dependency reference to resolve.</param>
+    /// <param name="packages">All packages parsed from the uv.lock.</param>
+    /// <returns>The matching package, or null when no package with the name exists.</returns>
+    internal static UvPackage? ResolveDependencyPackage(UvDependency dep, List<UvPackage> packages)
+    {
+        var candidates = packages
+            .Where(p => p.Name.Equals(dep.Name, StringComparison.OrdinalIgnoreCase))
+            .ToList();
+
+        if (candidates.Count <= 1)
+        {
+            return candidates.FirstOrDefault();
+        }
+
+        if (!string.IsNullOrWhiteSpace(dep.Specifier))
+        {
+            var specs = dep.Specifier.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+            var matching = candidates
+                .Where(p =>
+                {
+                    try
+                    {
+                        return PythonVersionUtilities.VersionValidForSpec(p.Version, specs);
+                    }
+                    catch (ArgumentException)
+                    {
+                        return false;
+                    }
+                })
+                .OrderBy(p => p.Version, new PythonVersionComparer())
+                .ToList();
+
+            if (matching.Count > 0)
+            {
+                return matching[0];
+            }
+        }
+
+        return candidates[0];
+    }
+
     protected override Task OnFileFoundAsync(ProcessRequest processRequest, IDictionary<string, string> detectorArgs, CancellationToken cancellationToken = default)
     {
         var singleFileComponentRecorder = processRequest.SingleFileComponentRecorder;
@@ -124,36 +172,16 @@ public class UvLockComponentDetector : FileComponentDetector, IExperimentalDetec
                 var isExplicit = explicitPackages.Contains(pkg.Name);
                 var isDev = devOnlyPackages.Contains(pkg.Name);
 
-                TypedComponent component;
-                if (pkg.Source?.Git != null)
-                {
-                    var (repoUrl, commitHash) = ParseGitUrl(pkg.Source.Git);
-                    component = new GitComponent(repoUrl, commitHash);
-                }
-                else
-                {
-                    component = new PipComponent(pkg.Name, pkg.Version);
-                }
-
+                var component = pkg.ToTypedComponent();
                 var detectedComponent = new DetectedComponent(component);
                 singleFileComponentRecorder.RegisterUsage(detectedComponent, isDevelopmentDependency: isDev, isExplicitReferencedDependency: isExplicit);
 
                 foreach (var dep in pkg.Dependencies)
                 {
-                    var depPkg = uvLock.Packages.FirstOrDefault(p => p.Name.Equals(dep.Name, StringComparison.OrdinalIgnoreCase));
+                    var depPkg = ResolveDependencyPackage(dep, uvLock.Packages);
                     if (depPkg != null)
                     {
-                        TypedComponent depComponent;
-                        if (depPkg.Source?.Git != null)
-                        {
-                            var (depRepoUrl, depCommitHash) = ParseGitUrl(depPkg.Source.Git);
-                            depComponent = new GitComponent(depRepoUrl, depCommitHash);
-                        }
-                        else
-                        {
-                            depComponent = new PipComponent(depPkg.Name, depPkg.Version);
-                        }
-
+                        var depComponent = depPkg.ToTypedComponent();
                         singleFileComponentRecorder.RegisterUsage(new DetectedComponent(depComponent), parentComponentId: component.Id, isDevelopmentDependency: isDev);
                     }
                     else

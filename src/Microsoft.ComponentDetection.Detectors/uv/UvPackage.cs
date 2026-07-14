@@ -1,6 +1,7 @@
 namespace Microsoft.ComponentDetection.Detectors.Uv;
 
 using System.Collections.Generic;
+using Microsoft.ComponentDetection.Contracts.TypedComponent;
 
 internal class UvPackage
 {
@@ -18,4 +19,15 @@ internal class UvPackage
 
     // Source property for uv.lock
     public UvSource? Source { get; set; }
+
+    public TypedComponent ToTypedComponent()
+    {
+        if (this.Source?.Git != null)
+        {
+            var (repoUrl, commitHash) = UvLockComponentDetector.ParseGitUrl(this.Source.Git);
+            return new GitComponent(repoUrl, commitHash);
+        }
+
+        return new PipComponent(this.Name, this.Version);
+    }
 }

@@ -511,17 +511,28 @@ name = 'myproject'
 version = '0.1.0'
 source = { virtual = '.' }
 dependencies = [
-    { name = 'shared' },
+    { name = 'shared', specifier = '>=1.0.0' },
 ]
 [package.metadata]
 requires-dist = [
-    { name = 'shared' },
+    { name = 'shared', specifier = '>=2.0.0' },
 ]
 [[package]]
 name = 'shared'
 version = '1.0.0'
+dependencies = [
+    { name = 'subdep', specifier = '>=1.0.0' },]
 [[package]]
 name = 'shared'
+version = '2.0.0'
+dependencies = [
+    { name = 'subdep', specifier = '>=2.0.0' },
+]
+[[package]]
+name = 'subdep'
+version = '1.0.0'
+[[package]]
+name = 'subdep'
 version = '2.0.0'
 ";
         var (scanResult, componentRecorder) = await this.detectorTestUtility
@@ -532,9 +543,22 @@ version = '2.0.0'
         var detected = componentRecorder.GetDetectedComponents().ToList();
 
         // Both versions of the duplicated package should be detected.
-        detected.Should().HaveCount(2);
-        detected.Select(d => ((PipComponent)d.Component).Version)
-            .Should().BeEquivalentTo(["1.0.0", "2.0.0"]);
+        detected.Should().HaveCount(4);
+        detected.Select(d => (((PipComponent)d.Component).Name, ((PipComponent)d.Component).Version))
+            .Should().BeEquivalentTo([("shared", "1.0.0"), ("shared", "2.0.0"), ("subdep", "1.0.0"), ("subdep", "2.0.0")]);
+
+        var graph = componentRecorder.GetDependencyGraphsByLocation().Values.First();
+        var shared1Id = new PipComponent("shared", "1.0.0").Id;
+        var shared2Id = new PipComponent("shared", "2.0.0").Id;
+        var subdep1Id = new PipComponent("subdep", "1.0.0").Id;
+        var subdep2Id = new PipComponent("subdep", "2.0.0").Id;
+
+        // Dependency edges are resolved by package name, so both duplicated 'shared'
+        // versions point at the first matching 'subdep' entry (1.0.0).
+        graph.GetDependenciesForComponent(shared1Id).Should().BeEquivalentTo([subdep1Id]);
+        graph.GetDependenciesForComponent(shared2Id).Should().BeEquivalentTo([subdep2Id]);
+        graph.GetDependenciesForComponent(subdep1Id).Should().BeEmpty();
+        graph.GetDependenciesForComponent(subdep2Id).Should().BeEmpty();
     }
 
     [TestMethod]
