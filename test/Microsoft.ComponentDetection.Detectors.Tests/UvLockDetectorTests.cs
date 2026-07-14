@@ -503,9 +503,6 @@ source = { git = 'https://github.com/encode/httpx?tag=0.27.0#aabbccdd11223344aab
     [TestMethod]
     public async Task TestUvLockDetector_DuplicatePackageName_HandledGracefullyAsync()
     {
-        // uv.lock can contain the same package name multiple times with different
-        // versions when resolution markers (e.g. platform-specific) select different
-        // versions. The detector must handle this without failing.
         var uvLock = @"[[package]]
 name = 'myproject'
 version = '0.1.0'
@@ -542,7 +539,6 @@ version = '2.0.0'
         scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
         var detected = componentRecorder.GetDetectedComponents().ToList();
 
-        // Both versions of the duplicated package should be detected.
         detected.Should().HaveCount(4);
         detected.Select(d => (((PipComponent)d.Component).Name, ((PipComponent)d.Component).Version))
             .Should().BeEquivalentTo([("shared", "1.0.0"), ("shared", "2.0.0"), ("subdep", "1.0.0"), ("subdep", "2.0.0")]);
@@ -553,8 +549,6 @@ version = '2.0.0'
         var subdep1Id = new PipComponent("subdep", "1.0.0").Id;
         var subdep2Id = new PipComponent("subdep", "2.0.0").Id;
 
-        // Dependency edges are resolved by package name, so both duplicated 'shared'
-        // versions point at the first matching 'subdep' entry (1.0.0).
         graph.GetDependenciesForComponent(shared1Id).Should().BeEquivalentTo([subdep1Id]);
         graph.GetDependenciesForComponent(shared2Id).Should().BeEquivalentTo([subdep2Id]);
         graph.GetDependenciesForComponent(subdep1Id).Should().BeEmpty();
