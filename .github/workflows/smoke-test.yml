@@ -53,7 +53,7 @@ jobs:
 
           echo "Ant installed successfully. Installing Ivy plugin..."
           sudo chmod 777 /usr/share/ant/lib
-          curl https://downloads.apache.org/ant/ivy/2.5.2/apache-ivy-2.5.2-bin.tar.gz | tar xOz apache-ivy-2.5.2/ivy-2.5.2.jar > /usr/share/ant/lib/ivy.jar
+          curl https://downloads.apache.org/ant/ivy/2.5.3/apache-ivy-2.5.3-bin.tar.gz | tar xOz apache-ivy-2.5.3/ivy-2.5.3.jar > /usr/share/ant/lib/ivy.jar
 
       - name: Checkout Smoke Test Repos
         run: |
