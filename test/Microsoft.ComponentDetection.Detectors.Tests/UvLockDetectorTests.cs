@@ -499,4 +499,41 @@ source = { git = 'https://github.com/encode/httpx?tag=0.27.0#aabbccdd11223344aab
         ((PipComponent)pipComponents.First().Component).Name.Should().Be("requests");
         ((GitComponent)gitComponents.First().Component).RepositoryUrl.Should().Be(new Uri("https://github.com/encode/httpx"));
     }
+
+    [TestMethod]
+    public async Task TestUvLockDetector_DuplicatePackageName_HandledGracefullyAsync()
+    {
+        // uv.lock can contain the same package name multiple times with different
+        // versions when resolution markers (e.g. platform-specific) select different
+        // versions. The detector must handle this without failing.
+        var uvLock = @"[[package]]
+name = 'myproject'
+version = '0.1.0'
+source = { virtual = '.' }
+dependencies = [
+    { name = 'shared' },
+]
+[package.metadata]
+requires-dist = [
+    { name = 'shared' },
+]
+[[package]]
+name = 'shared'
+version = '1.0.0'
+[[package]]
+name = 'shared'
+version = '2.0.0'
+";
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
+            .WithFile("uv.lock", uvLock)
+            .ExecuteDetectorAsync();
+
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+        var detected = componentRecorder.GetDetectedComponents().ToList();
+
+        // Both versions of the duplicated package should be detected.
+        detected.Should().HaveCount(2);
+        detected.Select(d => ((PipComponent)d.Component).Version)
+            .Should().BeEquivalentTo(["1.0.0", "2.0.0"]);
+    }
 }

@@ -47,7 +47,15 @@ public class UvLockComponentDetector : FileComponentDetector, IExperimentalDetec
 
     internal static HashSet<string> GetTransitivePackages(IEnumerable<string> roots, List<UvPackage> packages)
     {
-        var lookup = packages.ToDictionary(p => p.Name, p => p, StringComparer.OrdinalIgnoreCase);
+        // A package name can appear more than once in a uv.lock (e.g. when resolution
+        // markers select different versions per platform). Group by name and union the
+        // dependencies of every matching entry so traversal is resilient to duplicates.
+        var lookup = packages
+            .GroupBy(p => p.Name, StringComparer.OrdinalIgnoreCase)
+            .ToDictionary(
+                g => g.Key,
+                g => g.SelectMany(p => p.Dependencies.Select(d => d.Name)).ToList(),
+                StringComparer.OrdinalIgnoreCase);
         var visited = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         var queue = new Queue<string>(roots);
 
@@ -59,11 +67,11 @@ public class UvLockComponentDetector : FileComponentDetector, IExperimentalDetec
                 continue;
             }
 
-            if (lookup.TryGetValue(name, out var pkg))
+            if (lookup.TryGetValue(name, out var deps))
             {
-                foreach (var dep in pkg.Dependencies)
+                foreach (var dep in deps)
                 {
-                    queue.Enqueue(dep.Name);
+                    queue.Enqueue(dep);
                 }
             }
         }
