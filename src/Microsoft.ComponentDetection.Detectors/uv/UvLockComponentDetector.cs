@@ -38,14 +38,6 @@ public class UvLockComponentDetector : FileComponentDetector, IExperimentalDetec
         return pck.Source?.Virtual != null;
     }
 
-    internal static (Uri RepositoryUrl, string CommitHash) ParseGitUrl(string gitUrl)
-    {
-        var uri = new Uri(gitUrl);
-        var repoUrl = new Uri(uri.GetLeftPart(UriPartial.Path));
-        var commitHash = uri.Fragment.TrimStart('#');
-        return (repoUrl, commitHash);
-    }
-
     internal static HashSet<string> GetTransitivePackages(IEnumerable<string> roots, List<UvPackage> packages)
     {
         // A package name can appear more than once in a uv.lock (e.g. when resolution
@@ -179,7 +171,7 @@ public class UvLockComponentDetector : FileComponentDetector, IExperimentalDetec
 
                 foreach (var dep in pkg.Dependencies)
                 {
-                    var depPkg = ResolveDependencyPackage(dep, uvLock.Packages);
+                    var depPkg = this.ResolveDependencyPackage(dep, uvLock.Packages);
                     if (depPkg != null)
                     {
                         var depComponent = depPkg.ToTypedComponent();

@@ -1,5 +1,6 @@
 namespace Microsoft.ComponentDetection.Detectors.Uv;
 
+using System;
 using System.Collections.Generic;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 
@@ -24,10 +25,18 @@ internal class UvPackage
     {
         if (this.Source?.Git != null)
         {
-            var (repoUrl, commitHash) = UvLockComponentDetector.ParseGitUrl(this.Source.Git);
+            var (repoUrl, commitHash) = ParseGitUrl(this.Source.Git);
             return new GitComponent(repoUrl, commitHash);
         }
 
         return new PipComponent(this.Name, this.Version);
+    }
+
+    private static (Uri RepositoryUrl, string CommitHash) ParseGitUrl(string gitUrl)
+    {
+        var uri = new Uri(gitUrl);
+        var repoUrl = new Uri(uri.GetLeftPart(UriPartial.Path));
+        var commitHash = uri.Fragment.TrimStart('#');
+        return (repoUrl, commitHash);
     }
 }
