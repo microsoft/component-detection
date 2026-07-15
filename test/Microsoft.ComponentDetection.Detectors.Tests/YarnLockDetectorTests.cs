@@ -428,6 +428,133 @@ public class YarnLockDetectorTests
     }
 
     [TestMethod]
+    public async Task WellFormedYarnLockWithMultipleWorkspaces_FindsAllComponentsAsync()
+    {
+        // Regression test for the workspace resolution performance fix: a single
+        // filesystem traversal must still discover every workspace package.json that a
+        // glob workspace pattern expands to, and register the dependencies declared in
+        // each of them.
+        var version0 = NewRandomVersion();
+        var version1 = NewRandomVersion();
+        var version2 = NewRandomVersion();
+
+        var componentA = new YarnTestComponentDefinition { ActualVersion = version0, RequestedVersion = $"^{version0}", ResolvedVersion = "https://resolved0/a/resolved", Name = Guid.NewGuid().ToString("N") };
+        var componentB = new YarnTestComponentDefinition { ActualVersion = version1, RequestedVersion = $"^{version1}", ResolvedVersion = "https://resolved1/b/resolved", Name = Guid.NewGuid().ToString("N") };
+        var componentC = new YarnTestComponentDefinition { ActualVersion = version2, RequestedVersion = $"^{version2}", ResolvedVersion = "https://resolved2/c/resolved", Name = Guid.NewGuid().ToString("N") };
+
+        var yarnLockStream = YarnTestUtilities.GetMockedYarnLockStream("yarn.lock", this.CreateYarnLockV1FileContent([componentA, componentB, componentC]));
+
+        var rootJson = JsonSerializer.Serialize(new
+        {
+            name = "testworkspace",
+            version = "1.0.0",
+            @private = true,
+            workspaces = new[] { "packages/*" },
+        });
+
+        var app1Json = JsonSerializer.Serialize(new
+        {
+            name = "app1",
+            version = "1.0.0",
+            dependencies = new Dictionary<string, string> { [componentA.Name] = componentA.RequestedVersion },
+        });
+
+        var app2Json = JsonSerializer.Serialize(new
+        {
+            name = "app2",
+            version = "1.0.0",
+            dependencies = new Dictionary<string, string>
+            {
+                [componentB.Name] = componentB.RequestedVersion,
+                [componentC.Name] = componentC.RequestedVersion,
+            },
+        });
+
+        var app1Path = Path.Combine(Path.GetTempPath(), "packages", "app1", "package.json");
+        var app2Path = Path.Combine(Path.GetTempPath(), "packages", "app2", "package.json");
+
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
+            .WithFile("yarn.lock", yarnLockStream.Stream)
+            .WithFile("package.json", rootJson.ToStream(), ["package.json"], Path.Combine(Path.GetTempPath(), "package.json"))
+            .WithFile("package.json", app1Json.ToStream(), ["package.json"], app1Path)
+            .WithFile("package.json", app2Json.ToStream(), ["package.json"], app2Path)
+            .ExecuteDetectorAsync();
+
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+
+        var detectedComponents = componentRecorder.GetDetectedComponents().ToList();
+        detectedComponents.Should().HaveCount(3);
+
+        var detectedA = detectedComponents.Single(x => ((NpmComponent)x.Component).Name == componentA.Name);
+        var detectedB = detectedComponents.Single(x => ((NpmComponent)x.Component).Name == componentB.Name);
+        var detectedC = detectedComponents.Single(x => ((NpmComponent)x.Component).Name == componentC.Name);
+
+        ((NpmComponent)detectedA.Component).Version.Should().Be(version0);
+        ((NpmComponent)detectedB.Component).Version.Should().Be(version1);
+        ((NpmComponent)detectedC.Component).Version.Should().Be(version2);
+
+        // Each component is an explicitly referenced (root) dependency of its workspace.
+        componentRecorder.AssertAllExplicitlyReferencedComponents<NpmComponent>(detectedA.Component.Id, parent => parent.Name == componentA.Name);
+        componentRecorder.AssertAllExplicitlyReferencedComponents<NpmComponent>(detectedB.Component.Id, parent => parent.Name == componentB.Name);
+        componentRecorder.AssertAllExplicitlyReferencedComponents<NpmComponent>(detectedC.Component.Id, parent => parent.Name == componentC.Name);
+
+        // The dependency's file path must point at the workspace package.json that declared it.
+        detectedA.FilePaths.Should().Contain(app1Path);
+        detectedB.FilePaths.Should().Contain(app2Path);
+        detectedC.FilePaths.Should().Contain(app2Path);
+    }
+
+    [TestMethod]
+    public async Task WellFormedYarnLockWithWorkspaceSharedDependency_AttributesFirstWorkspaceAsync()
+    {
+        // Regression test guarding that the single-traversal workspace resolution preserves
+        // the original resolution order (workspace pattern order, then discovery order) so
+        // that first-wins location attribution stays deterministic when the same dependency
+        // is declared by more than one workspace.
+        var version0 = NewRandomVersion();
+        var componentA = new YarnTestComponentDefinition { ActualVersion = version0, RequestedVersion = $"^{version0}", ResolvedVersion = "https://resolved0/a/resolved", Name = Guid.NewGuid().ToString("N") };
+
+        var yarnLockStream = YarnTestUtilities.GetMockedYarnLockStream("yarn.lock", this.CreateYarnLockV1FileContent([componentA]));
+
+        var rootJson = JsonSerializer.Serialize(new
+        {
+            name = "testworkspace",
+            version = "1.0.0",
+            @private = true,
+            workspaces = new[] { "packages/app1", "packages/app2" },
+        });
+
+        var memberJson = JsonSerializer.Serialize(new
+        {
+            name = "member",
+            version = "1.0.0",
+            dependencies = new Dictionary<string, string> { [componentA.Name] = componentA.RequestedVersion },
+        });
+
+        var app1Path = Path.Combine(Path.GetTempPath(), "packages", "app1", "package.json");
+        var app2Path = Path.Combine(Path.GetTempPath(), "packages", "app2", "package.json");
+
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
+            .WithFile("yarn.lock", yarnLockStream.Stream)
+            .WithFile("package.json", rootJson.ToStream(), ["package.json"], Path.Combine(Path.GetTempPath(), "package.json"))
+            .WithFile("package.json", memberJson.ToStream(), ["package.json"], app1Path)
+            .WithFile("package.json", memberJson.ToStream(), ["package.json"], app2Path)
+            .ExecuteDetectorAsync();
+
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+
+        var detectedComponents = componentRecorder.GetDetectedComponents();
+        detectedComponents.Should().ContainSingle();
+
+        var detectedA = detectedComponents.Single();
+        ((NpmComponent)detectedA.Component).Name.Should().Be(componentA.Name);
+
+        // The first workspace pattern (packages/app1) wins the location attribution.
+        detectedA.FilePaths.Should().ContainSingle();
+        detectedA.FilePaths.Should().Contain(app1Path);
+    }
+
+    [TestMethod]
     public async Task WellFormedYarnLockV1WithMoreThanOneComponent_FindsComponentsAsync()
     {
         var version0 = NewRandomVersion();
