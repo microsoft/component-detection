@@ -518,7 +518,8 @@ requires-dist = [
 name = 'shared'
 version = '1.0.0'
 dependencies = [
-    { name = 'subdep', specifier = '>=1.0.0' },]
+    { name = 'subdep', specifier = '>=1.0.0' },
+]
 [[package]]
 name = 'shared'
 version = '2.0.0'
