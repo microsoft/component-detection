@@ -263,29 +263,49 @@ public class YarnLockComponentDetector : FileComponentDetector
             ? StringComparison.OrdinalIgnoreCase
             : StringComparison.Ordinal;
 
+        // Resolve all workspace package.json files in a SINGLE filesystem traversal to improve perf.
+        var unionMatcher = new Matcher(comparison);
+        foreach (var workspacePattern in yarnWorkspaces)
+        {
+            unionMatcher.AddInclude($"{workspacePattern}/package.json");
+        }
+
+        var componentStreams = this.ComponentStreamEnumerableFactory.GetComponentStreams(
+            root,
+            ["package.json"],
+            null,
+            recursivelyScanDirectories: true);
+
+        var workspaceCandidates = new List<(string RelativePath, string Location, IDictionary<string, IDictionary<string, bool>> Dependencies)>();
+        foreach (var stream in componentStreams)
+        {
+            var relativePath = Path.GetRelativePath(root.FullName, stream.Location).Replace('\\', '/');
+            if (!unionMatcher.Match(relativePath).HasMatches)
+            {
+                continue;
+            }
+
+            var combinedDependencies = NpmComponentUtilities.TryGetAllPackageJsonDependencies(stream.Stream, out _);
+            workspaceCandidates.Add((relativePath, stream.Location, combinedDependencies));
+        }
+
         foreach (var workspacePattern in yarnWorkspaces)
         {
             var matcher = new Matcher(comparison);
             matcher.AddInclude($"{workspacePattern}/package.json");
 
-            var componentStreams = this.ComponentStreamEnumerableFactory.GetComponentStreams(
-                root,
-                (file) =>
-                {
-                    var relativePath = Path.GetRelativePath(root.FullName, file.FullName).Replace('\\', '/');
-                    return matcher.Match(relativePath).HasMatches;
-                },
-                null,
-                true);
-
-            foreach (var stream in componentStreams)
+            foreach (var (candidateRelativePath, candidateLocation, candidateDependencies) in workspaceCandidates)
             {
-                this.Logger.LogInformation("{ComponentLocation} found for workspace {WorkspacePattern}", stream.Location, workspacePattern);
-                var combinedDependencies = NpmComponentUtilities.TryGetAllPackageJsonDependencies(stream.Stream, out _);
-
-                foreach (var dependency in combinedDependencies)
+                if (!matcher.Match(candidateRelativePath).HasMatches)
                 {
-                    this.ProcessWorkspaceDependency(dependencies, dependency, workspaceDependencyVsLocationMap, stream.Location);
+                    continue;
+                }
+
+                this.Logger.LogInformation("{ComponentLocation} found for workspace {WorkspacePattern}", candidateLocation, workspacePattern);
+
+                foreach (var dependency in candidateDependencies)
+                {
+                    this.ProcessWorkspaceDependency(dependencies, dependency, workspaceDependencyVsLocationMap, candidateLocation);
                 }
             }
         }
