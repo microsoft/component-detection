@@ -29,7 +29,7 @@ public class UvLockComponentDetector : FileComponentDetector, IExperimentalDetec
 
     public override IEnumerable<ComponentType> SupportedComponentTypes => [ComponentType.Pip, ComponentType.Git];
 
-    public override int Version => 1;
+    public override int Version => 2;
 
     public override IEnumerable<string> Categories => ["Python"];
 
@@ -89,7 +89,7 @@ public class UvLockComponentDetector : FileComponentDetector, IExperimentalDetec
     /// <param name="dep">The dependency reference to resolve.</param>
     /// <param name="packages">All packages parsed from the uv.lock.</param>
     /// <returns>The matching package, or null when no package with the name exists.</returns>
-    internal static UvPackage? ResolveDependencyPackage(UvDependency dep, List<UvPackage> packages)
+    internal UvPackage? ResolveDependencyPackage(UvDependency dep, List<UvPackage> packages)
     {
         var candidates = packages
             .Where(p => p.Name.Equals(dep.Name, StringComparison.OrdinalIgnoreCase))
@@ -112,6 +112,7 @@ public class UvLockComponentDetector : FileComponentDetector, IExperimentalDetec
                     }
                     catch (ArgumentException)
                     {
+                        this.Logger.LogWarning("Invalid version specifier {Specifier} for dependency {DependencyName}", dep.Specifier, dep.Name);
                         return false;
                     }
                 })
