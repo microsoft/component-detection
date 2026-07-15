@@ -105,11 +105,9 @@ package:
     }
 
     [TestMethod]
+    [Timeout(3000, CooperativeCancellation = true)] // Fail after 3 seconds if we're stuck in a loop
     public async Task CondaComponentDetector_TestCyclicalDependenciesAsync()
     {
-        // conda environments can contain cyclical dependencies (e.g. pip <-> setuptools).
-        // This lock file models a cycle: pkg-a -> pkg-b -> pkg-a.
-        // The detector must handle it without infinite recursion and still register both packages.
         var condaLockContent =
 @"version: 1
 metadata:
@@ -145,12 +143,6 @@ package:
         var detectorTask = this.detectorTestUtility
             .WithFile("conda-lock.yml", condaLockContent)
             .ExecuteDetectorAsync();
-
-        // If the detector fails to guard against cyclical dependencies it will spin
-        // (or recurse) forever. Race the detector against a timeout so the test fails
-        // fast with a clear message instead of hanging the whole test run.
-        var completed = await Task.WhenAny(detectorTask, Task.Delay(3000));
-        completed.Should().BeSameAs(detectorTask, "the detector should handle cyclical dependencies without spinning");
 
         var (scanResult, componentRecorder) = await detectorTask;
 

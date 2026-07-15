@@ -76,26 +76,24 @@ public static class CondaDependencyResolver
 
         var component = CreateComponent(package);
 
-        //// Register the package itself. This also records the edge from the parent,
-        //// so it must happen every time the package is reached, regardless of cycles.
+        // Register the package itself. This also records the edge from the parent,
+        // so it must happen every time the package is reached, regardless of cycles.
         RegisterPackage(component, parentId, false, singleFileComponentRecorder);
 
-        //// Only walk a package's dependencies once. This guards against cyclic
-        //// dependency graphs (which would otherwise recurse forever) and avoids
-        //// re-walking shared sub-trees.
-        if (!visited.Add(component.Id))
+        // Only walk a package's dependencies once. This guards against cyclic
+        // dependency graphs (which would otherwise recurse forever) and avoids
+        // re-walking shared sub-trees.
+        var visitKey = $"{component.Id}:{package.Platform}";
+        if (!visited.Add(visitKey))
         {
             return;
         }
 
-        //// Register all dependencies of the package.
-        (package.Dependencies?.Keys ?? Enumerable.Empty<string>()).ToList().ForEach(dependency =>
-            RegisterPackageWithDependencies(
-                condaLock?.Package.FirstOrDefault(condaPackage => condaPackage.Name == dependency && condaPackage.Platform == package.Platform),
-                component.Id,
-                condaLock,
-                singleFileComponentRecorder,
-                visited));
+        foreach (var dependency in package.Dependencies?.Keys ?? Enumerable.Empty<string>())
+        {
+            var dependencyPackage = condaLock?.Package.FirstOrDefault(condaPackage => condaPackage.Name == dependency && condaPackage.Platform == package.Platform);
+            RegisterPackageWithDependencies(dependencyPackage, component.Id, condaLock, singleFileComponentRecorder, visited);
+        }
     }
 
     /// <summary>
