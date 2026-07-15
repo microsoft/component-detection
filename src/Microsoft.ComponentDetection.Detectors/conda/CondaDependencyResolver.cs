@@ -18,7 +18,13 @@ public static class CondaDependencyResolver
     /// <param name="condaLock">The full condaLock object.</param>
     /// <param name="singleFileComponentRecorder">The SingleFileComponentRecorder.</param>
     public static void RecordDependencyGraphFromFile(CondaLock condaLock, ISingleFileComponentRecorder singleFileComponentRecorder)
-        => GetPackages(condaLock).ForEach(package => RegisterPackageWithDependencies(package, null, condaLock, singleFileComponentRecorder));
+    {
+        // Tracks components whose sub-tree has already been walked so that cyclic
+        // dependencies (e.g. A -> B -> A) don't cause infinite recursion and so that
+        // diamond-shaped graphs aren't re-walked exponentially.
+        var visited = new HashSet<string>();
+        GetPackages(condaLock).ForEach(package => RegisterPackageWithDependencies(package, null, condaLock, singleFileComponentRecorder, visited));
+    }
 
     /// <summary>
     /// Updates all registered packages that don't have any ancestors.
@@ -60,7 +66,8 @@ public static class CondaDependencyResolver
     /// <param name="parentId">The id of the parent package.</param>
     /// <param name="condaLock">The full condaLock object.</param>
     /// <param name="singleFileComponentRecorder">The SingleFileComponentRecorder.</param>
-    private static void RegisterPackageWithDependencies(CondaPackage package, string parentId, CondaLock condaLock, ISingleFileComponentRecorder singleFileComponentRecorder)
+    /// <param name="visited">The set of component ids whose dependencies have already been walked.</param>
+    private static void RegisterPackageWithDependencies(CondaPackage package, string parentId, CondaLock condaLock, ISingleFileComponentRecorder singleFileComponentRecorder, HashSet<string> visited)
     {
         if (package == null)
         {
@@ -69,16 +76,26 @@ public static class CondaDependencyResolver
 
         var component = CreateComponent(package);
 
-        //// Register the package itself.
+        //// Register the package itself. This also records the edge from the parent,
+        //// so it must happen every time the package is reached, regardless of cycles.
         RegisterPackage(component, parentId, false, singleFileComponentRecorder);
 
+        //// Only walk a package's dependencies once. This guards against cyclic
+        //// dependency graphs (which would otherwise recurse forever) and avoids
+        //// re-walking shared sub-trees.
+        if (!visited.Add(component.Id))
+        {
+            return;
+        }
+
         //// Register all dependencies of the package.
-        package.Dependencies.Keys.ToList().ForEach(dependency =>
+        (package.Dependencies?.Keys ?? Enumerable.Empty<string>()).ToList().ForEach(dependency =>
             RegisterPackageWithDependencies(
                 condaLock?.Package.FirstOrDefault(condaPackage => condaPackage.Name == dependency && condaPackage.Platform == package.Platform),
                 component.Id,
                 condaLock,
-                singleFileComponentRecorder));
+                singleFileComponentRecorder,
+                visited));
     }
 
     /// <summary>
@@ -122,19 +139,9 @@ public static class CondaDependencyResolver
     /// <param name="package">The CondaPackage to convert.</param>
     /// <returns>The TypedComponent.</returns>
     private static TypedComponent CreateComponent(CondaPackage package)
-        => IsPythonPackage(package)
-                ? new PipComponent(package.Name, package.Version)
-                : new CondaComponent(package.Name, package.Version, null, package.Category, null, null, null, null);
-
-    /// <summary>
-    /// Checks if a package is a python package.
-    ///
-    /// If the package is either managed by pip, or if it depends on python
-    /// it is considered a python package.
-    /// </summary>
-    /// <param name="package">The CondaPackage.</param>
-    /// <returns>True if the package is a python package.</returns>
-    private static bool IsPythonPackage(CondaPackage package)
-        => package.Manager.Equals("pip", StringComparison.OrdinalIgnoreCase) ||
-           package.Dependencies.Keys.Any(dependency => dependency.Equals("python", StringComparison.OrdinalIgnoreCase));
+    {
+        return package.Manager.Equals("pip", StringComparison.OrdinalIgnoreCase)
+            ? new PipComponent(package.Name, package.Version)
+            : new CondaComponent(package.Name, package.Version, null, package.Category, null, null, null, null);
+    }
 }
