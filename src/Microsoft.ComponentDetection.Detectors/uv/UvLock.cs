@@ -89,6 +89,17 @@ internal class UvLock
                 uvPackage.Source = source;
             }
 
+            if (pkgTable.TryGetValue("sdist", out var sdistObj) && sdistObj is TomlTable sdistTable)
+            {
+                uvPackage.DownloadUrl = TryGetUrlFromArtifactTable(sdistTable);
+            }
+
+            if (uvPackage.DownloadUrl == null &&
+                pkgTable.TryGetValue("wheels", out var wheelsObj) && wheelsObj is TomlArray wheelsArray)
+            {
+                uvPackage.DownloadUrl = TryGetFirstWheelUrl(wheelsArray);
+            }
+
             return uvPackage;
         }
 
@@ -142,5 +153,27 @@ internal class UvLock
                 }
             }
         }
+    }
+
+    private static string? TryGetUrlFromArtifactTable(TomlTable artifactTable)
+    {
+        return artifactTable.TryGetValue("url", out var urlObj) && urlObj is string url ? url : null;
+    }
+
+    private static string? TryGetFirstWheelUrl(TomlArray wheelsArray)
+    {
+        foreach (var wheelObj in wheelsArray)
+        {
+            if (wheelObj is TomlTable wheelTable)
+            {
+                var url = TryGetUrlFromArtifactTable(wheelTable);
+                if (!string.IsNullOrWhiteSpace(url))
+                {
+                    return url;
+                }
+            }
+        }
+
+        return null;
     }
 }

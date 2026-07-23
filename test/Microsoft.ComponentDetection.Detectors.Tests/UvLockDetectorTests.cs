@@ -611,4 +611,37 @@ dependencies = [
         graph.GetDependenciesForComponent(aId).Should().BeEquivalentTo([bId]);
         graph.GetDependenciesForComponent(bId).Should().BeEquivalentTo([aId]);
     }
+
+    [TestMethod]
+    public async Task TestUvLockDetector_PipPackage_UsesSdistDownloadUrlAsync()
+    {
+        var uvLock = @"[[package]]
+name = 'myproject'
+version = '0.1.0'
+source = { virtual = '.' }
+dependencies = [
+    { name = 'requests' },
+]
+[package.metadata]
+requires-dist = [
+    { name = 'requests' },
+]
+[[package]]
+name = 'requests'
+version = '2.32.0'
+source = { registry = 'https://pypi.org/simple' }
+sdist = { url = 'https://files.pythonhosted.org/packages/source/r/requests/requests-2.32.0.tar.gz' }
+";
+
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
+            .WithFile("uv.lock", uvLock)
+            .ExecuteDetectorAsync();
+
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+        var detectedComponent = componentRecorder.GetDetectedComponents().Single().Component;
+        detectedComponent.Should().BeOfType<PipComponent>();
+
+        var pipComponent = (PipComponent)detectedComponent;
+        pipComponent.DownloadUrl.Should().Be(new Uri("https://files.pythonhosted.org/packages/source/r/requests/requests-2.32.0.tar.gz"));
+    }
 }

@@ -21,6 +21,9 @@ internal class UvPackage
     // Source property for uv.lock
     public UvSource? Source { get; set; }
 
+    // Preferred artifact URL (sdist first, then wheel fallback) for provenance.
+    public string? DownloadUrl { get; set; }
+
     public TypedComponent ToTypedComponent()
     {
         if (this.Source?.Git != null)
@@ -29,7 +32,13 @@ internal class UvPackage
             return new GitComponent(repoUrl, commitHash);
         }
 
-        return new PipComponent(this.Name, this.Version);
+        var component = new PipComponent(this.Name, this.Version);
+        if (Uri.TryCreate(this.DownloadUrl, UriKind.Absolute, out var downloadUri))
+        {
+            component.DownloadUrl = downloadUri;
+        }
+
+        return component;
     }
 
     private static (Uri RepositoryUrl, string CommitHash) ParseGitUrl(string gitUrl)

@@ -392,4 +392,39 @@ version = '1.0.0'
         var pkg = uvLock.Packages.First();
         pkg.Source.Should().BeNull();
     }
+
+    [TestMethod]
+    public void ParsePackage_ParsesDownloadUrl_FromSdist()
+    {
+        var toml = """
+[[package]]
+name = 'foo'
+version = '1.0.0'
+sdist = { url = 'https://files.example.com/foo-1.0.0.tar.gz', hash = 'sha256:abc' }
+""";
+
+        using var ms = new MemoryStream(Encoding.UTF8.GetBytes(toml));
+        var uvLock = UvLock.Parse(ms);
+        uvLock.Packages.Should().ContainSingle();
+        uvLock.Packages.First().DownloadUrl.Should().Be("https://files.example.com/foo-1.0.0.tar.gz");
+    }
+
+    [TestMethod]
+    public void ParsePackage_ParsesDownloadUrl_FromWheels_WhenSdistMissing()
+    {
+        var toml = """
+[[package]]
+name = 'foo'
+version = '1.0.0'
+wheels = [
+    { hash = 'sha256:missing-url' },
+    { url = 'https://files.example.com/foo-1.0.0-py3-none-any.whl', hash = 'sha256:def' },
+]
+""";
+
+        using var ms = new MemoryStream(Encoding.UTF8.GetBytes(toml));
+        var uvLock = UvLock.Parse(ms);
+        uvLock.Packages.Should().ContainSingle();
+        uvLock.Packages.First().DownloadUrl.Should().Be("https://files.example.com/foo-1.0.0-py3-none-any.whl");
+    }
 }
