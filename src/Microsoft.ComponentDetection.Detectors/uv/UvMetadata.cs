@@ -2,15 +2,14 @@ namespace Microsoft.ComponentDetection.Detectors.Uv;
 
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.Serialization;
+using System.Text.Json.Serialization;
 
-[DataContract]
 internal class UvMetadata
 {
-    [DataMember(Name = "requires-dist")]
+    [JsonPropertyName("requires-dist")]
     public List<UvDependency> RequiresDist { get; set; } = [];
 
-    [DataMember(Name = "requires-dev")]
+    [JsonPropertyName("requires-dev")]
     public Dictionary<string, List<UvDependency>> RequiresDev { get; set; } = [];
 
     public void Normalize()

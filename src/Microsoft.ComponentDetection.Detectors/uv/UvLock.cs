@@ -3,14 +3,13 @@ namespace Microsoft.ComponentDetection.Detectors.Uv;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Runtime.Serialization;
+using System.Text.Json.Serialization;
 using Tomlyn;
 
-[DataContract]
 internal class UvLock
 {
     // A list of packages with their dependencies.
-    [DataMember(Name = "package")]
+    [JsonPropertyName("package")]
     public List<UvPackage> Packages { get; set; } = [];
 
     public static UvLock Parse(Stream tomlStream)

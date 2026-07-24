@@ -1,16 +1,15 @@
 namespace Microsoft.ComponentDetection.Detectors.Uv;
 
-using System.Runtime.Serialization;
+using System.Text.Json.Serialization;
 
-[DataContract]
 internal class UvSource
 {
-    [DataMember(Name = "registry")]
+    [JsonPropertyName("registry")]
     public string? Registry { get; set; }
 
-    [DataMember(Name = "virtual")]
+    [JsonPropertyName("virtual")]
     public string? Virtual { get; set; }
 
-    [DataMember(Name = "git")]
+    [JsonPropertyName("git")]
     public string? Git { get; set; }
 }

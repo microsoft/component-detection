@@ -3,31 +3,30 @@ namespace Microsoft.ComponentDetection.Detectors.Uv;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.Serialization;
+using System.Text.Json.Serialization;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 
-[DataContract]
 internal class UvPackage
 {
-    [DataMember(Name = "name")]
+    [JsonPropertyName("name")]
     public string Name { get; set; } = string.Empty;
 
-    [DataMember(Name = "version")]
+    [JsonPropertyName("version")]
     public string Version { get; set; } = string.Empty;
 
-    [DataMember(Name = "dependencies")]
+    [JsonPropertyName("dependencies")]
     public List<UvDependency> Dependencies { get; set; } = [];
 
-    [DataMember(Name = "metadata")]
+    [JsonPropertyName("metadata")]
     public UvMetadata? Metadata { get; set; }
 
-    [DataMember(Name = "source")]
+    [JsonPropertyName("source")]
     public UvSource? Source { get; set; }
 
-    [IgnoreDataMember]
+    [JsonIgnore]
     public List<UvDependency> MetadataRequiresDist => this.Metadata?.RequiresDist ?? [];
 
-    [IgnoreDataMember]
+    [JsonIgnore]
     public List<UvDependency> MetadataRequiresDev => this.Metadata?.RequiresDev?.Values
         .Where(group => group != null)
         .SelectMany(group => group!)

@@ -78,6 +78,8 @@ version = '2.0.0'
         uvLock.Packages.Should().HaveCount(2);
         uvLock.Packages.First().Name.Should().Be("foo");
         uvLock.Packages.First().Dependencies.Should().ContainSingle(d => d.Name == "bar" && d.Specifier == ">=2.0.0");
+        uvLock.Packages.Last().Name.Should().Be("bar");
+        uvLock.Packages.Last().Dependencies.Should().BeEmpty();
     }
 
     [TestMethod]
