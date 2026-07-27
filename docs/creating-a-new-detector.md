@@ -51,6 +51,8 @@ Runs after all files are processed. Use this for:
 
 New detectors progress through three stages before becoming default. Contributors only implement **Stage 1**; maintainers handle promotion through later stages.
 
+For the maintainer promotion guide, see [Promoting a Detector](./promoting-a-detector.md).
+
 | Stage | Interface | Behavior |
 |-------|-----------|----------|
 | **1. Default Off** | `IDefaultOffComponentDetector` | Must be explicitly enabled via `--DetectorArgs YourDetectorId=EnableIfDefaultOff`. Detector should be fully functional and produce correct output. |
@@ -409,6 +411,7 @@ Before submitting your detector:
 
 ## Additional Resources
 
+- [Promoting a Detector](./promoting-a-detector.md) - Maintainer guide for promoting detectors through lifecycle stages
 - [Detector Arguments](./detector-arguments.md) - Available command-line arguments
 - [Feature Overview](./feature-overview.md) - Component Detection capabilities
 - [Enable Default Off Detectors](./enable-default-off.md) - How to enable experimental detectors

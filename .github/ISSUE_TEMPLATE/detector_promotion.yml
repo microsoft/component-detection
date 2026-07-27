@@ -1,0 +1,106 @@
+name: Detector Promotion Tracker
+description: Track a new detector through the promotion lifecycle (DefaultOff → Experimental → Default)
+title: "[Detector Promotion]: "
+labels: ['detector-promotion']
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## Detector Promotion Tracker
+
+        Use this issue to track a new detector's progression through the [promotion lifecycle](../../docs/promoting-a-detector.md).
+        Create this issue after a new detector is merged as `IDefaultOffComponentDetector`.
+
+  - type: input
+    id: detector-id
+    attributes:
+      label: Detector ID
+      description: The value of the detector's `Id` property (e.g., "Paket", "Ivy").
+      placeholder: "YourDetector"
+    validations:
+      required: true
+
+  - type: input
+    id: detector-class
+    attributes:
+      label: Detector class name
+      description: The full class name (e.g., PaketComponentDetector).
+      placeholder: "YourComponentDetector"
+    validations:
+      required: true
+
+  - type: input
+    id: merged-pr
+    attributes:
+      label: Initial PR
+      description: The PR number that introduced the detector.
+      placeholder: "#1234"
+    validations:
+      required: true
+
+  - type: input
+    id: ecosystem
+    attributes:
+      label: Ecosystem
+      description: The package ecosystem this detector covers (e.g., NuGet, npm, Maven).
+      placeholder: "NuGet"
+    validations:
+      required: true
+
+  - type: markdown
+    attributes:
+      value: |
+        ---
+
+        ## Stage 1: Default Off ✅ (current)
+
+        The detector has been merged and is available via `--DetectorArgs DetectorId=EnableIfDefaultOff`.
+
+        ### Promotion criteria for Stage 2 (Experimental)
+
+        - [ ] All unit tests pass reliably
+        - [ ] Verification test resources are checked in and snapshots pass
+        - [ ] Detector has been manually tested against real-world projects
+        - [ ] Edge cases are handled (empty files, malformed input, missing fields)
+        - [ ] No performance regressions observed when running locally
+        - [ ] Reviewed and approved by at least one maintainer
+
+        **Promotion PR:** _(link the PR that changes the interface to `IExperimentalDetector`)_
+
+        ---
+
+        ## Stage 2: Experimental
+
+        The detector runs automatically but results are not included in scan output. Telemetry is collected.
+
+        ### Monitoring checklist
+
+        - [ ] Detector completes within the 4-minute timeout cap
+        - [ ] Error rate is low (no frequent parsing failures)
+        - [ ] Component counts are reasonable — no false positives
+        - [ ] No memory pressure on large repositories
+        - [ ] Has been running in production for 2+ weeks
+
+        ### Promotion criteria for Stage 3 (Default)
+
+        - [ ] Telemetry shows stable performance over the monitoring period
+        - [ ] Component detection accuracy validated against known repositories
+        - [ ] No regressions reported
+        - [ ] Verification test snapshots are up to date
+        - [ ] Documentation page exists in `docs/detectors/`
+        - [ ] Detector version bumped if output changed during Experimental
+
+        **Promotion PR:** _(link the PR that removes `IExperimentalDetector`)_
+
+        ---
+
+        ## Stage 3: Default ⬜
+
+        The detector is fully integrated. Components are included in scan results for all users.
+
+  - type: textarea
+    id: notes
+    attributes:
+      label: Additional context
+      description: Any extra notes — related issues, known limitations, test repositories, etc.
