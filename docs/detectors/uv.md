@@ -6,7 +6,7 @@
 
 ## Detection strategy
 
-uv detection is performed by parsing a <em>uv.lock</em> found under the scan directory.
+uv detection is performed by parsing a _uv.lock_ found under the scan directory.
 
 Full dependency graph generation is supported.
 

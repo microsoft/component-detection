@@ -65,12 +65,12 @@ public class ComponentDetectorTests
     }
 
     [TestMethod]
-    public void UvLockComponentDetector_ImplementsIExperimentalDetector()
+    public void UvLockComponentDetector_DoesNotImplementIExperimentalDetector()
     {
         var uvLockDetector = this.detectors.SingleOrDefault(d => d.Id == "UvLock");
 
         uvLockDetector.Should().NotBeNull("because UvLockComponentDetector should be registered");
-        uvLockDetector.Should().BeAssignableTo<IExperimentalDetector>("because UvLockComponentDetector should implement IExperimentalDetector");
+        uvLockDetector.Should().NotBeAssignableTo<IExperimentalDetector>("because UvLockComponentDetector should not implement IExperimentalDetector");
     }
 
     [TestMethod]

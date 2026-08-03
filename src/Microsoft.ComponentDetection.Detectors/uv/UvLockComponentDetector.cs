@@ -11,7 +11,7 @@ using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.ComponentDetection.Detectors.Pip;
 using Microsoft.Extensions.Logging;
 
-public class UvLockComponentDetector : FileComponentDetector, IExperimentalDetector
+public class UvLockComponentDetector : FileComponentDetector
 {
     public UvLockComponentDetector(
         IComponentStreamEnumerableFactory componentStreamEnumerableFactory,

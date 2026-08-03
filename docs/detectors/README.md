@@ -137,7 +137,7 @@
 
 | Detector                | Status       |
 | ----------------------- | ------------ |
-| UvLockComponentDetector | Experimental |
+| UvLockComponentDetector | Stable       |
 
 - [Vcpkg](vcpkg.md)
 
