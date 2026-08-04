@@ -8,6 +8,8 @@ updates:
       - "JamieMagee"
     labels:
       - "type:ci"
+    cooldown:
+      default-days: 7
 
   - package-ecosystem: 'nuget'
     directory: '/'
