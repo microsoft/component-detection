@@ -36,6 +36,7 @@ internal class ImageReference
     private const string OciDirPrefix = "oci-dir:";
     private const string OciArchivePrefix = "oci-archive:";
     private const string DockerArchivePrefix = "docker-archive:";
+    private const string PlatformParameter = "?platform=";
 
     /// <summary>
     /// Gets the original input string as provided by the user.
@@ -54,6 +55,11 @@ internal class ImageReference
     public required ImageReferenceKind Kind { get; init; }
 
     /// <summary>
+    /// Gets the optional platform to select when scanning a local image source.
+    /// </summary>
+    public string? Platform { get; init; }
+
+    /// <summary>
     /// Parses an input image string into an <see cref="ImageReference"/>.
     /// </summary>
     /// <param name="input">The raw image input string.</param>
@@ -62,50 +68,24 @@ internal class ImageReference
     {
         if (input.StartsWith(OciDirPrefix, StringComparison.OrdinalIgnoreCase))
         {
-            var path = input[OciDirPrefix.Length..];
-            if (string.IsNullOrWhiteSpace(path))
-            {
-                throw new ArgumentException($"Input with '{OciDirPrefix}' prefix must include a path.", nameof(input));
-            }
-
-            return new ImageReference
-            {
-                OriginalInput = input,
-                Reference = path,
-                Kind = ImageReferenceKind.OciLayout,
-            };
+            return ParseLocalReference(input, OciDirPrefix, ImageReferenceKind.OciLayout);
         }
 
         if (input.StartsWith(OciArchivePrefix, StringComparison.OrdinalIgnoreCase))
         {
-            var path = input[OciArchivePrefix.Length..];
-            if (string.IsNullOrWhiteSpace(path))
-            {
-                throw new ArgumentException($"Input with '{OciArchivePrefix}' prefix must include a path.", nameof(input));
-            }
-
-            return new ImageReference
-            {
-                OriginalInput = input,
-                Reference = path,
-                Kind = ImageReferenceKind.OciArchive,
-            };
+            return ParseLocalReference(input, OciArchivePrefix, ImageReferenceKind.OciArchive);
         }
 
         if (input.StartsWith(DockerArchivePrefix, StringComparison.OrdinalIgnoreCase))
         {
-            var path = input[DockerArchivePrefix.Length..];
-            if (string.IsNullOrWhiteSpace(path))
-            {
-                throw new ArgumentException($"Input with '{DockerArchivePrefix}' prefix must include a path.", nameof(input));
-            }
+            return ParseLocalReference(input, DockerArchivePrefix, ImageReferenceKind.DockerArchive);
+        }
 
-            return new ImageReference
-            {
-                OriginalInput = input,
-                Reference = path,
-                Kind = ImageReferenceKind.DockerArchive,
-            };
+        if (input.Contains(PlatformParameter, StringComparison.OrdinalIgnoreCase))
+        {
+            throw new ArgumentException(
+                "Platform selection is supported only for OCI layouts, OCI archives, and Docker archives.",
+                nameof(input));
         }
 
 #pragma warning disable CA1308
@@ -116,5 +96,42 @@ internal class ImageReference
             Kind = ImageReferenceKind.DockerImage,
         };
 #pragma warning restore CA1308
+    }
+
+    private static ImageReference ParseLocalReference(
+        string input,
+        string prefix,
+        ImageReferenceKind kind)
+    {
+        var pathAndParameters = input[prefix.Length..];
+        var platformParameterIndex = pathAndParameters.LastIndexOf(
+            PlatformParameter,
+            StringComparison.OrdinalIgnoreCase);
+
+        var path = platformParameterIndex >= 0
+            ? pathAndParameters[..platformParameterIndex]
+            : pathAndParameters;
+        if (string.IsNullOrWhiteSpace(path))
+        {
+            throw new ArgumentException($"Input with '{prefix}' prefix must include a path.", nameof(input));
+        }
+
+        string? platform = null;
+        if (platformParameterIndex >= 0)
+        {
+            platform = pathAndParameters[(platformParameterIndex + PlatformParameter.Length)..].Trim();
+            if (string.IsNullOrWhiteSpace(platform))
+            {
+                throw new ArgumentException("The platform parameter must include a value.", nameof(input));
+            }
+        }
+
+        return new ImageReference
+        {
+            OriginalInput = input,
+            Reference = path,
+            Kind = kind,
+            Platform = platform,
+        };
     }
 }

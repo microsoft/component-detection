@@ -36,6 +36,24 @@ Images present on the filesystem as either an [OCI layout directory](https://spe
 
 Images saved to disk via `docker save` can be referenced using the `docker-archive:` prefix followed by the path to the tarball, e.g. `docker-archive:/path/to/image.tar`.
 
+### Platform Selection
+
+For multi-platform local images, append `?platform=<platform>` to each image reference. Platform selection is supported for OCI layouts, OCI archives, and Docker archives. The value is passed directly to Syft, which accepts forms such as `linux/arm64`, `linux/arm64/v8`, `arm64`, and `linux`.
+
+For example, different platforms can be selected for multiple images in one scan:
+
+```sh
+--DockerImagesToScan "oci-archive:/images/api.tar?platform=linux/amd64,oci-archive:/images/worker.tar?platform=linux/arm64"
+```
+
+The same local image can also be scanned once per platform:
+
+```sh
+--DockerImagesToScan "oci-dir:/images/application?platform=linux/amd64,oci-dir:/images/application?platform=linux/arm64"
+```
+
+When the platform suffix is omitted, Syft uses the current system platform, or if the image only has a single platform, that one is chosen. Platform selection is not supported for image names, tags, or digests resolved through the Docker daemon because Docker selects their platform before Syft scans them.
+
 ### Scanner Scope
 
 By default, this detector invokes Syft with the `all-layers` scanning scope (i.e. the Syft argument `--scope all-layers`).
@@ -53,7 +71,7 @@ For example:
 ## Known limitations
 
 - Windows container scanning is not supported
-- Multiplatform images are not supported
+- Platform selection is not supported for image names, tags, or digests resolved through the Docker daemon
 
 ## Excluding Base Image Components
 

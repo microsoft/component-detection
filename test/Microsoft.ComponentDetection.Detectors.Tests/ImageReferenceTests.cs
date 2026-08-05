@@ -135,4 +135,51 @@ public class ImageReferenceTests
             .WithMessage("Input with 'oci-archive:' prefix must include a path.*")
             .WithParameterName("input");
     }
+
+    [TestMethod]
+    [DataRow("oci-dir:/path/to/image?platform=linux/arm64", (int)ImageReferenceKind.OciLayout, "/path/to/image", "linux/arm64")]
+    [DataRow("oci-archive:C:\\images\\image.tar?platform=linux/arm64/v8", (int)ImageReferenceKind.OciArchive, "C:\\images\\image.tar", "linux/arm64/v8")]
+    [DataRow("docker-archive:/path/to/image.tar?PLATFORM=arm64", (int)ImageReferenceKind.DockerArchive, "/path/to/image.tar", "arm64")]
+    public void Parse_LocalImageWithPlatform_ReturnsPlatform(
+        string input,
+        int expectedKind,
+        string expectedPath,
+        string expectedPlatform)
+    {
+        var result = ImageReference.Parse(input);
+
+        result.Kind.Should().Be((ImageReferenceKind)expectedKind);
+        result.OriginalInput.Should().Be(input);
+        result.Reference.Should().Be(expectedPath);
+        result.Platform.Should().Be(expectedPlatform);
+    }
+
+    [TestMethod]
+    public void Parse_LocalImageWithBlankPlatform_Throws()
+    {
+        var act = () => ImageReference.Parse("oci-dir:/path/to/image?platform=   ");
+
+        act.Should().Throw<ArgumentException>()
+            .WithMessage("The platform parameter must include a value.*")
+            .WithParameterName("input");
+    }
+
+    [TestMethod]
+    public void Parse_LocalImageWithUnknownQuery_PreservesPath()
+    {
+        var result = ImageReference.Parse("oci-dir:/path/to/image?variant=test");
+
+        result.Reference.Should().Be("/path/to/image?variant=test");
+        result.Platform.Should().BeNull();
+    }
+
+    [TestMethod]
+    public void Parse_DockerImageWithPlatform_Throws()
+    {
+        var act = () => ImageReference.Parse("ubuntu:latest?platform=linux/arm64");
+
+        act.Should().Throw<ArgumentException>()
+            .WithMessage("Platform selection is supported only for OCI layouts, OCI archives, and Docker archives.*")
+            .WithParameterName("input");
+    }
 }

@@ -49,6 +49,23 @@ public interface ILinuxScanner
     );
 
     /// <summary>
+    /// Runs the Syft scanner for a selected platform and returns the raw parsed output without processing components.
+    /// </summary>
+    /// <param name="syftSource">The source argument passed to Syft.</param>
+    /// <param name="additionalBinds">Additional volume bind mounts for the Syft container.</param>
+    /// <param name="scope">The scope for scanning the image.</param>
+    /// <param name="platform">The optional platform passed to Syft.</param>
+    /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
+    /// <returns>A task whose result contains the parsed <see cref="SyftOutput"/>.</returns>
+    public Task<SyftOutput> GetSyftOutputAsync(
+        string syftSource,
+        IList<string> additionalBinds,
+        LinuxScannerScope scope,
+        string? platform,
+        CancellationToken cancellationToken = default
+    );
+
+    /// <summary>
     /// Processes parsed Syft output into layer-mapped components.
     /// </summary>
     /// <param name="syftOutput">The parsed Syft output.</param>

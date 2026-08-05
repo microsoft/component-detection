@@ -253,8 +253,10 @@ public class LinuxContainerDetector(
         // Docker images will resolve to ContainerDetails via inspect. Deduplicate by ImageId since multiple refs can resolve to the same image.
         var processedDockerImages = new ConcurrentDictionary<string, ContainerDetails>();
 
-        // Local images will be validated for existence and tracked by their file path.
-        var localImages = new ConcurrentDictionary<string, ImageReferenceKind>();
+        // Local images will be validated for existence and tracked by path, kind, and platform.
+        var localImages = new ConcurrentDictionary<
+            (string FullPath, ImageReferenceKind Kind, string Platform),
+            ImageReference>();
 
         var resolveTasks = imageReferences.Select(imageRef =>
             this.ResolveImageAsync(imageRef, processedDockerImages, localImages, componentRecorder, cancellationToken));
@@ -269,7 +271,7 @@ public class LinuxContainerDetector(
 
         scanTasks.AddRange(localImages
             .Select(kvp =>
-                this.ScanLocalImageAsync(kvp.Key, kvp.Value, scannerScope, componentRecorder, cancellationToken)));
+                this.ScanLocalImageAsync(kvp.Key.FullPath, kvp.Value, scannerScope, componentRecorder, cancellationToken)));
 
         return await Task.WhenAll(scanTasks);
     }
@@ -284,7 +286,9 @@ public class LinuxContainerDetector(
     private async Task ResolveImageAsync(
         ImageReference imageRef,
         ConcurrentDictionary<string, ContainerDetails> resolvedDockerImages,
-        ConcurrentDictionary<string, ImageReferenceKind> localImages,
+        ConcurrentDictionary<
+            (string FullPath, ImageReferenceKind Kind, string Platform),
+            ImageReference> localImages,
         IComponentRecorder componentRecorder,
         CancellationToken cancellationToken)
     {
@@ -299,7 +303,9 @@ public class LinuxContainerDetector(
                 case ImageReferenceKind.OciArchive:
                 case ImageReferenceKind.DockerArchive:
                     var fullPath = this.ValidateLocalImagePath(imageRef);
-                    localImages.TryAdd(fullPath, imageRef.Kind);
+                    localImages.TryAdd(
+                        (fullPath, imageRef.Kind, imageRef.Platform ?? string.Empty),
+                        imageRef);
                     break;
                 default:
                     throw new InvalidUserInputException(
@@ -438,14 +444,14 @@ public class LinuxContainerDetector(
     /// </summary>
     private async Task<ImageScanningResult> ScanLocalImageAsync(
         string localImagePath,
-        ImageReferenceKind imageRefKind,
+        ImageReference imageRef,
         LinuxScannerScope scannerScope,
         IComponentRecorder componentRecorder,
         CancellationToken cancellationToken)
     {
         string hostPathToBind;
         string syftContainerPath;
-        switch (imageRefKind)
+        switch (imageRef.Kind)
         {
             case ImageReferenceKind.OciLayout:
                 hostPathToBind = localImagePath;
@@ -464,7 +470,7 @@ public class LinuxContainerDetector(
             case ImageReferenceKind.DockerImage:
             default:
                 throw new InvalidUserInputException(
-                    $"Unsupported image reference kind '{imageRefKind}' for local image at path '{localImagePath}'."
+                    $"Unsupported image reference kind '{imageRef.Kind}' for local image at path '{localImagePath}'."
                 );
         }
 
@@ -476,12 +482,18 @@ public class LinuxContainerDetector(
                 $"{hostPathToBind}:{LocalImageMountPoint}:ro",
             };
 
-            var syftOutput = await this.linuxScanner.GetSyftOutputAsync(
-                syftContainerPath,
-                additionalBinds,
-                scannerScope,
-                cancellationToken
-            );
+            var syftOutput = imageRef.Platform == null
+                ? await this.linuxScanner.GetSyftOutputAsync(
+                    syftContainerPath,
+                    additionalBinds,
+                    scannerScope,
+                    cancellationToken)
+                : await this.linuxScanner.GetSyftOutputAsync(
+                    syftContainerPath,
+                    additionalBinds,
+                    scannerScope,
+                    imageRef.Platform,
+                    cancellationToken);
 
             SyftSourceMetadata? sourceMetadata = null;
             try
@@ -509,7 +521,7 @@ public class LinuxContainerDetector(
             var containerDetails = this.dockerService.GetEmptyContainerDetails();
             containerDetails.ImageId = !string.IsNullOrWhiteSpace(sourceMetadata?.ImageId)
                 ? sourceMetadata.ImageId
-                : localImagePath;
+                : imageRef.Platform == null ? localImagePath : imageRef.OriginalInput;
             containerDetails.Digests = sourceMetadata?.RepoDigests ?? [];
             containerDetails.Tags = sourceMetadata?.Tags ?? [];
             containerDetails.Layers = sourceMetadata?.Layers?
@@ -531,7 +543,7 @@ public class LinuxContainerDetector(
             // Determine base image layer count using existing logic
             var baseImageLayerCount = await this.GetBaseImageLayerCountAsync(
                 containerDetails,
-                localImagePath,
+                imageRef.OriginalInput,
                 cancellationToken
             );
 
@@ -563,14 +575,14 @@ public class LinuxContainerDetector(
         {
             this.logger.LogWarning(
                 e,
-                "Processing of local image at {LocalImagePath} failed",
-                localImagePath
+                "Processing of local image {LocalImageReference} failed",
+                imageRef.OriginalInput
             );
-            RecordImageDetectionFailure(e, localImagePath);
+            RecordImageDetectionFailure(e, imageRef.OriginalInput);
 
             var singleFileComponentRecorder =
-                componentRecorder.CreateSingleFileComponentRecorder(localImagePath);
-            singleFileComponentRecorder.RegisterPackageParseFailure(localImagePath);
+                componentRecorder.CreateSingleFileComponentRecorder(imageRef.OriginalInput);
+            singleFileComponentRecorder.RegisterPackageParseFailure(imageRef.OriginalInput);
         }
 
         return EmptyImageScanningResult();

@@ -976,6 +976,39 @@ public class LinuxScannerTests
     }
 
     [TestMethod]
+    public async Task TestLinuxScanner_GetSyftOutputAsync_PassesPlatformAsync()
+    {
+        this.mockDockerService.Setup(service =>
+                service.CreateAndRunContainerAsync(
+                    It.IsAny<string>(),
+                    It.IsAny<List<string>>(),
+                    It.IsAny<IList<string>>(),
+                    It.IsAny<CancellationToken>()
+                )
+            )
+            .ReturnsAsync(("{\"artifacts\":[]}", string.Empty));
+
+        await this.linuxScanner.GetSyftOutputAsync(
+            "oci-dir:/oci-image",
+            ["/host/image:/oci-image:ro"],
+            LinuxScannerScope.AllLayers,
+            "linux/arm64"
+        );
+
+        this.mockDockerService.Verify(
+            service => service.CreateAndRunContainerAsync(
+                    It.IsAny<string>(),
+                    It.Is<List<string>>(command =>
+                        command.Contains("--platform")
+                        && command.IndexOf("--platform") + 1 < command.Count
+                        && command[command.IndexOf("--platform") + 1] == "linux/arm64"),
+                    It.IsAny<IList<string>>(),
+                    It.IsAny<CancellationToken>()
+                ),
+            Times.Once);
+    }
+
+    [TestMethod]
     public void TestLinuxScanner_ProcessSyftOutput_ReturnsComponentsWithoutLayerInfoWhenNoContainerLayers()
     {
         var syftOutputJson = """
@@ -1319,6 +1352,47 @@ public class LinuxScannerTests
                 ),
             Times.Once
         );
+    }
+
+    [TestMethod]
+    public async Task TestLinuxScanner_SyftCacheKey_DifferentPlatformsRunSeparatelyAsync()
+    {
+        LinuxScanner.ResetCache();
+
+        const string syftOutput = "{\"artifacts\":[]}";
+        var syftTcs = new TaskCompletionSource<(string, string)>();
+        this.mockDockerService.Setup(service =>
+                service.CreateAndRunContainerAsync(
+                    It.IsAny<string>(),
+                    It.IsAny<List<string>>(),
+                    It.IsAny<IList<string>>(),
+                    It.IsAny<CancellationToken>()
+                )
+            )
+            .Returns(syftTcs.Task);
+
+        var task1 = this.linuxScanner.GetSyftOutputAsync(
+            "oci-dir:/img",
+            ["/host/image:/img:ro"],
+            LinuxScannerScope.AllLayers,
+            "linux/amd64");
+        var task2 = this.linuxScanner.GetSyftOutputAsync(
+            "oci-dir:/img",
+            ["/host/image:/img:ro"],
+            LinuxScannerScope.AllLayers,
+            "linux/arm64");
+
+        syftTcs.SetResult((syftOutput, string.Empty));
+        await Task.WhenAll(task1, task2);
+
+        this.mockDockerService.Verify(
+            service => service.CreateAndRunContainerAsync(
+                    It.IsAny<string>(),
+                    It.IsAny<List<string>>(),
+                    It.IsAny<IList<string>>(),
+                    It.IsAny<CancellationToken>()
+                ),
+            Times.Exactly(2));
     }
 
     [TestMethod]

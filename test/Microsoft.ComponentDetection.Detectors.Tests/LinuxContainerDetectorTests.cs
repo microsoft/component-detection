@@ -1246,6 +1246,141 @@ public class LinuxContainerDetectorTests
     }
 
     [TestMethod]
+    public async Task TestLinuxContainerDetector_SameArchiveWithDifferentPlatforms_ScansBothAsync()
+    {
+        var archivePath = Path.Combine(
+            Path.GetTempPath(),
+            $"test-platform-archive-{Guid.NewGuid():N}.tar");
+        await System.IO.File.WriteAllBytesAsync(archivePath, []);
+
+        try
+        {
+            var syftOutput = SyftOutput.FromJson("{\"artifacts\":[]}");
+            this.mockSyftLinuxScanner.Setup(scanner =>
+                    scanner.GetSyftOutputAsync(
+                        It.IsAny<string>(),
+                        It.IsAny<IList<string>>(),
+                        It.IsAny<LinuxScannerScope>(),
+                        It.IsAny<string>(),
+                        It.IsAny<CancellationToken>()
+                    )
+                )
+                .ReturnsAsync(syftOutput);
+            this.mockSyftLinuxScanner.Setup(scanner =>
+                    scanner.ProcessSyftOutput(
+                        It.IsAny<SyftOutput>(),
+                        It.IsAny<IEnumerable<DockerLayer>>(),
+                        It.IsAny<ISet<ComponentType>>()
+                    )
+                )
+                .Returns([]);
+
+            var scanRequest = new ScanRequest(
+                new DirectoryInfo(Path.GetTempPath()),
+                (_, __) => false,
+                this.mockLogger.Object,
+                null,
+                [
+                    $"oci-archive:{archivePath}?platform=linux/amd64",
+                    $"oci-archive:{archivePath}?platform=linux/arm64",
+                ],
+                new ComponentRecorder()
+            );
+            var detector = new LinuxContainerDetector(
+                this.mockSyftLinuxScanner.Object,
+                this.mockDockerService.Object,
+                this.mockLinuxContainerDetectorLogger.Object
+            );
+
+            var scanResult = await detector.ExecuteDetectorAsync(scanRequest);
+
+            scanResult.ContainerDetails.Should().HaveCount(2);
+            this.mockSyftLinuxScanner.Verify(
+                scanner => scanner.GetSyftOutputAsync(
+                        It.IsAny<string>(),
+                        It.IsAny<IList<string>>(),
+                        It.IsAny<LinuxScannerScope>(),
+                        "linux/amd64",
+                        It.IsAny<CancellationToken>()),
+                Times.Once);
+            this.mockSyftLinuxScanner.Verify(
+                scanner => scanner.GetSyftOutputAsync(
+                        It.IsAny<string>(),
+                        It.IsAny<IList<string>>(),
+                        It.IsAny<LinuxScannerScope>(),
+                        "linux/arm64",
+                        It.IsAny<CancellationToken>()),
+                Times.Once);
+        }
+        finally
+        {
+            System.IO.File.Delete(archivePath);
+        }
+    }
+
+    [TestMethod]
+    public async Task TestLinuxContainerDetector_DuplicateArchivePlatform_ScansOnceAsync()
+    {
+        var archivePath = Path.Combine(
+            Path.GetTempPath(),
+            $"test-platform-archive-{Guid.NewGuid():N}.tar");
+        await System.IO.File.WriteAllBytesAsync(archivePath, []);
+
+        try
+        {
+            this.mockSyftLinuxScanner.Setup(scanner =>
+                    scanner.GetSyftOutputAsync(
+                        It.IsAny<string>(),
+                        It.IsAny<IList<string>>(),
+                        It.IsAny<LinuxScannerScope>(),
+                        It.IsAny<string>(),
+                        It.IsAny<CancellationToken>()
+                    )
+                )
+                .ReturnsAsync(SyftOutput.FromJson("{\"artifacts\":[]}"));
+            this.mockSyftLinuxScanner.Setup(scanner =>
+                    scanner.ProcessSyftOutput(
+                        It.IsAny<SyftOutput>(),
+                        It.IsAny<IEnumerable<DockerLayer>>(),
+                        It.IsAny<ISet<ComponentType>>()
+                    )
+                )
+                .Returns([]);
+
+            var imageReference = $"oci-archive:{archivePath}?platform=linux/arm64";
+            var scanRequest = new ScanRequest(
+                new DirectoryInfo(Path.GetTempPath()),
+                (_, __) => false,
+                this.mockLogger.Object,
+                null,
+                [imageReference, imageReference],
+                new ComponentRecorder()
+            );
+            var detector = new LinuxContainerDetector(
+                this.mockSyftLinuxScanner.Object,
+                this.mockDockerService.Object,
+                this.mockLinuxContainerDetectorLogger.Object
+            );
+
+            var scanResult = await detector.ExecuteDetectorAsync(scanRequest);
+
+            scanResult.ContainerDetails.Should().ContainSingle();
+            this.mockSyftLinuxScanner.Verify(
+                scanner => scanner.GetSyftOutputAsync(
+                        It.IsAny<string>(),
+                        It.IsAny<IList<string>>(),
+                        It.IsAny<LinuxScannerScope>(),
+                        "linux/arm64",
+                        It.IsAny<CancellationToken>()),
+                Times.Once);
+        }
+        finally
+        {
+            System.IO.File.Delete(archivePath);
+        }
+    }
+
+    [TestMethod]
     public async Task TestLinuxContainerDetector_ImageParseFailure_ContinuesScanningOtherImagesAsync()
     {
         var componentRecorder = new ComponentRecorder();

@@ -22,7 +22,7 @@ using Microsoft.Extensions.Logging;
 internal class LinuxScanner : ILinuxScanner
 {
     private const string ScannerImage =
-        "governancecontainerregistry.azurecr.io/syft:v1.37.0@sha256:48d679480c6d272c1801cf30460556959c01d4826795be31d4fd8b53750b7d91";
+        "governancecontainerregistry.azurecr.io/syft:v1.37.0@sha256:13b53ebabe3d215268c90cf8fb9b875f0183908245f376fd4b3a2cb69d21d484";
 
     private static readonly IList<string> CmdParameters = ["--quiet", "--output", "json"];
 
@@ -52,7 +52,7 @@ internal class LinuxScanner : ILinuxScanner
     /// When multiple detectors scan the same image concurrently, the second
     /// caller awaits the already-running task instead of launching a new container.
     /// </summary>
-    private static readonly ConcurrentDictionary<(string Source, LinuxScannerScope Scope, string Binds), Task<string>> SyftRunCache = new();
+    private static readonly ConcurrentDictionary<(string Source, LinuxScannerScope Scope, string Binds, string Platform), Task<string>> SyftRunCache = new();
 
     private static readonly int SemaphoreTimeout = Convert.ToInt32(
         TimeSpan.FromHours(1).TotalMilliseconds
@@ -116,7 +116,7 @@ internal class LinuxScanner : ILinuxScanner
             ScannerVersion = ScannerImage,
         };
         using var syftTelemetryRecord = new LinuxScannerSyftTelemetryRecord();
-        var stdout = await this.RunSyftAsync(imageHash, scope, additionalBinds: [], record, syftTelemetryRecord, cancellationToken);
+        var stdout = await this.RunSyftAsync(imageHash, scope, additionalBinds: [], platform: null, record, syftTelemetryRecord, cancellationToken);
 
         try
         {
@@ -137,6 +137,15 @@ internal class LinuxScanner : ILinuxScanner
         IList<string> additionalBinds,
         LinuxScannerScope scope,
         CancellationToken cancellationToken = default
+    ) => await this.GetSyftOutputAsync(syftSource, additionalBinds, scope, platform: null, cancellationToken);
+
+    /// <inheritdoc/>
+    public async Task<SyftOutput> GetSyftOutputAsync(
+        string syftSource,
+        IList<string> additionalBinds,
+        LinuxScannerScope scope,
+        string? platform,
+        CancellationToken cancellationToken = default
     )
     {
         using var record = new LinuxScannerTelemetryRecord
@@ -145,7 +154,7 @@ internal class LinuxScanner : ILinuxScanner
             ScannerVersion = ScannerImage,
         };
         using var syftTelemetryRecord = new LinuxScannerSyftTelemetryRecord();
-        var stdout = await this.RunSyftAsync(syftSource, scope, additionalBinds, record, syftTelemetryRecord, cancellationToken);
+        var stdout = await this.RunSyftAsync(syftSource, scope, additionalBinds, platform, record, syftTelemetryRecord, cancellationToken);
         try
         {
             return SyftOutput.FromJson(stdout);
@@ -287,12 +296,13 @@ internal class LinuxScanner : ILinuxScanner
         string syftSource,
         LinuxScannerScope scope,
         IList<string> additionalBinds,
+        string? platform,
         LinuxScannerTelemetryRecord record,
         LinuxScannerSyftTelemetryRecord syftTelemetryRecord,
         CancellationToken cancellationToken)
     {
         var bindsKey = string.Join(";", (additionalBinds ?? []).OrderBy(b => b, StringComparer.Ordinal));
-        var cacheKey = (syftSource, scope, bindsKey);
+        var cacheKey = (syftSource, scope, bindsKey, platform ?? string.Empty);
         var tcs = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
         var existingTask = SyftRunCache.GetOrAdd(cacheKey, tcs.Task);
 
@@ -307,7 +317,7 @@ internal class LinuxScanner : ILinuxScanner
         // We own this cache entry — run syft and propagate the result.
         try
         {
-            var result = await this.RunSyftCoreAsync(syftSource, scope, additionalBinds ?? [], record, syftTelemetryRecord, cancellationToken);
+            var result = await this.RunSyftCoreAsync(syftSource, scope, additionalBinds ?? [], platform, record, syftTelemetryRecord, cancellationToken);
             tcs.SetResult(result);
             return result;
         }
@@ -332,6 +342,7 @@ internal class LinuxScanner : ILinuxScanner
         string syftSource,
         LinuxScannerScope scope,
         IList<string> additionalBinds,
+        string? platform,
         LinuxScannerTelemetryRecord record,
         LinuxScannerSyftTelemetryRecord syftTelemetryRecord,
         CancellationToken cancellationToken)
@@ -360,6 +371,7 @@ internal class LinuxScanner : ILinuxScanner
                     var command = new List<string> { syftSource }
                         .Concat(CmdParameters)
                         .Concat(scopeParameters)
+                        .Concat(platform == null ? [] : new[] { "--platform", platform })
                         .ToList();
                     (stdout, stderr) = await this.dockerService.CreateAndRunContainerAsync(
                         ScannerImage,
