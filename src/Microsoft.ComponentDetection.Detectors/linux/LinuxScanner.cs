@@ -22,7 +22,7 @@ using Microsoft.Extensions.Logging;
 internal class LinuxScanner : ILinuxScanner
 {
     private const string ScannerImage =
-        "governancecontainerregistry.azurecr.io/syft:v1.37.0@sha256:13b53ebabe3d215268c90cf8fb9b875f0183908245f376fd4b3a2cb69d21d484";
+        "governancecontainerregistry.azurecr.io/syft:v1.49.0@sha256:13b53ebabe3d215268c90cf8fb9b875f0183908245f376fd4b3a2cb69d21d484";
 
     private static readonly IList<string> CmdParameters = ["--quiet", "--output", "json"];
 
@@ -444,7 +444,7 @@ internal class LinuxScanner : ILinuxScanner
         // Collect layer IDs from the artifact's locations, filtering out entries with null/empty layer IDs.
         var locationLayerIds = artifact.Locations?
             .Where(location => !string.IsNullOrEmpty(location.Path) && !string.IsNullOrEmpty(location.LayerId))
-            .Select(location => (location.Path, location.LayerId))
+            .Select(location => (location.Path, LayerId: location.LayerId!))
             .ToList() ?? [];
 
         // Also consult the metadata files property to find additional owned files,
@@ -495,7 +495,7 @@ internal class LinuxScanner : ILinuxScanner
     /// owned by a package even when the artifact's locations only reference the
     /// package manager database.
     /// </summary>
-    private static Dictionary<string, string> BuildFilePathToLayerMap(FileElement[] files)
+    private static Dictionary<string, string> BuildFilePathToLayerMap(SyftOutputFile[]? files)
     {
         var map = new Dictionary<string, string>(StringComparer.Ordinal);
         if (files == null)
