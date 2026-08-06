@@ -53,7 +53,7 @@ public class LinuxContainerDetector(
     public IEnumerable<ComponentType> SupportedComponentTypes => [ComponentType.Linux];
 
     /// <inheritdoc/>
-    public int Version => 8;
+    public int Version => 9;
 
     /// <inheritdoc/>
     public bool NeedsAutomaticRootDependencyCalculation => false;
