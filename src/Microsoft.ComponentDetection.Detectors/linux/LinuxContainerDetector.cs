@@ -482,18 +482,12 @@ public class LinuxContainerDetector(
                 $"{hostPathToBind}:{LocalImageMountPoint}:ro",
             };
 
-            var syftOutput = imageRef.Platform == null
-                ? await this.linuxScanner.GetSyftOutputAsync(
-                    syftContainerPath,
-                    additionalBinds,
-                    scannerScope,
-                    cancellationToken)
-                : await this.linuxScanner.GetSyftOutputAsync(
-                    syftContainerPath,
-                    additionalBinds,
-                    scannerScope,
-                    imageRef.Platform,
-                    cancellationToken);
+            var syftOutput = await this.linuxScanner.GetSyftOutputAsync(
+                syftContainerPath,
+                additionalBinds,
+                scannerScope,
+                imageRef.Platform,
+                cancellationToken);
 
             SyftSourceMetadata? sourceMetadata = null;
             try

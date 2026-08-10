@@ -432,6 +432,7 @@ public class LinuxContainerDetectorTests
                         It.IsAny<string>(),
                         It.IsAny<IList<string>>(),
                         It.IsAny<LinuxScannerScope>(),
+                        null,
                         It.IsAny<CancellationToken>()
                     )
                 )
@@ -488,6 +489,7 @@ public class LinuxContainerDetectorTests
                         It.Is<IList<string>>(binds =>
                             binds.Count == 1 && binds[0].Contains(ociDir)),
                         It.IsAny<LinuxScannerScope>(),
+                        null,
                         It.IsAny<CancellationToken>()
                     ),
                 Times.Once
@@ -566,6 +568,7 @@ public class LinuxContainerDetectorTests
                         It.IsAny<string>(),
                         It.IsAny<IList<string>>(),
                         It.IsAny<LinuxScannerScope>(),
+                        null,
                         It.IsAny<CancellationToken>()
                     )
                 )
@@ -596,6 +599,7 @@ public class LinuxContainerDetectorTests
                         It.Is<IList<string>>(binds =>
                             binds.Count == 1 && binds[0].Contains(ociDir)),
                         It.IsAny<LinuxScannerScope>(),
+                        null,
                         It.IsAny<CancellationToken>()
                     ),
                 Times.Once
@@ -654,6 +658,7 @@ public class LinuxContainerDetectorTests
                         It.IsAny<string>(),
                         It.IsAny<IList<string>>(),
                         It.IsAny<LinuxScannerScope>(),
+                        null,
                         It.IsAny<CancellationToken>()
                     )
                 )
@@ -683,6 +688,7 @@ public class LinuxContainerDetectorTests
                         It.Is<IList<string>>(binds =>
                             binds.Count == 1 && binds[0].Contains(ociDir) && !binds[0].Contains(ociDirWithExtraComponents)),
                         It.IsAny<LinuxScannerScope>(),
+                        null,
                         It.IsAny<CancellationToken>()
                     ),
                 Times.Once
@@ -742,6 +748,7 @@ public class LinuxContainerDetectorTests
                         It.IsAny<string>(),
                         It.IsAny<IList<string>>(),
                         It.IsAny<LinuxScannerScope>(),
+                        null,
                         It.IsAny<CancellationToken>()
                     )
                 )
@@ -827,6 +834,7 @@ public class LinuxContainerDetectorTests
                         It.IsAny<string>(),
                         It.IsAny<IList<string>>(),
                         It.IsAny<LinuxScannerScope>(),
+                        null,
                         It.IsAny<CancellationToken>()
                     )
                 )
@@ -940,6 +948,7 @@ public class LinuxContainerDetectorTests
                         It.IsAny<string>(),
                         It.IsAny<IList<string>>(),
                         It.IsAny<LinuxScannerScope>(),
+                        null,
                         It.IsAny<CancellationToken>()
                     )
                 )
@@ -1048,6 +1057,7 @@ public class LinuxContainerDetectorTests
                         It.IsAny<string>(),
                         It.IsAny<IList<string>>(),
                         It.IsAny<LinuxScannerScope>(),
+                        null,
                         It.IsAny<CancellationToken>()
                     )
                 )
@@ -1102,6 +1112,7 @@ public class LinuxContainerDetectorTests
                         It.Is<IList<string>>(binds =>
                             binds.Count == 1 && binds[0].Contains(ociArchiveDir)),
                         It.IsAny<LinuxScannerScope>(),
+                        null,
                         It.IsAny<CancellationToken>()
                     ),
                 Times.Once
@@ -1180,6 +1191,7 @@ public class LinuxContainerDetectorTests
                         It.IsAny<string>(),
                         It.IsAny<IList<string>>(),
                         It.IsAny<LinuxScannerScope>(),
+                        null,
                         It.IsAny<CancellationToken>()
                     )
                 )
@@ -1234,6 +1246,7 @@ public class LinuxContainerDetectorTests
                         It.Is<IList<string>>(binds =>
                             binds.Count == 1 && binds[0].Contains(dockerArchiveDir)),
                         It.IsAny<LinuxScannerScope>(),
+                        null,
                         It.IsAny<CancellationToken>()
                     ),
                 Times.Once
