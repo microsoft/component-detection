@@ -104,6 +104,46 @@ package:
         detectedComponents.Should().HaveCount(4);
     }
 
+    [TestMethod]
+    public async Task CondaComponentDetector_CircularDependenciesAsync()
+    {
+        var condaLockContent =
+@"version: 1
+package:
+- name: alpha
+  version: 1.0.0
+  manager: conda
+  platform: linux-64
+  dependencies:
+    beta: '>=1.0.0'
+  category: main
+  optional: false
+- name: beta
+  version: 1.0.0
+  manager: conda
+  platform: linux-64
+  dependencies:
+    alpha: '>=1.0.0'
+  category: main
+  optional: false
+";
+
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
+            .WithFile("conda-lock.yml", condaLockContent)
+            .ExecuteDetectorAsync();
+
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+
+        var detectedComponents = componentRecorder.GetDetectedComponents();
+        var alpha = detectedComponents.Single(component => component.Component is CondaComponent condaComponent && condaComponent.Name == "alpha");
+        var beta = detectedComponents.Single(component => component.Component is CondaComponent condaComponent && condaComponent.Name == "beta");
+        var dependencyGraph = componentRecorder.GetDependencyGraphsByLocation().Values.Single();
+
+        detectedComponents.Should().HaveCount(2);
+        dependencyGraph.GetDependenciesForComponent(alpha.Component.Id).Should().ContainSingle(beta.Component.Id);
+        dependencyGraph.GetDependenciesForComponent(beta.Component.Id).Should().ContainSingle(alpha.Component.Id);
+    }
+
     private void AssertCondaLockComponentNameAndVersion(IEnumerable<DetectedComponent> detectedComponents, string name, string version)
     {
         detectedComponents.SingleOrDefault(c =>
