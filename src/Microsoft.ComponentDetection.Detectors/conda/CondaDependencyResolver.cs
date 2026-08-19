@@ -18,7 +18,7 @@ public static class CondaDependencyResolver
     /// <param name="condaLock">The full condaLock object.</param>
     /// <param name="singleFileComponentRecorder">The SingleFileComponentRecorder.</param>
     public static void RecordDependencyGraphFromFile(CondaLock condaLock, ISingleFileComponentRecorder singleFileComponentRecorder)
-        => GetPackages(condaLock).ForEach(package => RegisterPackageWithDependencies(package, null, condaLock, singleFileComponentRecorder));
+        => GetPackages(condaLock).ForEach(package => RegisterPackageWithDependencies(package, null, condaLock, singleFileComponentRecorder, []));
 
     /// <summary>
     /// Updates all registered packages that don't have any ancestors.
@@ -60,7 +60,8 @@ public static class CondaDependencyResolver
     /// <param name="parentId">The id of the parent package.</param>
     /// <param name="condaLock">The full condaLock object.</param>
     /// <param name="singleFileComponentRecorder">The SingleFileComponentRecorder.</param>
-    private static void RegisterPackageWithDependencies(CondaPackage package, string parentId, CondaLock condaLock, ISingleFileComponentRecorder singleFileComponentRecorder)
+    /// <param name="currentPath">The component ids in the current dependency path.</param>
+    private static void RegisterPackageWithDependencies(CondaPackage package, string parentId, CondaLock condaLock, ISingleFileComponentRecorder singleFileComponentRecorder, HashSet<string> currentPath)
     {
         if (package == null)
         {
@@ -72,13 +73,22 @@ public static class CondaDependencyResolver
         //// Register the package itself.
         RegisterPackage(component, parentId, false, singleFileComponentRecorder);
 
+        //// Conda lockfiles can contain dependency cycles; retain the edge above but do not traverse the same path indefinitely.
+        if (!currentPath.Add(component.Id))
+        {
+            return;
+        }
+
         //// Register all dependencies of the package.
         package.Dependencies.Keys.ToList().ForEach(dependency =>
             RegisterPackageWithDependencies(
                 condaLock?.Package.FirstOrDefault(condaPackage => condaPackage.Name == dependency && condaPackage.Platform == package.Platform),
                 component.Id,
                 condaLock,
-                singleFileComponentRecorder));
+                singleFileComponentRecorder,
+                currentPath));
+
+        currentPath.Remove(component.Id);
     }
 
     /// <summary>
