@@ -23,34 +23,48 @@ public class DockerServiceTests
 
     public DockerServiceTests() => this.dockerService = new DockerService(this.loggerMock.Object);
 
-    [TestMethod]
-    [OSCondition(ConditionMode.Exclude, OperatingSystems.Windows)]
-    public async Task DockerService_CanPingDockerAsync()
+    /// <summary>
+    /// Skip the test if docker is not running.
+    /// </summary>
+    private async Task SkipIfDockerNotRunningAsync()
     {
-        var canPingDocker = await this.dockerService.CanPingDockerAsync();
-        canPingDocker.Should().BeTrue();
+        var isDockerRunning = await this.dockerService.CanPingDockerAsync();
+        if (!isDockerRunning)
+        {
+            Assert.Inconclusive("docker is not running");
+        }
     }
 
     [TestMethod]
-    [OSCondition(ConditionMode.Exclude, OperatingSystems.Windows)]
+    public async Task DockerService_CanPingDockerAsync_DoesNotThrow()
+    {
+        // CanPingDockerAsync should return true or false, regardless of Operating System
+        await this.dockerService.CanPingDockerAsync();
+    }
+
+    [TestMethod]
     public async Task DockerService_CanRunLinuxContainersAsync()
     {
+        await this.SkipIfDockerNotRunningAsync();
+
         var isLinuxContainerModeEnabled = await this.dockerService.CanRunLinuxContainersAsync();
         isLinuxContainerModeEnabled.Should().BeTrue();
     }
 
     [TestMethod]
-    [OSCondition(ConditionMode.Exclude, OperatingSystems.Windows)]
     public async Task DockerService_CanPullImageAsync()
     {
-        Func<Task> action = async () => await this.dockerService.TryPullImageAsync(TestImage);
-        await action.Should().NotThrowAsync();
+        await this.SkipIfDockerNotRunningAsync();
+
+        var isImagePulled = await this.dockerService.TryPullImageAsync(TestImage);
+        isImagePulled.Should().BeTrue();
     }
 
     [TestMethod]
-    [OSCondition(ConditionMode.Exclude, OperatingSystems.Windows)]
     public async Task DockerService_CanInspectImageAsync()
     {
+        await this.SkipIfDockerNotRunningAsync();
+
         await this.dockerService.TryPullImageAsync(TestImage);
         var details = await this.dockerService.InspectImageAsync(TestImage);
         details.Should().NotBeNull();
@@ -58,9 +72,10 @@ public class DockerServiceTests
     }
 
     [TestMethod]
-    [OSCondition(ConditionMode.Exclude, OperatingSystems.Windows)]
     public async Task DockerService_PopulatesBaseImageAndLayerDetailsAsync()
     {
+        await this.SkipIfDockerNotRunningAsync();
+
         await this.dockerService.TryPullImageAsync(TestImageWithBaseDetails);
         var details = await this.dockerService.InspectImageAsync(TestImageWithBaseDetails);
 
@@ -84,9 +99,10 @@ public class DockerServiceTests
     }
 
     [TestMethod]
-    [OSCondition(ConditionMode.Exclude, OperatingSystems.Windows)]
     public async Task DockerService_CanCreateAndRunImageAsync()
     {
+        await this.SkipIfDockerNotRunningAsync();
+
         var (stdout, stderr) = await this.dockerService.CreateAndRunContainerAsync(TestImage, []);
         stdout.Should().StartWith("\nHello from Docker!");
         stderr.Should().BeEmpty();
