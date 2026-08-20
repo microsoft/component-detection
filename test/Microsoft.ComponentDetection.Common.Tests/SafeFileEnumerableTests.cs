@@ -88,6 +88,7 @@ public class SafeFileEnumerableTests
         filesFound.Should().Be(1);
     }
 
+    [TestMethod]
     [OSCondition(ConditionMode.Exclude, OperatingSystems.Windows)]
     public void GetEnumerator_CallsSymlinkCode()
     {
@@ -109,6 +110,7 @@ public class SafeFileEnumerableTests
         this.pathUtilityServiceMock.Verify(x => x.ResolvePhysicalPath(subDir.FullName), Times.AtLeastOnce);
     }
 
+    [TestMethod]
     [OSCondition(ConditionMode.Exclude, OperatingSystems.Windows)]
     public void GetEnumerator_DuplicatePathIgnored()
     {
