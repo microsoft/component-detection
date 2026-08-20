@@ -23,7 +23,8 @@ public class DockerServiceTests
 
     public DockerServiceTests() => this.dockerService = new DockerService(this.loggerMock.Object);
 
-    [SkipTestOnWindows]
+    [TestMethod]
+    [OSCondition(ConditionMode.Exclude, OperatingSystems.Windows)]
     public async Task DockerService_CanPingDockerAsync()
     {
         var canPingDocker = await this.dockerService.CanPingDockerAsync();
