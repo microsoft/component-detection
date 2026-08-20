@@ -1,3 +1,4 @@
+#nullable disable
 namespace Microsoft.ComponentDetection.Detectors.Conan.Contracts;
 
 using System;
@@ -5,7 +6,7 @@ using System.Linq;
 using System.Text.Json.Serialization;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 
-public class ConanLockNode
+internal class ConanLockNode
 {
     [JsonPropertyName("context")]
     public string Context { get; set; }

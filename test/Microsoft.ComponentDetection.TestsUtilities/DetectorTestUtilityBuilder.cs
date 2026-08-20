@@ -1,3 +1,4 @@
+#nullable disable
 namespace Microsoft.ComponentDetection.TestsUtilities;
 
 using System;
@@ -124,9 +125,7 @@ public class DetectorTestUtilityBuilder<T>
 
     private static string FindMatchingPattern(string fileName, IEnumerable<string> searchPatterns)
     {
-        var foundPattern = searchPatterns.FirstOrDefault(searchPattern => new PathUtilityService(null).MatchesPattern(searchPattern, fileName));
-
-        return foundPattern ?? fileName;
+        return PatternMatchingUtility.GetMatchingPattern(fileName, searchPatterns) ?? fileName;
     }
 
     private ProcessRequest CreateProcessRequest(string pattern, string filePath, Stream content) =>

@@ -1,3 +1,4 @@
+#nullable disable
 namespace Microsoft.ComponentDetection.Detectors.NuGet;
 
 using static global::NuGet.Frameworks.FrameworkConstants.CommonFrameworks;
@@ -96,7 +97,7 @@ internal partial class FrameworkPackages
             { "System.Threading.Thread", "4.3.0" },
             { "System.Threading.ThreadPool", "4.3.0" },
             { "System.Threading.Timer", "4.3.0" },
-            { "System.ValueTuple", "4.4.0" },
+            { "System.ValueTuple", "4.6.1" },
             { "System.Xml.ReaderWriter", "4.3.1" },
             { "System.Xml.XDocument", "4.0.11" },
             { "System.Xml.XmlDocument", "4.3.0" },

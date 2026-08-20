@@ -1,3 +1,4 @@
+#nullable disable
 namespace Microsoft.ComponentDetection.Detectors.Pnpm;
 
 using System.Collections.Generic;
@@ -8,7 +9,7 @@ using YamlDotNet.Serialization;
 /// Issue tracking v9 specs: https://github.com/pnpm/spec/issues/6
 /// Format should eventually get updated here: https://github.com/pnpm/spec/blob/master/lockfile/6.0.md.
 /// </summary>
-public class PnpmYamlV9 : PnpmHasDependenciesV9
+internal class PnpmYamlV9 : PnpmHasDependenciesV9
 {
     [YamlMember(Alias = "importers")]
     public Dictionary<string, PnpmHasDependenciesV9> Importers { get; set; }

@@ -1,11 +1,13 @@
+#nullable disable
 namespace Microsoft.ComponentDetection.Contracts.TypedComponent;
 
+using System.Text.Json.Serialization;
 using Microsoft.ComponentDetection.Contracts.Internal;
 using PackageUrl;
 
 public class NpmComponent : TypedComponent
 {
-    private NpmComponent()
+    public NpmComponent()
     {
         /* Reserved for deserialization */
     }
@@ -18,17 +20,23 @@ public class NpmComponent : TypedComponent
         this.Author = author;
     }
 
+    [JsonPropertyName("name")]
     public string Name { get; set; }
 
+    [JsonPropertyName("version")]
     public string Version { get; set; }
 
+    [JsonPropertyName("hash")]
     public string Hash { get; set; }
 
+    [JsonPropertyName("author")]
     public NpmAuthor Author { get; set; }
 
+    [JsonIgnore]
     public override ComponentType Type => ComponentType.Npm;
 
+    [JsonPropertyName("packageUrl")]
     public override PackageURL PackageUrl => new PackageURL("npm", null, this.Name, this.Version, null, null);
 
-    protected override string ComputeId() => $"{this.Name} {this.Version} - {this.Type}";
+    protected override string ComputeBaseId() => $"{this.Name} {this.Version} - {this.Type}";
 }

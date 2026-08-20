@@ -2,8 +2,8 @@ name: "Detector version bump reminder"
 on:
   push:
     paths:
-      - 'src/Microsoft.ComponentDetection.Detectors/**'
-      
+      - "src/Microsoft.ComponentDetection.Detectors/**"
+
 permissions:
   pull-requests: write
 
@@ -11,7 +11,12 @@ jobs:
   comment:
     runs-on: ubuntu-latest
     steps:
-      - uses: mshick/add-pr-comment@b8f338c590a895d50bcbfa6c5859251edc8952fc # v2
+      - name: Harden Runner
+        uses: step-security/harden-runner@fa2e9d605c4eeb9fcad4c99c224cee0c6c7f3594 # v2.16.0
+        with:
+          egress-policy: audit
+
+      - uses: mshick/add-pr-comment@ffd016c7e151d97d69d21a843022fd4cd5b96fe5 # v3.9.0
         with:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
           message: |
@@ -20,5 +25,5 @@ jobs:
             * The detector detects more or fewer components than before
             * The detector generates different parent/child graph relationships than before
             * The detector generates different `devDependencies` values than before
-            
+
             If none of the above scenarios apply, feel free to ignore this comment 🙂

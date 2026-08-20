@@ -1,12 +1,14 @@
+#nullable disable
 namespace Microsoft.ComponentDetection.Detectors.Tests;
 
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
-using FluentAssertions;
+using AwesomeAssertions;
 using Microsoft.ComponentDetection.Common;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
@@ -17,7 +19,6 @@ using Microsoft.ComponentDetection.TestsUtilities;
 using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
-using Newtonsoft.Json;
 
 [TestClass]
 public class PipReportComponentDetectorTests : BaseDetectorTest<PipReportComponentDetector>
@@ -63,12 +64,12 @@ public class PipReportComponentDetectorTests : BaseDetectorTest<PipReportCompone
         this.pipCommandService.Setup(x => x.GetPipVersionAsync(It.IsAny<string>(), It.IsAny<string>()))
             .ReturnsAsync(new Version(23, 0, 0));
 
-        this.singlePackageReport = JsonConvert.DeserializeObject<PipInstallationReport>(TestResources.pip_report_single_pkg);
-        this.singlePackageReportBadVersion = JsonConvert.DeserializeObject<PipInstallationReport>(TestResources.pip_report_single_pkg_bad_version);
-        this.singlePackageReportInvalidPkgVersion = JsonConvert.DeserializeObject<PipInstallationReport>(TestResources.pip_report_single_pkg_invalid_pkg_version);
-        this.multiPackageReport = JsonConvert.DeserializeObject<PipInstallationReport>(TestResources.pip_report_multi_pkg);
-        this.jupyterPackageReport = JsonConvert.DeserializeObject<PipInstallationReport>(TestResources.pip_report_jupyterlab);
-        this.simpleExtrasReport = JsonConvert.DeserializeObject<PipInstallationReport>(TestResources.pip_report_simple_extras);
+        this.singlePackageReport = JsonSerializer.Deserialize<PipInstallationReport>(TestResources.pip_report_single_pkg);
+        this.singlePackageReportBadVersion = JsonSerializer.Deserialize<PipInstallationReport>(TestResources.pip_report_single_pkg_bad_version);
+        this.singlePackageReportInvalidPkgVersion = JsonSerializer.Deserialize<PipInstallationReport>(TestResources.pip_report_single_pkg_invalid_pkg_version);
+        this.multiPackageReport = JsonSerializer.Deserialize<PipInstallationReport>(TestResources.pip_report_multi_pkg);
+        this.jupyterPackageReport = JsonSerializer.Deserialize<PipInstallationReport>(TestResources.pip_report_jupyterlab);
+        this.simpleExtrasReport = JsonSerializer.Deserialize<PipInstallationReport>(TestResources.pip_report_simple_extras);
     }
 
     [TestMethod]
@@ -551,6 +552,13 @@ public class PipReportComponentDetectorTests : BaseDetectorTest<PipReportCompone
             It.IsAny<CancellationToken>()))
             .ThrowsAsync(new InvalidOperationException("Want to fallback, so fail initial report generation"));
 
+        this.pipCommandService.Setup(x => x.GenerateInstallationReportAsync(
+            It.Is<string>(s => s.Contains("setup.py", StringComparison.OrdinalIgnoreCase)),
+            It.IsAny<string>(),
+            It.IsAny<string>(),
+            It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new InvalidOperationException("Want to fallback for setup.py too, so fail initial report generation"));
+
         var (result, componentRecorder) = await this.DetectorTestUtility
             .WithFile("setup.py", string.Empty)
             .WithFile("requirements.txt", string.Empty)
@@ -706,6 +714,54 @@ public class PipReportComponentDetectorTests : BaseDetectorTest<PipReportCompone
 
         var idnaComponent = pipComponents.Single(x => ((PipComponent)x.Component).Name.Equals("idna")).Component as PipComponent;
         idnaComponent.Version.Should().Be("3.7");
+    }
+
+    [TestMethod]
+    public async Task TestPipReportDetector_EmptyPreGeneratedReportAsync()
+    {
+        this.mockEnvVarService.Setup(x => x.DoesEnvironmentVariableExist("DisablePipReportSkipRun")).Returns(false);
+
+        var file1 = Path.Join(Directory.GetCurrentDirectory(), "Mocks", "EmptyReport", "requirements.txt");
+
+        var (result, componentRecorder) = await this.DetectorTestUtility
+            .WithFile("requirements.txt", string.Empty, fileLocation: file1)
+            .ExecuteDetectorAsync();
+
+        result.ResultCode.Should().Be(ProcessingResultCode.Success);
+
+        // Verify that the empty pre-generated file was detected and logged
+        this.mockLogger.Verify(
+            x => x.Log(
+                LogLevel.Debug,
+                It.IsAny<EventId>(),
+                It.Is<It.IsAnyType>((o, t) => o.ToString().Contains("Empty report file")),
+                It.IsAny<Exception>(),
+                It.IsAny<Func<It.IsAnyType, Exception, string>>()),
+            Times.Once);
+    }
+
+    [TestMethod]
+    public async Task TestPipReportDetector_InvalidJsonPreGeneratedReportAsync()
+    {
+        this.mockEnvVarService.Setup(x => x.DoesEnvironmentVariableExist("DisablePipReportSkipRun")).Returns(false);
+
+        var file1 = Path.Join(Directory.GetCurrentDirectory(), "Mocks", "InvalidJsonReport", "requirements.txt");
+
+        var (result, componentRecorder) = await this.DetectorTestUtility
+            .WithFile("requirements.txt", string.Empty, fileLocation: file1)
+            .ExecuteDetectorAsync();
+
+        result.ResultCode.Should().Be(ProcessingResultCode.Success);
+
+        // Verify that the invalid JSON pre-generated file was detected and logged
+        this.mockLogger.Verify(
+            x => x.Log(
+                LogLevel.Warning,
+                It.IsAny<EventId>(),
+                It.Is<It.IsAnyType>((o, t) => o.ToString().Contains("Invalid JSON")),
+                It.IsAny<Exception>(),
+                It.IsAny<Func<It.IsAnyType, Exception, string>>()),
+            Times.Once);
     }
 
     private List<(string PackageString, GitComponent Component)> ToGitTuple(IList<string> components)

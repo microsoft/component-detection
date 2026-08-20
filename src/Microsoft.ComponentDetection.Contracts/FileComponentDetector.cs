@@ -1,3 +1,4 @@
+#nullable disable
 namespace Microsoft.ComponentDetection.Contracts;
 
 using System;
@@ -33,7 +34,10 @@ public abstract class FileComponentDetector : IComponentDetector
     /// <inheritdoc />
     public abstract string Id { get; }
 
-    /// <summary> Gets the search patterns used to produce the list of valid folders to scan. These patterns are evaluated with .Net's Directory.EnumerateFiles function. </summary>
+    /// <summary>
+    /// Gets the search patterns used to produce the list of valid files to scan.
+    /// The first pattern that matches a given file will be used to determine how that file is processed, so more specific patterns should be listed before more general ones. Wildcards are accepted.
+    /// </summary>
     public abstract IList<string> SearchPatterns { get; }
 
     /// <summary>Gets the categories this detector is considered a member of. Used by the DetectorCategories arg to include detectors.</summary>
@@ -124,9 +128,9 @@ public abstract class FileComponentDetector : IComponentDetector
                 MaxDegreeOfParallelism = threadsToUse,
             });
 
-        var preprocessedObserbable = await this.OnPrepareDetectionAsync(processRequests, detectorArgs, cancellationToken);
+        var preprocessedObservable = await this.OnPrepareDetectionAsync(processRequests, detectorArgs, cancellationToken);
 
-        await preprocessedObserbable.ForEachAsync(processRequest => processor.Post(processRequest));
+        await preprocessedObservable.ForEachAsync(processRequest => processor.Post(processRequest));
 
         processor.Complete();
 

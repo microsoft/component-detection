@@ -1,3 +1,4 @@
+#nullable disable
 namespace Microsoft.ComponentDetection.Detectors.Pnpm;
 
 using System;
@@ -16,7 +17,7 @@ using Microsoft.Extensions.Logging;
 /// Factory responsible for constructing the proper <see cref="IPnpmDetector"/> and recording its dependency
 /// graph based on the file found during file component detection.
 /// </summary>
-public class PnpmComponentDetectorFactory : FileComponentDetector
+internal class PnpmComponentDetectorFactory : FileComponentDetector
 {
     /// <summary>
     /// The maximum version of the report specification that this detector can handle.
@@ -37,7 +38,7 @@ public class PnpmComponentDetectorFactory : FileComponentDetector
 
     public override IEnumerable<string> Categories => [Enum.GetName(typeof(DetectorClass), DetectorClass.Npm)];
 
-    public override IList<string> SearchPatterns { get; } = ["shrinkwrap.yaml", "pnpm-lock.yaml"];
+    public override IList<string> SearchPatterns { get; } = ["pnpm-lock.yaml", "shrinkwrap.yaml"];
 
     public override IEnumerable<ComponentType> SupportedComponentTypes { get; } = [ComponentType.Npm];
 

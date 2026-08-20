@@ -1,3 +1,4 @@
+#nullable disable
 namespace Microsoft.ComponentDetection.Detectors.Yarn;
 
 using System;
@@ -7,11 +8,11 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
-using global::DotNet.Globbing;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.Internal;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.ComponentDetection.Detectors.Npm;
+using Microsoft.Extensions.FileSystemGlobbing;
 using Microsoft.Extensions.Logging;
 
 public class YarnLockComponentDetector : FileComponentDetector
@@ -258,30 +259,53 @@ public class YarnLockComponentDetector : FileComponentDetector
 
     private void GetWorkspaceDependencies(IList<string> yarnWorkspaces, DirectoryInfo root, IDictionary<string, IDictionary<string, bool>> dependencies, IDictionary<string, string> workspaceDependencyVsLocationMap)
     {
-        var ignoreCase = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
+        var comparison = RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
+            ? StringComparison.OrdinalIgnoreCase
+            : StringComparison.Ordinal;
 
-        var globOptions = new GlobOptions()
+        // Resolve all workspace package.json files in a SINGLE filesystem traversal to improve perf.
+        var unionMatcher = new Matcher(comparison);
+        foreach (var workspacePattern in yarnWorkspaces)
         {
-            Evaluation = new EvaluationOptions()
+            unionMatcher.AddInclude($"{workspacePattern}/package.json");
+        }
+
+        var componentStreams = this.ComponentStreamEnumerableFactory.GetComponentStreams(
+            root,
+            ["package.json"],
+            null,
+            recursivelyScanDirectories: true);
+
+        var workspaceCandidates = new List<(string RelativePath, string Location, IDictionary<string, IDictionary<string, bool>> Dependencies)>();
+        foreach (var stream in componentStreams)
+        {
+            var relativePath = Path.GetRelativePath(root.FullName, stream.Location).Replace('\\', '/');
+            if (!unionMatcher.Match(relativePath).HasMatches)
             {
-                CaseInsensitive = ignoreCase,
-            },
-        };
+                continue;
+            }
+
+            var combinedDependencies = NpmComponentUtilities.TryGetAllPackageJsonDependencies(stream.Stream, out _);
+            workspaceCandidates.Add((relativePath, stream.Location, combinedDependencies));
+        }
 
         foreach (var workspacePattern in yarnWorkspaces)
         {
-            var glob = Glob.Parse($"{root.FullName.Replace('\\', '/')}/{workspacePattern}/package.json", globOptions);
+            var matcher = new Matcher(comparison);
+            matcher.AddInclude($"{workspacePattern}/package.json");
 
-            var componentStreams = this.ComponentStreamEnumerableFactory.GetComponentStreams(root, (file) => glob.IsMatch(file.FullName.Replace('\\', '/')), null, true);
-
-            foreach (var stream in componentStreams)
+            foreach (var (candidateRelativePath, candidateLocation, candidateDependencies) in workspaceCandidates)
             {
-                this.Logger.LogInformation("{ComponentLocation} found for workspace {WorkspacePattern}", stream.Location, workspacePattern);
-                var combinedDependencies = NpmComponentUtilities.TryGetAllPackageJsonDependencies(stream.Stream, out _);
-
-                foreach (var dependency in combinedDependencies)
+                if (!matcher.Match(candidateRelativePath).HasMatches)
                 {
-                    this.ProcessWorkspaceDependency(dependencies, dependency, workspaceDependencyVsLocationMap, stream.Location);
+                    continue;
+                }
+
+                this.Logger.LogInformation("{ComponentLocation} found for workspace {WorkspacePattern}", candidateLocation, workspacePattern);
+
+                foreach (var dependency in candidateDependencies)
+                {
+                    this.ProcessWorkspaceDependency(dependencies, dependency, workspaceDependencyVsLocationMap, candidateLocation);
                 }
             }
         }

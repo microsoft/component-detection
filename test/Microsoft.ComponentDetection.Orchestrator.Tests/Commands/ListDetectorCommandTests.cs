@@ -1,8 +1,10 @@
+#nullable disable
 namespace Microsoft.ComponentDetection.Orchestrator.Tests.Commands;
 
 using System.Collections.Generic;
 using System.Linq;
-using FluentAssertions;
+using System.Threading;
+using AwesomeAssertions;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Orchestrator.Commands;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -29,7 +31,7 @@ public class ListDetectorCommandTests
 
         var command = new ListDetectorsCommand(mockDetectors, console);
 
-        var result = command.Execute(null, new ListDetectorsSettings());
+        var result = command.Execute(null, new ListDetectorsSettings(), CancellationToken.None);
 
         result.Should().Be(0);
         console.Output.Should().ContainAll(fakeIds);

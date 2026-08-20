@@ -1,10 +1,12 @@
+#nullable disable
 namespace Microsoft.ComponentDetection.Detectors.Tests;
 
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-using FluentAssertions;
+using AwesomeAssertions;
 using Microsoft.ComponentDetection.Common.DependencyGraph;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
@@ -16,21 +18,23 @@ using Moq;
 [TestClass]
 [TestCategory("Governance/All")]
 [TestCategory("Governance/ComponentDetection")]
-public class VcpkgComponentDetectorTests : BaseDetectorTest<VcpkgComponentDetector>
+public class VcpkgComponentDetectorTests
 {
+    private readonly DetectorTestUtilityBuilder<VcpkgComponentDetector> detectorTestUtility = new();
+
     private readonly Mock<ICommandLineInvocationService> mockCommandLineInvocationService;
     private readonly Mock<IEnvironmentVariableService> mockEnvironmentVariableService;
 
     public VcpkgComponentDetectorTests()
     {
         this.mockCommandLineInvocationService = new Mock<ICommandLineInvocationService>();
-        this.DetectorTestUtility.AddServiceMock(this.mockCommandLineInvocationService);
+        this.detectorTestUtility.AddServiceMock(this.mockCommandLineInvocationService);
 
         this.mockEnvironmentVariableService = new Mock<IEnvironmentVariableService>();
-        this.DetectorTestUtility.AddServiceMock(this.mockEnvironmentVariableService);
+        this.detectorTestUtility.AddServiceMock(this.mockEnvironmentVariableService);
 
         var componentRecorder = new ComponentRecorder(enableManualTrackingOfExplicitReferences: false);
-        this.DetectorTestUtility.WithScanRequest(
+        this.detectorTestUtility.WithScanRequest(
             new ScanRequest(
                 new DirectoryInfo(Path.GetTempPath()),
                 null,
@@ -63,7 +67,7 @@ public class VcpkgComponentDetectorTests : BaseDetectorTest<VcpkgComponentDetect
         }
     ]
 }";
-        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile("vcpkg.spdx.json", spdxFile)
             .ExecuteDetectorAsync();
 
@@ -120,7 +124,7 @@ public class VcpkgComponentDetectorTests : BaseDetectorTest<VcpkgComponentDetect
         }
     ]
 }";
-        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile("vcpkg.spdx.json", spdxFile)
             .ExecuteDetectorAsync();
 
@@ -147,11 +151,64 @@ public class VcpkgComponentDetectorTests : BaseDetectorTest<VcpkgComponentDetect
     }
 
     [TestMethod]
+    public async Task TestResourceWithSlashInNameProducesValidPackageUrlAsync()
+    {
+        var spdxFile = """
+            {
+                "SPDXID": "SPDXRef-DOCUMENT",
+                "documentNamespace": "https://spdx.org/spdxdocs/brotli-x64-windows",
+                "name": "brotli:x64-windows@1.0.9",
+                "packages": [
+                    {
+                        "name": "brotli",
+                        "SPDXID": "SPDXRef-port",
+                        "versionInfo": "1.0.9#0",
+                        "downloadLocation": "git+https://github.com/Microsoft/vcpkg#ports/brotli",
+                        "licenseConcluded": "NOASSERTION",
+                        "licenseDeclared": "NOASSERTION",
+                        "copyrightText": "NOASSERTION"
+                    },
+                    {
+                        "SPDXID": "SPDXRef-resource-1",
+                        "name": "google/brotli",
+                        "downloadLocation": "git+https://github.com/google/brotli@1.0.9",
+                        "licenseConcluded": "NOASSERTION",
+                        "licenseDeclared": "NOASSERTION",
+                        "copyrightText": "NOASSERTION"
+                    }
+                ]
+            }
+            """;
+        var (scanResult, componentRecorder) = await this
+            .detectorTestUtility.WithFile("vcpkg.spdx.json", spdxFile)
+            .ExecuteDetectorAsync();
+
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+
+        var detectedComponents = componentRecorder.GetDetectedComponents();
+        var components = detectedComponents.ToList();
+
+        components.Should().HaveCount(2);
+
+        var resourceComponent = (VcpkgComponent)components
+                .First(c => ((VcpkgComponent)c.Component).SPDXID == "SPDXRef-resource-1")
+                .Component;
+        resourceComponent.Name.Should().Be("google/brotli");
+        resourceComponent.Version.Should().Be("1.0.9");
+
+        // This was the bug: names with slashes caused MalformedPackageUrlException
+        var purl = resourceComponent.PackageUrl;
+        purl.Should().NotBeNull();
+        purl.ToString().Should().Contain("vcpkg");
+        purl.ToString().Should().Contain("brotli");
+    }
+
+    [TestMethod]
     public async Task TestBlankJsonAsync()
     {
         var spdxFile = "{}";
 
-        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile("vcpkg.spdx.json", spdxFile)
             .ExecuteDetectorAsync();
 
@@ -167,7 +224,7 @@ public class VcpkgComponentDetectorTests : BaseDetectorTest<VcpkgComponentDetect
     {
         var spdxFile = "invalidspdxfile";
 
-        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile("vcpkg.spdx.json", spdxFile)
             .ExecuteDetectorAsync();
 
@@ -176,5 +233,132 @@ public class VcpkgComponentDetectorTests : BaseDetectorTest<VcpkgComponentDetect
         var detectedComponents = componentRecorder.GetDetectedComponents();
         var components = detectedComponents.ToList();
         components.Should().BeEmpty();
+    }
+
+    [TestMethod]
+    public async Task TestEmptyManifestInfoAsync()
+    {
+        var spdxFile = @"{
+    ""SPDXID"": ""SPDXRef - DOCUMENT"",
+    ""documentNamespace"":
+        ""https://spdx.org/spdxdocs/nlohmann-json-x64-linux-3.10.4-78c7f190-b402-44d1-a364-b9ac86392b84"",
+    ""name"": ""nlohmann-json:x64-linux@3.10.4 69dcfc6886529ad2d210f71f132d743672a7e65d2c39f53456f17fc5fc08b278"",
+    ""packages"": [
+        {
+            ""name"": ""nlohmann-json"",
+            ""SPDXID"": ""SPDXRef-port"",
+            ""versionInfo"": ""3.10.4#5"",
+            ""downloadLocation"": ""git+https://github.com/Microsoft/vcpkg#ports/nlohmann-json"",
+            ""homepage"": ""https://github.com/nlohmann/json"",
+            ""licenseConcluded"": ""NOASSERTION"",
+            ""licenseDeclared"": ""NOASSERTION"",
+            ""copyrightText"": ""NOASSERTION"",
+            ""description"": ""JSON for Modern C++"",
+            ""comment"": ""This is the port (recipe) consumed by vcpkg.""
+        }
+    ]
+}";
+
+        // Empty manifest-info.json should not cause an exception
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
+            .WithFile(CrossPlatformPath(Path.GetFullPath("vcpkg_installed\\packageLocation\\vcpkg.spdx.json")), spdxFile)
+            .WithFile(CrossPlatformPath(Path.GetFullPath("vcpkg_installed\\vcpkg\\manifest-info.json")), string.Empty)
+            .ExecuteDetectorAsync();
+
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+
+        var detectedComponents = componentRecorder.GetDetectedComponents();
+        detectedComponents.Should().NotBeEmpty();
+    }
+
+    [TestMethod]
+    public async Task TestInvalidManifestInfoAsync()
+    {
+        var spdxFile = @"{
+    ""SPDXID"": ""SPDXRef - DOCUMENT"",
+    ""documentNamespace"":
+        ""https://spdx.org/spdxdocs/nlohmann-json-x64-linux-3.10.4-78c7f190-b402-44d1-a364-b9ac86392b84"",
+    ""name"": ""nlohmann-json:x64-linux@3.10.4 69dcfc6886529ad2d210f71f132d743672a7e65d2c39f53456f17fc5fc08b278"",
+    ""packages"": [
+        {
+            ""name"": ""nlohmann-json"",
+            ""SPDXID"": ""SPDXRef-port"",
+            ""versionInfo"": ""3.10.4#5"",
+            ""downloadLocation"": ""git+https://github.com/Microsoft/vcpkg#ports/nlohmann-json"",
+            ""homepage"": ""https://github.com/nlohmann/json"",
+            ""licenseConcluded"": ""NOASSERTION"",
+            ""licenseDeclared"": ""NOASSERTION"",
+            ""copyrightText"": ""NOASSERTION"",
+            ""description"": ""JSON for Modern C++"",
+            ""comment"": ""This is the port (recipe) consumed by vcpkg.""
+        }
+    ]
+}";
+
+        // Invalid JSON in manifest-info.json should not cause an exception
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
+            .WithFile(CrossPlatformPath(Path.GetFullPath("vcpkg_installed\\packageLocation\\vcpkg.spdx.json")), spdxFile)
+            .WithFile(CrossPlatformPath(Path.GetFullPath("vcpkg_installed\\vcpkg\\manifest-info.json")), "invalid json content")
+            .ExecuteDetectorAsync();
+
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+
+        var detectedComponents = componentRecorder.GetDetectedComponents();
+        detectedComponents.Should().NotBeEmpty();
+    }
+
+    [TestMethod]
+    [DataRow("vcpkg_installed\\manifest-info.json", "vcpkg.json")]
+    [DataRow("vcpkg_installed\\vcpkg\\manifest-info.json", "vcpkg.json")]
+    [DataRow("bad_location\\manifest-info.json", "vcpkg_installed\\packageLocation\\vcpkg.spdx.json")]
+    public async Task TestVcpkgManifestFileAsync(string manifestPath, string pathToVcpkg)
+    {
+        var t_pathToVcpkg = CrossPlatformPath(Path.GetFullPath(pathToVcpkg));
+        var t_manifestPath = CrossPlatformPath(Path.GetFullPath(manifestPath));
+
+        var spdxFile = @"{
+    ""SPDXID"": ""SPDXRef - DOCUMENT"",
+    ""documentNamespace"":
+        ""https://spdx.org/spdxdocs/nlohmann-json-x64-linux-3.10.4-78c7f190-b402-44d1-a364-b9ac86392b84"",
+    ""name"": ""nlohmann-json:x64-linux@3.10.4 69dcfc6886529ad2d210f71f132d743672a7e65d2c39f53456f17fc5fc08b278"",
+    ""packages"": [
+        {
+            ""name"": ""nlohmann-json"",
+            ""SPDXID"": ""SPDXRef-port"",
+            ""versionInfo"": ""3.10.4#5"",
+            ""downloadLocation"": ""git+https://github.com/Microsoft/vcpkg#ports/nlohmann-json"",
+            ""homepage"": ""https://github.com/nlohmann/json"",
+            ""licenseConcluded"": ""NOASSERTION"",
+            ""licenseDeclared"": ""NOASSERTION"",
+            ""copyrightText"": ""NOASSERTION"",
+            ""description"": ""JSON for Modern C++"",
+            ""comment"": ""This is the port (recipe) consumed by vcpkg.""
+        }
+    ]
+}";
+        var manifestFile = $@"{{
+    ""manifest-path"": ""{t_pathToVcpkg.Replace("\\", "\\\\")}""
+}}";
+
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
+            .WithFile(CrossPlatformPath(Path.GetFullPath("vcpkg_installed\\packageLocation\\vcpkg.spdx.json")), spdxFile)
+            .WithFile(t_manifestPath, manifestFile)
+            .ExecuteDetectorAsync();
+
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+
+        var detectedComponents = componentRecorder.GetDependencyGraphsByLocation();
+
+        var singleFileComponent = detectedComponents.FirstOrDefault();
+        singleFileComponent.Should().NotBeNull();
+
+        var expectedResult = singleFileComponent.Key.Replace("/tmp/", string.Empty);
+        expectedResult.Should().Be(t_pathToVcpkg);
+    }
+
+    private static string CrossPlatformPath(string relPath)
+    {
+        var segments = relPath.Split(['\\', '/'], StringSplitOptions.RemoveEmptyEntries);
+        return Path.Combine(segments);
     }
 }

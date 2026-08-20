@@ -7,7 +7,7 @@ using Microsoft.ComponentDetection.Contracts;
 using Microsoft.Extensions.Logging;
 
 /// <inheritdoc />
-public class ComponentStreamEnumerableFactory : IComponentStreamEnumerableFactory
+internal class ComponentStreamEnumerableFactory : IComponentStreamEnumerableFactory
 {
     private readonly IPathUtilityService pathUtilityService;
     private readonly ILogger<ComponentStreamEnumerable> logger;

@@ -1,3 +1,4 @@
+#nullable disable
 namespace Microsoft.ComponentDetection.Common;
 
 using System.Collections.Generic;
@@ -7,7 +8,7 @@ using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Contracts;
 
 /// <inheritdoc />
-public class FileUtilityService : IFileUtilityService
+internal class FileUtilityService : IFileUtilityService
 {
     /// <inheritdoc />
     public string ReadAllText(string filePath)

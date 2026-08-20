@@ -1,6 +1,7 @@
+#nullable disable
 namespace Microsoft.ComponentDetection.Common.Tests;
 
-using FluentAssertions;
+using AwesomeAssertions;
 using Microsoft.ComponentDetection.Common;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -30,5 +31,16 @@ public class PathUtilityServiceTests
         var normalizedPath = service.NormalizePath(path);
 
         normalizedPath.Should().Be(expectedPath);
+    }
+
+    [TestMethod]
+    public void MatchesPattern_IsForwardedToPatternMatchingUtility()
+    {
+        var service = new PathUtilityService(new NullLogger<PathUtilityService>());
+
+#pragma warning disable CS0618 // Type or member is obsolete
+        service.MatchesPattern("*.json", "package.json").Should().BeTrue();
+        service.MatchesPattern("*.json", "package.yaml").Should().BeFalse();
+#pragma warning restore CS0618 // Type or member is obsolete
     }
 }

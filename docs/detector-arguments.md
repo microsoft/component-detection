@@ -10,7 +10,7 @@ dotnet run --project "src\Microsoft.ComponentDetection\Microsoft.ComponentDetect
                               separated glob patterns.
 
   --IgnoreDirectories         Filters out specific directories, providing
-                              individual directory paths separated by semicolon.
+                              individual directory paths separated by commas.
                               Obsolete in favor of DirectoryExclusionList's glob
                               syntax.
 

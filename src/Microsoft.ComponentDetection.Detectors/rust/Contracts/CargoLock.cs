@@ -1,3 +1,4 @@
+#nullable disable
 namespace Microsoft.ComponentDetection.Detectors.Rust.Contracts;
 
 using System.Collections.Generic;
@@ -5,7 +6,7 @@ using System.Runtime.Serialization;
 
 // Represents Cargo.Lock file structure.
 [DataContract]
-public class CargoLock
+internal class CargoLock
 {
     [DataMember(Name = "package")]
     public List<CargoPackage> Package { get; set; }

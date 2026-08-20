@@ -1,9 +1,13 @@
+#nullable disable
 namespace Microsoft.ComponentDetection.Common.Tests;
 
 using System;
-using FluentAssertions;
+using AwesomeAssertions;
 using Microsoft.ComponentDetection.Contracts;
+using Microsoft.ComponentDetection.Contracts.BcdeModels;
+using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Moq;
 
 [TestClass]
 [TestCategory("Governance/All")]
@@ -266,5 +270,263 @@ public class DockerReferenceUtilityTests
 
         result.Should().NotBeNull();
         result.Should().BeAssignableTo<RepositoryReference>();
+    }
+
+    [TestMethod]
+    public void HasUnresolvedVariables_ReturnsTrueForDollarSign()
+    {
+        DockerReferenceUtility.HasUnresolvedVariables("${MY_IMAGE}:latest").Should().BeTrue();
+    }
+
+    [TestMethod]
+    public void HasUnresolvedVariables_ReturnsTrueForBraces()
+    {
+        DockerReferenceUtility.HasUnresolvedVariables("{{ .Values.image }}").Should().BeTrue();
+    }
+
+    [TestMethod]
+    public void HasUnresolvedVariables_ReturnsTrueForDoubleUnderscoreTokens()
+    {
+        DockerReferenceUtility.HasUnresolvedVariables("__MCR_ENDPOINT__/aks/devinfra/helm3sample:__IMAGE_TAG__").Should().BeTrue();
+    }
+
+    [TestMethod]
+    public void HasUnresolvedVariables_ReturnsTrueForHashDelimitedTokens()
+    {
+        // A token wrapped in matching '#' (e.g. #imageTag#) is treated as an unresolved template
+        // variable and skipped silently rather than reported as an invalid character.
+        DockerReferenceUtility.HasUnresolvedVariables("#cs_containerRegistryLoginServerUrl#/coreservicesaksservice_#cs_aks_workloadName#_#cs_aks_serviceTrackIdentifier#/#serviceName#:#imageTag#").Should().BeTrue();
+    }
+
+    [TestMethod]
+    public void HasUnresolvedVariables_ReturnsTrueForExclamationDelimitedTokens()
+    {
+        // A token wrapped in matching '!' (e.g. !imageTag!) is treated as an unresolved template
+        // variable and skipped silently rather than reported as an invalid character.
+        DockerReferenceUtility.HasUnresolvedVariables("!cs_containerRegistryLoginServerUrl!/coreservicesaksservice_!cs_aks_workloadName!/!serviceName!:!imageTag!").Should().BeTrue();
+    }
+
+    [TestMethod]
+    public void HasUnresolvedVariables_ReturnsFalseForPlainReference()
+    {
+        DockerReferenceUtility.HasUnresolvedVariables("docker.io/library/nginx:latest").Should().BeFalse();
+    }
+
+    [TestMethod]
+    public void HasUnresolvedVariables_ReturnsFalseForReferenceWithUnderscores()
+    {
+        DockerReferenceUtility.HasUnresolvedVariables("mcr.microsoft.com/some_repo/my_image:1.0").Should().BeFalse();
+    }
+
+    [TestMethod]
+    public void TryParseImageReference_ReturnsNullForUnresolvedVariables()
+    {
+        DockerReferenceUtility.TryParseImageReference("${IMAGE}:latest").Should().BeNull();
+    }
+
+    [TestMethod]
+    public void TryParseImageReference_ReturnsNullForDoubleUnderscoreTokens()
+    {
+        DockerReferenceUtility.TryParseImageReference("__MCR_ENDPOINT__/aks/devinfra/helm3sample:__IMAGE_TAG__").Should().BeNull();
+    }
+
+    [TestMethod]
+    public void TryParseImageReference_ReturnsNullForHashDelimitedTokens()
+    {
+        DockerReferenceUtility.TryParseImageReference("#cs_containerRegistryLoginServerUrl#/svc/#serviceName#:#imageTag#").Should().BeNull();
+    }
+
+    [TestMethod]
+    public void TryParseImageReference_ReturnsNullForExclamationDelimitedTokens()
+    {
+        DockerReferenceUtility.TryParseImageReference("!cs_containerRegistryLoginServerUrl!/svc/!serviceName!:!imageTag!").Should().BeNull();
+    }
+
+    [TestMethod]
+    public void TryParseImageReference_LogsWarningForTemplatedReference()
+    {
+        var logger = new Mock<ILogger>();
+
+        var result = DockerReferenceUtility.TryParseImageReference("__MCR_ENDPOINT__/aks/devinfra/helm3sample:__IMAGE_TAG__", logger.Object);
+
+        result.Should().BeNull();
+        logger.Verify(
+            l => l.Log(
+                LogLevel.Warning,
+                It.IsAny<EventId>(),
+                It.IsAny<It.IsAnyType>(),
+                It.IsAny<Exception>(),
+                It.IsAny<Func<It.IsAnyType, Exception, string>>()),
+            Times.Once);
+    }
+
+    [TestMethod]
+    public void TryParseImageReference_LogsWarningForHashDelimitedTokens()
+    {
+        var logger = new Mock<ILogger>();
+
+        var result = DockerReferenceUtility.TryParseImageReference(
+            "#cs_containerRegistryLoginServerUrl#/svc/#serviceName#:#imageTag#",
+            logger.Object);
+
+        result.Should().BeNull();
+        logger.Verify(
+            l => l.Log(
+                LogLevel.Warning,
+                It.IsAny<EventId>(),
+                It.IsAny<It.IsAnyType>(),
+                It.IsAny<Exception>(),
+                It.IsAny<Func<It.IsAnyType, Exception, string>>()),
+            Times.Once);
+    }
+
+    [TestMethod]
+    public void TryParseImageReference_LogsWarningForExclamationDelimitedTokens()
+    {
+        var logger = new Mock<ILogger>();
+
+        var result = DockerReferenceUtility.TryParseImageReference(
+            "!cs_containerRegistryLoginServerUrl!/svc/!serviceName!:!imageTag!",
+            logger.Object);
+
+        result.Should().BeNull();
+        logger.Verify(
+            l => l.Log(
+                LogLevel.Warning,
+                It.IsAny<EventId>(),
+                It.IsAny<It.IsAnyType>(),
+                It.IsAny<Exception>(),
+                It.IsAny<Func<It.IsAnyType, Exception, string>>()),
+            Times.Once);
+    }
+
+    [TestMethod]
+    public void TryParseImageReference_ReturnsNullForExclamationCharacter()
+    {
+        DockerReferenceUtility.TryParseImageReference("docker.io/library/nginx!:latest").Should().BeNull();
+    }
+
+    [TestMethod]
+    public void TryParseImageReference_LogsWarningForExclamationCharacter()
+    {
+        var logger = new Mock<ILogger>();
+
+        var result = DockerReferenceUtility.TryParseImageReference("docker.io/library/nginx!:latest", logger.Object);
+
+        result.Should().BeNull();
+        logger.Verify(
+            l => l.Log(
+                LogLevel.Warning,
+                It.IsAny<EventId>(),
+                It.IsAny<It.IsAnyType>(),
+                It.IsAny<Exception>(),
+                It.IsAny<Func<It.IsAnyType, Exception, string>>()),
+            Times.Once);
+    }
+
+    [TestMethod]
+    public void TryParseImageReference_LogsWarningForInvalidCharacterInTag()
+    {
+        var logger = new Mock<ILogger>();
+
+        var result = DockerReferenceUtility.TryParseImageReference("mcr.microsoft.com/dotnet/sdk:8.0#preview", logger.Object);
+
+        result.Should().BeNull();
+        logger.Verify(
+            l => l.Log(
+                LogLevel.Warning,
+                It.IsAny<EventId>(),
+                It.IsAny<It.IsAnyType>(),
+                It.IsAny<Exception>(),
+                It.IsAny<Func<It.IsAnyType, Exception, string>>()),
+            Times.Once);
+    }
+
+    [TestMethod]
+    public void TryParseImageReference_ReturnsNullForInvalidReference()
+    {
+        DockerReferenceUtility.TryParseImageReference("docker.io/library/Nginx").Should().BeNull();
+    }
+
+    [TestMethod]
+    public void TryParseImageReference_ReturnsParsedReferenceForValidInput()
+    {
+        var result = DockerReferenceUtility.TryParseImageReference("nginx:latest");
+
+        result.Should().NotBeNull();
+        result.Should().BeAssignableTo<TaggedReference>();
+    }
+
+    [TestMethod]
+    public void TryParseImageReference_ReturnsParsedReferenceForDigest()
+    {
+        var digest = $"sha256:{new string('a', 64)}";
+        var result = DockerReferenceUtility.TryParseImageReference($"nginx@{digest}");
+
+        result.Should().NotBeNull();
+        result.Should().BeAssignableTo<CanonicalReference>();
+        ((CanonicalReference)result).Digest.Should().Be(digest);
+    }
+
+    [TestMethod]
+    public void TryParseImageReference_ReturnsParsedReferenceForTagAndDigest()
+    {
+        var digest = $"sha256:{new string('a', 64)}";
+        var result = DockerReferenceUtility.TryParseImageReference($"nginx:latest@{digest}");
+
+        result.Should().NotBeNull();
+        result.Should().BeAssignableTo<DualReference>();
+        var dualRef = (DualReference)result;
+        dualRef.Tag.Should().Be("latest");
+        dualRef.Digest.Should().Be(digest);
+    }
+
+    [TestMethod]
+    public void TryRegisterImageReference_RegistersValidReference()
+    {
+        var recorder = new Mock<ISingleFileComponentRecorder>();
+
+        DockerReferenceUtility.TryRegisterImageReference("nginx:latest", recorder.Object);
+
+        recorder.Verify(r => r.RegisterUsage(It.IsAny<DetectedComponent>(), It.IsAny<bool>(), It.IsAny<string>(), It.IsAny<bool?>(), It.IsAny<DependencyScope?>(), It.IsAny<string>()), Times.Once);
+    }
+
+    [TestMethod]
+    public void TryRegisterImageReference_SkipsUnresolvedVariables()
+    {
+        var recorder = new Mock<ISingleFileComponentRecorder>();
+
+        DockerReferenceUtility.TryRegisterImageReference("${IMAGE}", recorder.Object);
+
+        recorder.Verify(r => r.RegisterUsage(It.IsAny<DetectedComponent>(), It.IsAny<bool>(), It.IsAny<string>(), It.IsAny<bool?>(), It.IsAny<DependencyScope?>(), It.IsAny<string>()), Times.Never);
+    }
+
+    [TestMethod]
+    public void TryRegisterImageReference_SkipsInvalidReference()
+    {
+        var recorder = new Mock<ISingleFileComponentRecorder>();
+
+        DockerReferenceUtility.TryRegisterImageReference("docker.io/library/Nginx", recorder.Object);
+
+        recorder.Verify(r => r.RegisterUsage(It.IsAny<DetectedComponent>(), It.IsAny<bool>(), It.IsAny<string>(), It.IsAny<bool?>(), It.IsAny<DependencyScope?>(), It.IsAny<string>()), Times.Never);
+    }
+
+    [TestMethod]
+    public void TryRegisterImageReference_LogsWarningForInvalidReference()
+    {
+        var recorder = new Mock<ISingleFileComponentRecorder>();
+        var logger = new Mock<ILogger>();
+
+        DockerReferenceUtility.TryRegisterImageReference("docker.io/library/Nginx", recorder.Object, logger.Object);
+
+        recorder.Verify(r => r.RegisterUsage(It.IsAny<DetectedComponent>(), It.IsAny<bool>(), It.IsAny<string>(), It.IsAny<bool?>(), It.IsAny<DependencyScope?>(), It.IsAny<string>()), Times.Never);
+        logger.Verify(
+            l => l.Log(
+                LogLevel.Warning,
+                It.IsAny<EventId>(),
+                It.IsAny<It.IsAnyType>(),
+                It.IsAny<Exception>(),
+                It.IsAny<Func<It.IsAnyType, Exception, string>>()),
+            Times.Once);
     }
 }

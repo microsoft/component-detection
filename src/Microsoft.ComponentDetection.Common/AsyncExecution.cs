@@ -19,19 +19,19 @@ public static class AsyncExecution
     /// <returns>The result of the function.</returns>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="toExecute"/> is null.</exception>
     /// <exception cref="TimeoutException">Thrown when the execution does not complete within the timeout.</exception>
-    public static async Task<T> ExecuteWithTimeoutAsync<T>(Func<Task<T>> toExecute, TimeSpan timeout, CancellationToken cancellationToken)
+    public static async Task<T> ExecuteWithTimeoutAsync<T>(Func<Task<T>> toExecute, TimeSpan timeout, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(toExecute);
 
-        var work = Task.Run(toExecute);
-
-        var completedInTime = await Task.Run(() => work.Wait(timeout));
-        if (!completedInTime)
+        var work = toExecute();
+        try
         {
-            throw new TimeoutException($"The execution did not complete in the allotted time ({timeout.TotalSeconds} seconds) and has been terminated prior to completion");
+            return await work.WaitAsync(timeout, cancellationToken);
         }
-
-        return await work;
+        catch (TimeoutException ex)
+        {
+            throw new TimeoutException($"The execution did not complete in the allotted time ({timeout.TotalSeconds} seconds) and has been terminated prior to completion", ex);
+        }
     }
 
     /// <summary>
@@ -43,15 +43,19 @@ public static class AsyncExecution
     /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="toExecute"/> is null.</exception>
     /// <exception cref="TimeoutException">Thrown when the execution does not complete within the timeout.</exception>
-    public static async Task ExecuteVoidWithTimeoutAsync(Action toExecute, TimeSpan timeout, CancellationToken cancellationToken)
+    public static async Task ExecuteVoidWithTimeoutAsync(Action toExecute, TimeSpan timeout, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(toExecute);
 
-        var work = Task.Run(toExecute, cancellationToken);
-        var completedInTime = await Task.Run(() => work.Wait(timeout));
-        if (!completedInTime)
+        var work = Task.Run(toExecute, CancellationToken.None);
+
+        try
         {
-            throw new TimeoutException($"The execution did not complete in the allotted time ({timeout.TotalSeconds} seconds) and has been terminated prior to completion");
+            await work.WaitAsync(timeout, cancellationToken);
+        }
+        catch (TimeoutException ex)
+        {
+            throw new TimeoutException($"The execution did not complete in the allotted time ({timeout.TotalSeconds} seconds) and has been terminated prior to completion", ex);
         }
     }
 }

@@ -1,9 +1,12 @@
 namespace Microsoft.ComponentDetection.Contracts.BcdeModels;
 
+using System.Text.Json.Serialization;
+
 /// <summary>Used to communicate Dependency Scope of Component.
 /// Currently only populated for Maven component.
 /// The values are ordered in terms of priority, which is used to resolve the scope for duplicate component while merging them.
 /// </summary>
+[JsonConverter(typeof(JsonStringEnumConverter))]
 public enum DependencyScope
 {
     /// <summary>default scope. dependencies are available in the project during all build tasks. propogated to dependent projects. </summary>

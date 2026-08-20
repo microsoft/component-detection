@@ -1,3 +1,4 @@
+#nullable disable
 namespace Microsoft.ComponentDetection.Detectors.Pip;
 
 using System;
@@ -15,7 +16,7 @@ using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using Polly;
 
-public sealed class SimplePyPiClient : ISimplePyPiClient, IDisposable
+internal sealed class SimplePyPiClient : ISimplePyPiClient, IDisposable
 {
     // Values used for cache creation
     private const long CACHEINTERVALSECONDS = 180;

@@ -1,15 +1,16 @@
+#nullable disable
 namespace Microsoft.ComponentDetection.Detectors.Swift;
 
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.Internal;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
 
 /// <summary>
 /// Detects Swift Package Manager components.
@@ -61,6 +62,12 @@ public class SwiftResolvedComponentDetector : FileComponentDetector, IDefaultOff
     {
         var parsedResolvedFile = this.ReadAndParseResolvedFile(componentStream.Stream);
 
+        if (parsedResolvedFile?.Pins == null)
+        {
+            this.Logger.LogWarning("Failed to parse Package.resolved file at {Location}", componentStream.Location);
+            return;
+        }
+
         foreach (var package in parsedResolvedFile.Pins)
         {
             try
@@ -108,6 +115,21 @@ public class SwiftResolvedComponentDetector : FileComponentDetector, IDefaultOff
             resolvedFile = reader.ReadToEnd();
         }
 
-        return JsonConvert.DeserializeObject<SwiftResolvedFile>(resolvedFile);
+        // System.Text.Json throws on empty strings, unlike Newtonsoft.Json which returned null
+        if (string.IsNullOrWhiteSpace(resolvedFile))
+        {
+            this.Logger.LogDebug("Empty Package.resolved file encountered");
+            return null;
+        }
+
+        try
+        {
+            return JsonSerializer.Deserialize<SwiftResolvedFile>(resolvedFile);
+        }
+        catch (JsonException ex)
+        {
+            this.Logger.LogWarning(ex, "Invalid JSON in Package.resolved file");
+            return null;
+        }
     }
 }

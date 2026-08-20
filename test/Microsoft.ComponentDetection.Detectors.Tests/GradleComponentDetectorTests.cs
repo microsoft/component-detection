@@ -1,3 +1,4 @@
+#nullable disable
 namespace Microsoft.ComponentDetection.Detectors.Tests;
 
 using System;
@@ -5,7 +6,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-using FluentAssertions;
+using AwesomeAssertions;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.ComponentDetection.Detectors.Gradle;
@@ -17,20 +18,22 @@ using Moq;
 [TestClass]
 [TestCategory("Governance/All")]
 [TestCategory("Governance/ComponentDetection")]
-public class GradleComponentDetectorTests : BaseDetectorTest<GradleComponentDetector>
+public class GradleComponentDetectorTests
 {
+    private readonly DetectorTestUtilityBuilder<GradleComponentDetector> detectorTestUtility = new();
+
     private readonly Mock<IEnvironmentVariableService> envVarService;
 
     public GradleComponentDetectorTests()
     {
         this.envVarService = new Mock<IEnvironmentVariableService>();
-        this.DetectorTestUtility.AddServiceMock(this.envVarService);
+        this.detectorTestUtility.AddServiceMock(this.envVarService);
     }
 
     [TestMethod]
     public async Task TestGradleDetectorWithNoFiles_ReturnsSuccessfullyAsync()
     {
-        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
             .ExecuteDetectorAsync();
 
         scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
@@ -45,7 +48,7 @@ public class GradleComponentDetectorTests : BaseDetectorTest<GradleComponentDete
 org.springframework:spring-core:5.0.5.RELEASE
 org.springframework:spring-jcl:5.0.5.RELEASE";
 
-        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile("gradle.lockfile", validFileOne)
             .ExecuteDetectorAsync();
 
@@ -76,7 +79,7 @@ org.springframework:spring-jcl:5.0.5.RELEASE";
 org.springframework:spring-core:5.0.5.RELEASE=debugCompile,releaseCompile
 org.springframework:spring-jcl:5.0.5.RELEASE=lintClassPath,debugCompile,releaseCompile";
 
-        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile("gradle.lockfile", validFileOne)
             .ExecuteDetectorAsync();
 
@@ -115,7 +118,7 @@ com.fasterxml.jackson.core:jackson-databind:2.8.11.3
 org.msgpack:msgpack-core:0.8.16
 org.springframework:spring-jcl:5.0.5.RELEASE";
 
-        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile("gradle.lockfile", validFileOne)
             .WithFile("gradle2.lockfile", validFileTwo)
             .ExecuteDetectorAsync();
@@ -160,7 +163,7 @@ org.springframework:spring-jcl:5.0.5.RELEASE";
         var validFileTwo =
             "org.springframework:spring-beans:5.0.5.RELEASE";
 
-        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile("gradle.lockfile", validFileOne)
             .WithFile("gradle2.lockfile", validFileTwo)
             .ExecuteDetectorAsync();
@@ -198,7 +201,7 @@ lorem ipsum
 four score and seven bugs ago
 $#26^#25%4";
 
-        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile("gradle.lockfile", invalidFileOne)
             .WithFile("gradle2.lockfile", validFileTwo)
             .ExecuteDetectorAsync();
@@ -240,7 +243,7 @@ org.springframework:spring-core:5.0.5.RELEASE";
 
         var devLockfile2 = @"org.jacoco:org.jacoco.agent:0.8.8";
 
-        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile("settings-gradle.lockfile", devLockfile1)
             .WithFile("buildscript-gradle.lockfile", devLockfile2)
             .WithFile("gradle.lockfile", regularLockfile)
@@ -296,7 +299,7 @@ org.springframework:spring-core:5.0.5.RELEASE";
 
         this.envVarService.Setup(x => x.GetListEnvironmentVariable("CD_GRADLE_DEV_LOCKFILES", ",")).Returns(["dev1\\gradle.lockfile", "dev2\\gradle.lockfile"]);
 
-        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile("dev1\\gradle.lockfile", devLockfile1)
             .WithFile("dev2\\gradle.lockfile", devLockfile2)
             .WithFile("prod\\gradle.lockfile", regularLockfile)
@@ -349,7 +352,7 @@ org.hamcrest:hamcrest-core:2.2=testReleaseUnitTest";
 
         this.envVarService.Setup(x => x.GetListEnvironmentVariable("CD_GRADLE_DEV_CONFIGURATIONS", ",")).Returns(["testDebugUnitTest", "testReleaseUnitTest"]);
 
-        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile("gradle.lockfile", lockfile)
             .ExecuteDetectorAsync();
 

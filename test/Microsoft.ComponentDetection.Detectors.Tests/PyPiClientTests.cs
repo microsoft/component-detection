@@ -1,3 +1,4 @@
+#nullable disable
 namespace Microsoft.ComponentDetection.Detectors.Tests;
 
 using System;
@@ -6,17 +7,16 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
-using FluentAssertions;
-using Microsoft.ComponentDetection.Common;
+using AwesomeAssertions;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Detectors.Pip;
 using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using Moq.Protected;
-using Newtonsoft.Json;
 
 [TestClass]
 public class PyPiClientTests
@@ -24,7 +24,7 @@ public class PyPiClientTests
     private readonly PyPiClient pypiClient;
 
     public PyPiClientTests() => this.pypiClient = new PyPiClient(
-            new EnvironmentVariableService(),
+            new Mock<IEnvironmentVariableService>().Object,
             new Mock<ILogger<PyPiClient>>().Object);
 
     [TestMethod]
@@ -40,7 +40,7 @@ public class PyPiClientTests
             },
         };
 
-        var mockHandler = this.MockHttpMessageHandler(JsonConvert.SerializeObject(pythonProject));
+        var mockHandler = this.MockHttpMessageHandler(JsonSerializer.Serialize(pythonProject));
         PyPiClient.HttpClient = new HttpClient(mockHandler.Object);
 
         Func<Task> action = async () => await this.pypiClient.GetProjectAsync(pythonSpecs);
@@ -63,7 +63,7 @@ public class PyPiClientTests
             },
         };
 
-        var mockHandler = this.MockHttpMessageHandler(JsonConvert.SerializeObject(pythonProject));
+        var mockHandler = this.MockHttpMessageHandler(JsonSerializer.Serialize(pythonProject));
         PyPiClient.HttpClient = new HttpClient(mockHandler.Object);
 
         var result = await this.pypiClient.GetProjectAsync(pythonSpecs);
@@ -83,7 +83,7 @@ public class PyPiClientTests
             },
         };
 
-        var mockHandler = this.MockHttpMessageHandler(JsonConvert.SerializeObject(pythonProject));
+        var mockHandler = this.MockHttpMessageHandler(JsonSerializer.Serialize(pythonProject));
         PyPiClient.HttpClient = new HttpClient(mockHandler.Object);
 
         Func<Task> action = async () => await this.pypiClient.GetProjectAsync(pythonSpecs);
@@ -111,7 +111,7 @@ public class PyPiClientTests
             },
         };
 
-        var mockHandler = this.MockHttpMessageHandler(JsonConvert.SerializeObject(pythonProject));
+        var mockHandler = this.MockHttpMessageHandler(JsonSerializer.Serialize(pythonProject));
         PyPiClient.HttpClient = new HttpClient(mockHandler.Object);
 
         Func<Task> action = async () =>
@@ -123,7 +123,7 @@ public class PyPiClientTests
         await action.Should().NotThrowAsync();
         await action.Should().NotThrowAsync();
 
-        // Verify the API call was performed only once
+        // Verify the API call was performed twice
         mockHandler.Protected().Verify(
             "SendAsync",
             Times.Exactly(2),
@@ -181,7 +181,7 @@ public class PyPiClientTests
             },
         };
 
-        var mockHandler = this.MockHttpMessageHandler(JsonConvert.SerializeObject(pythonProject));
+        var mockHandler = this.MockHttpMessageHandler(JsonSerializer.Serialize(pythonProject));
         PyPiClient.HttpClient = new HttpClient(mockHandler.Object);
 
         var mockLogger = new Mock<ILogger<PyPiClient>>();
@@ -221,7 +221,7 @@ public class PyPiClientTests
             },
         };
 
-        var mockHandler = this.MockHttpMessageHandler(JsonConvert.SerializeObject(pythonProject));
+        var mockHandler = this.MockHttpMessageHandler(JsonSerializer.Serialize(pythonProject));
         PyPiClient.HttpClient = new HttpClient(mockHandler.Object);
 
         var action = async () => await this.pypiClient.GetProjectAsync(pythonSpecs);
@@ -236,6 +236,34 @@ public class PyPiClientTests
                        req.Headers.UserAgent.First().Product.Name == "ComponentDetection"
                        && req.Headers.UserAgent.Last().Comment == "(+https://github.com/microsoft/component-detection)"),
             ItExpr.IsAny<CancellationToken>());
+    }
+
+    [TestMethod]
+    public async Task GetProject_EmptyResponse_ReturnsEmptyProjectAsync()
+    {
+        var pythonSpecs = new PipDependencySpecification { Name = "requests" };
+
+        var mockHandler = this.MockHttpMessageHandler(string.Empty);
+        PyPiClient.HttpClient = new HttpClient(mockHandler.Object);
+
+        var result = await this.pypiClient.GetProjectAsync(pythonSpecs);
+
+        result.Should().NotBeNull();
+        result.Releases.Should().BeNull();
+    }
+
+    [TestMethod]
+    public async Task GetProject_InvalidJson_ReturnsEmptyProjectAsync()
+    {
+        var pythonSpecs = new PipDependencySpecification { Name = "requests" };
+
+        var mockHandler = this.MockHttpMessageHandler("{ invalid json }");
+        PyPiClient.HttpClient = new HttpClient(mockHandler.Object);
+
+        var result = await this.pypiClient.GetProjectAsync(pythonSpecs);
+
+        result.Should().NotBeNull();
+        result.Releases.Should().BeNull();
     }
 
     private Mock<HttpMessageHandler> MockHttpMessageHandler(string content)

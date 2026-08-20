@@ -1,8 +1,8 @@
 namespace Microsoft.ComponentDetection.Common.Telemetry.Records;
 
-public class LinuxContainerDetectorUnsupportedOs : BaseDetectionTelemetryRecord
+internal class LinuxContainerDetectorUnsupportedOs : BaseDetectionTelemetryRecord
 {
     public override string RecordName => "LinuxContainerDetectorUnsupportedOs";
 
-    public string Os { get; set; }
+    public string? Os { get; set; }
 }

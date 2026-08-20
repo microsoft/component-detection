@@ -5,21 +5,26 @@ using System.Collections.Generic;
 using System.Linq;
 using Microsoft.ComponentDetection.Contracts;
 
-public class EnvironmentVariableService : IEnvironmentVariableService
+internal class EnvironmentVariableService : IEnvironmentVariableService
 {
     public bool DoesEnvironmentVariableExist(string name)
     {
         return this.GetEnvironmentVariable(name) != null;
     }
 
-    public string GetEnvironmentVariable(string name)
+    public string? GetEnvironmentVariable(string name)
     {
         // Environment variables are case-insensitive on Windows, and case-sensitive on
         // Linux and MacOS.
         // https://docs.microsoft.com/en-us/dotnet/api/system.environment.getenvironmentvariable
+        if (OperatingSystem.IsWindows())
+        {
+            return Environment.GetEnvironmentVariable(name);
+        }
+
         var caseInsensitiveName = Environment.GetEnvironmentVariables().Keys
             .OfType<string>()
-            .FirstOrDefault(x => string.Compare(x, name, true) == 0);
+            .FirstOrDefault(x => string.Equals(x, name, StringComparison.OrdinalIgnoreCase));
 
         return caseInsensitiveName != null ? Environment.GetEnvironmentVariable(caseInsensitiveName) : null;
     }

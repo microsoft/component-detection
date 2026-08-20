@@ -1,11 +1,11 @@
+#nullable disable
 namespace Microsoft.ComponentDetection.Common.Tests;
 
 using System;
 using System.Collections.Generic;
 using System.IO;
-using FluentAssertions;
+using AwesomeAssertions;
 using Microsoft.ComponentDetection.Contracts;
-using Microsoft.ComponentDetection.TestsUtilities;
 using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
@@ -50,7 +50,6 @@ public class SafeFileEnumerableTests
         IEnumerable<string> searchPatterns = [name];
 
         this.pathUtilityServiceMock.Setup(x => x.ResolvePhysicalPath(It.IsAny<string>())).Returns<string>((s) => s);
-        this.pathUtilityServiceMock.Setup(x => x.MatchesPattern(name, name)).Returns(true);
 
         var enumerable = new SafeFileEnumerable(new DirectoryInfo(this.temporaryDirectory), searchPatterns, this.loggerMock.Object, this.pathUtilityServiceMock.Object, (directoryName, span) => false, true);
 
@@ -77,8 +76,6 @@ public class SafeFileEnumerableTests
 
         IEnumerable<string> searchPatterns = [name];
 
-        this.pathUtilityServiceMock.Setup(x => x.MatchesPattern(name, name)).Returns(true);
-
         var enumerable = new SafeFileEnumerable(new DirectoryInfo(this.temporaryDirectory), searchPatterns, this.loggerMock.Object, this.pathUtilityServiceMock.Object, (directoryName, span) => false, false);
 
         var filesFound = 0;
@@ -91,7 +88,7 @@ public class SafeFileEnumerableTests
         filesFound.Should().Be(1);
     }
 
-    [SkipTestOnWindows]
+    [OSCondition(ConditionMode.Exclude, OperatingSystems.Windows)]
     public void GetEnumerator_CallsSymlinkCode()
     {
         var subDir = Directory.CreateSymbolicLink(Path.Combine(this.temporaryDirectory, "SubDir"), this.temporaryDirectory);
@@ -112,7 +109,7 @@ public class SafeFileEnumerableTests
         this.pathUtilityServiceMock.Verify(x => x.ResolvePhysicalPath(subDir.FullName), Times.AtLeastOnce);
     }
 
-    [SkipTestOnWindows]
+    [OSCondition(ConditionMode.Exclude, OperatingSystems.Windows)]
     public void GetEnumerator_DuplicatePathIgnored()
     {
         var subDir = Directory.CreateDirectory(Path.Combine(this.temporaryDirectory, "SubDir"));

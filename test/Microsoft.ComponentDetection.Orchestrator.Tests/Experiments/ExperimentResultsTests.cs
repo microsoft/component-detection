@@ -1,7 +1,8 @@
+#nullable disable
 namespace Microsoft.ComponentDetection.Orchestrator.Tests.Experiments;
 
 using System.Linq;
-using FluentAssertions;
+using AwesomeAssertions;
 using Microsoft.ComponentDetection.Contracts.BcdeModels;
 using Microsoft.ComponentDetection.Orchestrator.Experiments.Models;
 using Microsoft.VisualStudio.TestTools.UnitTesting;

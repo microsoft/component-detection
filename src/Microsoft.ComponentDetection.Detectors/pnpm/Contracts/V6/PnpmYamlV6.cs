@@ -1,3 +1,4 @@
+#nullable disable
 namespace Microsoft.ComponentDetection.Detectors.Pnpm;
 
 using System.Collections.Generic;
@@ -10,7 +11,7 @@ using YamlDotNet.Serialization;
 /// In the "dedicated shrinkwrap", the inherited members from PnpmHasDependenciesV6 will be used.
 /// In the "shared shrinkwrap", the importers member will be used.
 /// </summary>
-public class PnpmYamlV6 : PnpmHasDependenciesV6
+internal class PnpmYamlV6 : PnpmHasDependenciesV6
 {
     [YamlMember(Alias = "importers")]
     public Dictionary<string, PnpmHasDependenciesV6> Importers { get; set; }

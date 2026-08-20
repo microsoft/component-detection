@@ -1,8 +1,10 @@
 namespace Microsoft.ComponentDetection.Detectors.Linux;
 
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Common.Telemetry.Records;
@@ -10,64 +12,377 @@ using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.BcdeModels;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.ComponentDetection.Detectors.Linux.Contracts;
+using Microsoft.ComponentDetection.Detectors.Linux.Factories;
+using Microsoft.ComponentDetection.Detectors.Linux.Filters;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
 
-public class LinuxScanner : ILinuxScanner
+/// <summary>
+/// Scanner for Linux container layers using Syft.
+/// </summary>
+internal class LinuxScanner : ILinuxScanner
 {
-    private const string ScannerImage = "governancecontainerregistry.azurecr.io/syft:v1.16.0@sha256:12774e791a2b2bc48935c73da15180eee7f31815bc978b14f8f85cc408ec960b";
+    private const string ScannerImage =
+        "governancecontainerregistry.azurecr.io/syft:v1.49.0@sha256:13b53ebabe3d215268c90cf8fb9b875f0183908245f376fd4b3a2cb69d21d484";
 
-    private static readonly IList<string> CmdParameters =
-    [
-        "--quiet",
-        "--scope",
-        "all-layers",
-        "--output",
-        "json",
-    ];
+    private static readonly IList<string> CmdParameters = ["--quiet", "--output", "json"];
 
-    private static readonly IEnumerable<string> AllowedArtifactTypes = ["apk", "deb", "rpm"];
+    private static readonly IList<string> ScopeAllLayersParameter = ["--scope", "all-layers"];
 
-    private static readonly SemaphoreSlim DockerSemaphore = new SemaphoreSlim(2);
+    private static readonly IList<string> ScopeSquashedParameter = ["--scope", "squashed"];
 
-    private static readonly int SemaphoreTimeout = Convert.ToInt32(TimeSpan.FromHours(1).TotalMilliseconds);
+    /// <summary>
+    /// Well-known package manager database paths whose layer attribution should be ignored
+    /// when determining which layer a system package belongs to. These files are shared across
+    /// all packages managed by the same package manager and get updated whenever any package is
+    /// installed or removed, causing unrelated packages to appear as modified in later layers.
+    /// </summary>
+    private static readonly HashSet<string> PackageManagerDatabasePaths = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "/var/lib/dpkg/status",
+        "/lib/apk/db/installed",
+        "/var/lib/rpm/Packages",
+        "/var/lib/rpm/Packages.db",
+        "/var/lib/rpm/rpmdb.sqlite",
+    };
+
+    private static readonly SemaphoreSlim ContainerSemaphore = new SemaphoreSlim(2);
+
+    /// <summary>
+    /// Caches in-flight syft runs.
+    /// When multiple detectors scan the same image concurrently, the second
+    /// caller awaits the already-running task instead of launching a new container.
+    /// </summary>
+    private static readonly ConcurrentDictionary<(string Source, LinuxScannerScope Scope, string Binds, string Platform), Task<string>> SyftRunCache = new();
+
+    private static readonly int SemaphoreTimeout = Convert.ToInt32(
+        TimeSpan.FromHours(1).TotalMilliseconds
+    );
 
     private readonly IDockerService dockerService;
     private readonly ILogger<LinuxScanner> logger;
+    private readonly IEnumerable<IArtifactComponentFactory> componentFactories;
+    private readonly IEnumerable<IArtifactFilter> artifactFilters;
+    private readonly Dictionary<string, IArtifactComponentFactory> artifactTypeToFactoryLookup;
+    private readonly Dictionary<
+        ComponentType,
+        IArtifactComponentFactory
+    > componentTypeToFactoryLookup;
 
-    public LinuxScanner(IDockerService dockerService, ILogger<LinuxScanner> logger)
+    /// <summary>
+    /// Initializes a new instance of the <see cref="LinuxScanner"/> class.
+    /// </summary>
+    /// <param name="dockerService">The docker service.</param>
+    /// <param name="logger">The logger.</param>
+    /// <param name="componentFactories">The component factories.</param>
+    /// <param name="artifactFilters">The artifact filters.</param>
+    public LinuxScanner(
+        IDockerService dockerService,
+        ILogger<LinuxScanner> logger,
+        IEnumerable<IArtifactComponentFactory> componentFactories,
+        IEnumerable<IArtifactFilter> artifactFilters
+    )
     {
         this.dockerService = dockerService;
         this.logger = logger;
+        this.componentFactories = componentFactories;
+        this.artifactFilters = artifactFilters;
+
+        this.artifactTypeToFactoryLookup = componentFactories
+            .SelectMany(
+                f => f.SupportedArtifactTypes,
+                (factory, artifactType) => (artifactType, factory)
+            )
+            .ToDictionary(x => x.artifactType, x => x.factory);
+
+        this.componentTypeToFactoryLookup = componentFactories.ToDictionary(
+            f => f.SupportedComponentType,
+            f => f
+        );
     }
 
-    public async Task<IEnumerable<LayerMappedLinuxComponents>> ScanLinuxAsync(string imageHash, IEnumerable<DockerLayer> dockerLayers, int baseImageLayerCount, CancellationToken cancellationToken = default)
+    /// <inheritdoc/>
+    public async Task<IEnumerable<LayerMappedLinuxComponents>> ScanLinuxAsync(
+        string imageHash,
+        IEnumerable<DockerLayer> containerLayers,
+        int baseImageLayerCount,
+        ISet<ComponentType> enabledComponentTypes,
+        LinuxScannerScope scope,
+        CancellationToken cancellationToken = default
+    )
     {
         using var record = new LinuxScannerTelemetryRecord
         {
             ImageToScan = imageHash,
             ScannerVersion = ScannerImage,
         };
+        using var syftTelemetryRecord = new LinuxScannerSyftTelemetryRecord();
+        var stdout = await this.RunSyftAsync(imageHash, scope, additionalBinds: [], platform: null, record, syftTelemetryRecord, cancellationToken);
 
+        try
+        {
+            var syftOutput = SyftOutput.FromJson(stdout);
+            return this.ProcessSyftOutputWithTelemetry(syftOutput, containerLayers, enabledComponentTypes, syftTelemetryRecord);
+        }
+        catch (Exception e)
+        {
+            record.FailedDeserializingScannerOutput = e.ToString();
+            this.logger.LogError(e, "Failed to deserialize Syft output for image {ImageHash}", imageHash);
+            return [];
+        }
+    }
+
+    /// <inheritdoc/>
+    public async Task<SyftOutput> GetSyftOutputAsync(
+        string syftSource,
+        IList<string> additionalBinds,
+        LinuxScannerScope scope,
+        CancellationToken cancellationToken = default
+    ) => await this.GetSyftOutputAsync(syftSource, additionalBinds, scope, platform: null, cancellationToken);
+
+    /// <inheritdoc/>
+    public async Task<SyftOutput> GetSyftOutputAsync(
+        string syftSource,
+        IList<string> additionalBinds,
+        LinuxScannerScope scope,
+        string? platform,
+        CancellationToken cancellationToken = default
+    )
+    {
+        using var record = new LinuxScannerTelemetryRecord
+        {
+            ImageToScan = syftSource,
+            ScannerVersion = ScannerImage,
+        };
+        using var syftTelemetryRecord = new LinuxScannerSyftTelemetryRecord();
+        var stdout = await this.RunSyftAsync(syftSource, scope, additionalBinds, platform, record, syftTelemetryRecord, cancellationToken);
+        try
+        {
+            return SyftOutput.FromJson(stdout);
+        }
+        catch (Exception e)
+        {
+            record.FailedDeserializingScannerOutput = e.ToString();
+            this.logger.LogError(e, "Failed to deserialize Syft output for source {SyftSource}", syftSource);
+            throw;
+        }
+    }
+
+    /// <inheritdoc/>
+    public IEnumerable<LayerMappedLinuxComponents> ProcessSyftOutput(
+        SyftOutput syftOutput,
+        IEnumerable<DockerLayer> containerLayers,
+        ISet<ComponentType> enabledComponentTypes)
+    {
+        using var syftTelemetryRecord = new LinuxScannerSyftTelemetryRecord();
+        return this.ProcessSyftOutputWithTelemetry(syftOutput, containerLayers, enabledComponentTypes, syftTelemetryRecord);
+    }
+
+    private IEnumerable<LayerMappedLinuxComponents> ProcessSyftOutputWithTelemetry(
+        SyftOutput syftOutput,
+        IEnumerable<DockerLayer> containerLayers,
+        ISet<ComponentType> enabledComponentTypes,
+        LinuxScannerSyftTelemetryRecord syftTelemetryRecord)
+    {
+        // Apply artifact filters (e.g., Mariner 2.0 workaround)
+        var validArtifacts = syftOutput.Artifacts.AsEnumerable();
+        foreach (var filter in this.artifactFilters)
+        {
+            validArtifacts = filter.Filter(validArtifacts, syftOutput.Distro);
+        }
+
+        // Build a set of enabled factories based on requested component types
+        var enabledFactories = new HashSet<IArtifactComponentFactory>();
+        foreach (var componentType in enabledComponentTypes)
+        {
+            if (
+                this.componentTypeToFactoryLookup.TryGetValue(componentType, out var factory)
+                && factory != null
+            )
+            {
+                enabledFactories.Add(factory);
+            }
+        }
+
+        // Build a file path → layerID map from the top-level files listing.
+        // This allows us to determine layer attribution for files owned by a package
+        // even when the artifact's locations only reference the package manager database.
+        var filePathToLayerId = BuildFilePathToLayerMap(syftOutput.Files);
+
+        // Create components using only enabled factories
+        var componentsWithLayers = validArtifacts
+            .DistinctBy(artifact => (artifact.Name, artifact.Version, artifact.Type))
+            .Select(artifact =>
+                this.CreateComponentWithLayers(artifact, syftOutput.Distro, enabledFactories, filePathToLayerId)
+            )
+            .Where(result => result.Component != null)
+            .Select(result => (Component: result.Component!, result.LayerIds))
+            .ToList();
+
+        // Track unsupported artifact types for telemetry
+        var unsupportedTypes = validArtifacts
+            .Where(a => !this.artifactTypeToFactoryLookup.ContainsKey(a.Type))
+            .Select(a => a.Type)
+            .Distinct()
+            .ToList();
+
+        if (unsupportedTypes.Count > 0)
+        {
+            this.logger.LogDebug(
+                "Encountered unsupported artifact types: {UnsupportedTypes}",
+                string.Join(", ", unsupportedTypes)
+            );
+        }
+
+        // Track detected components in telemetry
+        syftTelemetryRecord.Components = JsonSerializer.Serialize(
+            componentsWithLayers.Select(c => c.Component.Id)
+        );
+
+        // Build a layer dictionary from the provided container layers and map components.
+        var knownLayers = containerLayers.ToList();
+
+        if (knownLayers.Count > 0)
+        {
+            var layerDictionary = knownLayers
+                .DistinctBy(layer => layer.DiffId)
+                .ToDictionary(layer => layer.DiffId, _ => new List<TypedComponent>());
+
+            foreach (var (component, layers) in componentsWithLayers)
+            {
+                foreach (var layer in layers)
+                {
+                    if (layerDictionary.TryGetValue(layer, out var componentList))
+                    {
+                        componentList.Add(component);
+                    }
+                }
+            }
+
+            return layerDictionary.Select(kvp => new LayerMappedLinuxComponents
+            {
+                Components = kvp.Value,
+                DockerLayer = knownLayers.First(layer => layer.DiffId == kvp.Key),
+            });
+        }
+
+        // No container layers provided — return all components under a single
+        // entry with no layer information rather than silently dropping them.
+        var allComponents = componentsWithLayers.Select(c => c.Component).ToList();
+        if (allComponents.Count == 0)
+        {
+            return [];
+        }
+
+        return
+        [
+            new LayerMappedLinuxComponents
+            {
+                Components = allComponents,
+                DockerLayer = new DockerLayer()
+                {
+                    DiffId = string.Empty,
+                    LayerIndex = 0,
+                    IsBaseImage = false,
+                },
+            },
+        ];
+    }
+
+    /// <summary>
+    /// Runs the Syft scanner container and returns the stdout output.
+    /// Results are cached so that callers with identical parameters share a single container run.
+    /// </summary>
+    private async Task<string> RunSyftAsync(
+        string syftSource,
+        LinuxScannerScope scope,
+        IList<string> additionalBinds,
+        string? platform,
+        LinuxScannerTelemetryRecord record,
+        LinuxScannerSyftTelemetryRecord syftTelemetryRecord,
+        CancellationToken cancellationToken)
+    {
+        var bindsKey = string.Join(";", (additionalBinds ?? []).OrderBy(b => b, StringComparer.Ordinal));
+        var cacheKey = (syftSource, scope, bindsKey, platform ?? string.Empty);
+        var tcs = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var existingTask = SyftRunCache.GetOrAdd(cacheKey, tcs.Task);
+
+        if (existingTask != tcs.Task)
+        {
+            // Another caller is already running syft for this image+scope — await their result,
+            // but allow this caller's cancellation token to abort the wait.
+            this.logger.LogDebug("Syft run for {SyftSource} (scope={Scope}) is already in-flight, reusing existing result", syftSource, scope);
+            return await existingTask.WaitAsync(cancellationToken);
+        }
+
+        // We own this cache entry — run syft and propagate the result.
+        try
+        {
+            var result = await this.RunSyftCoreAsync(syftSource, scope, additionalBinds ?? [], platform, record, syftTelemetryRecord, cancellationToken);
+            tcs.SetResult(result);
+            return result;
+        }
+        catch (Exception ex)
+        {
+            tcs.SetException(ex);
+            throw;
+        }
+        finally
+        {
+            // Remove the entry once complete. The cache only deduplicates concurrent
+            // in-flight calls — keeping completed entries would leak memory for the
+            // lifetime of the process.
+            SyftRunCache.TryRemove(cacheKey, out _);
+        }
+    }
+
+    /// <summary>
+    /// Executes the Syft scanner container and returns the stdout output.
+    /// </summary>
+    private async Task<string> RunSyftCoreAsync(
+        string syftSource,
+        LinuxScannerScope scope,
+        IList<string> additionalBinds,
+        string? platform,
+        LinuxScannerTelemetryRecord record,
+        LinuxScannerSyftTelemetryRecord syftTelemetryRecord,
+        CancellationToken cancellationToken)
+    {
         var acquired = false;
         var stdout = string.Empty;
         var stderr = string.Empty;
 
-        using var syftTelemetryRecord = new LinuxScannerSyftTelemetryRecord();
+        var scopeParameters = scope switch
+        {
+            LinuxScannerScope.AllLayers => ScopeAllLayersParameter,
+            LinuxScannerScope.Squashed => ScopeSquashedParameter,
+            _ => throw new ArgumentOutOfRangeException(
+                nameof(scope),
+                $"Unsupported scope value: {scope}"
+            ),
+        };
 
         try
         {
-            acquired = await DockerSemaphore.WaitAsync(SemaphoreTimeout, cancellationToken);
+            acquired = await ContainerSemaphore.WaitAsync(SemaphoreTimeout, cancellationToken);
             if (acquired)
             {
                 try
                 {
-                    var command = new List<string> { imageHash }.Concat(CmdParameters).ToList();
-                    (stdout, stderr) = await this.dockerService.CreateAndRunContainerAsync(ScannerImage, command, cancellationToken);
+                    var command = new List<string> { syftSource }
+                        .Concat(CmdParameters)
+                        .Concat(scopeParameters)
+                        .Concat(platform == null ? [] : new[] { "--platform", platform })
+                        .ToList();
+                    (stdout, stderr) = await this.dockerService.CreateAndRunContainerAsync(
+                        ScannerImage,
+                        command,
+                        additionalBinds,
+                        cancellationToken
+                    );
                 }
                 catch (Exception e)
                 {
-                    syftTelemetryRecord.Exception = JsonConvert.SerializeObject(e);
+                    syftTelemetryRecord.Exception = e.ToString();
                     this.logger.LogError(e, "Failed to run syft");
                     throw;
                 }
@@ -75,14 +390,17 @@ public class LinuxScanner : ILinuxScanner
             else
             {
                 record.SemaphoreFailure = true;
-                this.logger.LogWarning("Failed to enter the docker semaphore for image {ImageHash}", imageHash);
+                this.logger.LogWarning(
+                    "Failed to enter the container semaphore for image {SyftSource}",
+                    syftSource
+                );
             }
         }
         finally
         {
             if (acquired)
             {
-                DockerSemaphore.Release();
+                ContainerSemaphore.Release();
             }
         }
 
@@ -92,120 +410,127 @@ public class LinuxScanner : ILinuxScanner
         if (string.IsNullOrWhiteSpace(stdout) || !string.IsNullOrWhiteSpace(stderr))
         {
             throw new InvalidOperationException(
-                $"Scan failed with exit info: {stdout}{Environment.NewLine}{stderr}");
+                $"Scan failed with exit info: {stdout}{System.Environment.NewLine}{stderr}"
+            );
         }
 
-        var layerDictionary = dockerLayers
-            .DistinctBy(layer => layer.DiffId)
-            .ToDictionary(
-                layer => layer.DiffId,
-                _ => new List<LinuxComponent>());
+        return stdout;
+    }
 
-        try
+    private (TypedComponent? Component, IEnumerable<string> LayerIds) CreateComponentWithLayers(
+        ArtifactElement artifact,
+        Distro distro,
+        HashSet<IArtifactComponentFactory> enabledFactories,
+        Dictionary<string, string> filePathToLayerId
+    )
+    {
+        if (!this.artifactTypeToFactoryLookup.TryGetValue(artifact.Type, out var factory))
         {
-            var syftOutput = JsonConvert.DeserializeObject<SyftOutput>(stdout);
+            return (null, []);
+        }
 
-            // This workaround ignores some packages that originate from the mariner 2.0 image that
-            // have not been properly tagged with the release and epoch fields in their versions. This
-            // was fixed for azurelinux 3.0 with https://github.com/microsoft/azurelinux/pull/10405, but
-            // 2.0 no longer recieves non-security updates and will be deprecated in July 2025.
-            // This became a problem after the Syft update https://github.com/anchore/syft/pull/3008 which
-            // allowed for Syft to respect the package type that is listed in the ELF notes file. Since
-            // mariner 2.0 lists the packages as RPMs, Syft categorizes them as such.
-            var validArtifacts = syftOutput.Artifacts.ToList();
-            if (syftOutput.Distro.Id == "mariner" && syftOutput.Distro.VersionId == "2.0")
+        // Skip this artifact if its factory is not in the enabled set
+        if (!enabledFactories.Contains(factory))
+        {
+            return (null, []);
+        }
+
+        var component = factory.CreateComponent(artifact, distro);
+        if (component == null)
+        {
+            return (null, []);
+        }
+
+        // Collect layer IDs from the artifact's locations, filtering out entries with null/empty layer IDs.
+        var locationLayerIds = artifact.Locations?
+            .Where(location => !string.IsNullOrEmpty(location.Path) && !string.IsNullOrEmpty(location.LayerId))
+            .Select(location => (location.Path, LayerId: location.LayerId!))
+            .ToList() ?? [];
+
+        // Also consult the metadata files property to find additional owned files,
+        // and look up their layer IDs from the top-level file listing.
+        if (artifact.Metadata?.Files != null)
+        {
+            foreach (var file in artifact.Metadata.Files)
             {
-                var elfVersionsWithoutRelease = validArtifacts
-                    .Where(artifact =>
-                        artifact.FoundBy == "elf-binary-package-cataloger" // a number of detectors execute with Syft, this one can container invalid results
-                        && !artifact.Version.Contains('-', StringComparison.OrdinalIgnoreCase)) // dash character indicates that the release version was properly appended to the version, so allow these
-                    .ToList();
-
-                var elfVersionsRemoved = new List<string>();
-                foreach (var elfArtifact in elfVersionsWithoutRelease)
+                // The File union type can be either a FileFile object or a plain string path.
+                var filePath = file.FileFile?.Path ?? file.String;
+                if (!string.IsNullOrEmpty(filePath) && filePathToLayerId.TryGetValue(filePath, out var layerId))
                 {
-                    elfVersionsRemoved.Add(elfArtifact.Name + " " + elfArtifact.Version);
-                    validArtifacts.Remove(elfArtifact);
+                    locationLayerIds.Add((filePath, layerId));
                 }
-
-                syftTelemetryRecord.Mariner2ComponentsRemoved = JsonConvert.SerializeObject(elfVersionsRemoved);
             }
+        }
 
-            var linuxComponentsWithLayers = validArtifacts
-                .DistinctBy(artifact => (artifact.Name, artifact.Version))
-                .Where(artifact => AllowedArtifactTypes.Contains(artifact.Type))
-                .Select(artifact =>
-                    (Component: new LinuxComponent(syftOutput.Distro.Id, syftOutput.Distro.VersionId, artifact.Name, artifact.Version, this.GetLicenseFromArtifactElement(artifact), this.GetSupplierFromArtifactElement(artifact)), layerIds: artifact.Locations.Select(location => location.LayerId).Distinct()));
+        // Exclude well-known package manager database paths from layer attribution,
+        // unless they are the only known locations for this component.
+        var nonDbLayerIds = locationLayerIds
+            .Where(loc => !IsPackageManagerDatabasePath(loc.Path))
+            .Select(loc => loc.LayerId)
+            .Distinct()
+            .ToList();
 
-            foreach (var (component, layers) in linuxComponentsWithLayers)
+        if (nonDbLayerIds.Count > 0)
+        {
+            return (component, nonDbLayerIds);
+        }
+
+        // Fall back to database path layer IDs if no other locations are available.
+        var allLayerIds = locationLayerIds
+            .Select(loc => loc.LayerId)
+            .Where(id => !string.IsNullOrEmpty(id))
+            .Distinct()
+            .ToList();
+        return (component, allLayerIds);
+    }
+
+    /// <summary>
+    /// Clears the syft run cache. Intended for test isolation only.
+    /// </summary>
+    internal static void ResetCache() => SyftRunCache.Clear();
+
+    /// <summary>
+    /// Builds a dictionary mapping file paths to their layer IDs from the top-level
+    /// files listing in the syft output. This enables layer attribution for files
+    /// owned by a package even when the artifact's locations only reference the
+    /// package manager database.
+    /// </summary>
+    private static Dictionary<string, string> BuildFilePathToLayerMap(SyftOutputFile[]? files)
+    {
+        var map = new Dictionary<string, string>(StringComparer.Ordinal);
+        if (files == null)
+        {
+            return map;
+        }
+
+        foreach (var file in files)
+        {
+            if (file.Location != null && !string.IsNullOrEmpty(file.Location.Path) && !string.IsNullOrEmpty(file.Location.LayerId))
             {
-                layers.ToList().ForEach(layer => layerDictionary[layer].Add(component));
+                map.TryAdd(file.Location.Path, file.Location.LayerId);
             }
-
-            var layerMappedLinuxComponents = layerDictionary.Select(kvp =>
-            {
-                (var layerId, var components) = kvp;
-                return new LayerMappedLinuxComponents
-                {
-                    LinuxComponents = components,
-                    DockerLayer = dockerLayers.First(layer => layer.DiffId == layerId),
-                };
-            });
-
-            syftTelemetryRecord.LinuxComponents = JsonConvert.SerializeObject(linuxComponentsWithLayers.Select(linuxComponentWithLayer =>
-                new LinuxComponentRecord
-                {
-                    Name = linuxComponentWithLayer.Component.Name,
-                    Version = linuxComponentWithLayer.Component.Version,
-                }));
-
-            return layerMappedLinuxComponents;
         }
-        catch (Exception e)
-        {
-            record.FailedDeserializingScannerOutput = e.ToString();
-            return null;
-        }
+
+        return map;
     }
 
-    private string GetSupplierFromArtifactElement(ArtifactElement artifact)
+    /// <summary>
+    /// Determines whether a file path is a well-known package manager database file
+    /// that should be excluded from layer attribution.
+    /// </summary>
+    private static bool IsPackageManagerDatabasePath(string path)
     {
-        var supplier = artifact.Metadata?.Author;
-        if (!string.IsNullOrEmpty(supplier))
+        if (string.IsNullOrEmpty(path))
         {
-            return supplier;
+            return false;
         }
 
-        supplier = artifact.Metadata?.Maintainer;
-        if (!string.IsNullOrEmpty(supplier))
+        if (PackageManagerDatabasePaths.Contains(path))
         {
-            return supplier;
+            return true;
         }
 
-        return null;
-    }
-
-    private string GetLicenseFromArtifactElement(ArtifactElement artifact)
-    {
-        var license = artifact.Metadata?.License?.String;
-        if (license != null)
-        {
-            return license;
-        }
-
-        var licenses = artifact.Licenses;
-        if (licenses != null && licenses.Length != 0)
-        {
-            return string.Join(", ", licenses.Select(l => l.Value));
-        }
-
-        return null;
-    }
-
-    internal sealed class LinuxComponentRecord
-    {
-        public string Name { get; set; }
-
-        public string Version { get; set; }
+        // Cover any file under /var/lib/rpm/ (RPM database can use multiple files)
+        return path.StartsWith("/var/lib/rpm/", StringComparison.OrdinalIgnoreCase);
     }
 }

@@ -1,9 +1,10 @@
+#nullable disable
 namespace Microsoft.ComponentDetection.Detectors.Pnpm;
 
 using System.Collections.Generic;
 using YamlDotNet.Serialization;
 
-public class PnpmHasDependenciesV6 : PnpmYaml
+internal class PnpmHasDependenciesV6 : PnpmYaml
 {
     [YamlMember(Alias = "dependencies")]
     public Dictionary<string, PnpmYamlV6Dependency> Dependencies { get; set; }

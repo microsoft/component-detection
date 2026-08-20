@@ -1,4 +1,7 @@
+#nullable disable
 namespace Microsoft.ComponentDetection.Contracts.TypedComponent;
+
+using System.Text.Json.Serialization;
 
 public class CondaComponent : TypedComponent
 {
@@ -14,28 +17,37 @@ public class CondaComponent : TypedComponent
         this.MD5 = md5;
     }
 
-    private CondaComponent()
+    public CondaComponent()
     {
         /* Reserved for deserialization */
     }
 
+    [JsonPropertyName("build")]
     public string Build { get; set; }
 
+    [JsonPropertyName("channel")]
     public string Channel { get; set; }
 
+    [JsonPropertyName("name")]
     public string Name { get; set; }
 
+    [JsonPropertyName("namespace")]
     public string Namespace { get; set; }
 
+    [JsonPropertyName("subdir")]
     public string Subdir { get; set; }
 
+    [JsonPropertyName("version")]
     public string Version { get; set; }
 
+    [JsonPropertyName("url")]
     public string Url { get; set; }
 
+    [JsonPropertyName("mD5")]
     public string MD5 { get; set; }
 
+    [JsonIgnore]
     public override ComponentType Type => ComponentType.Conda;
 
-    protected override string ComputeId() => $"{this.Name} {this.Version} {this.Build} {this.Channel} {this.Subdir} {this.Namespace} {this.Url} {this.MD5} - {this.Type}";
+    protected override string ComputeBaseId() => $"{this.Name} {this.Version} {this.Build} {this.Channel} {this.Subdir} {this.Namespace} {this.Url} {this.MD5} - {this.Type}";
 }
