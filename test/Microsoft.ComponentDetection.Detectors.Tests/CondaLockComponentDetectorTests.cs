@@ -104,6 +104,48 @@ package:
         detectedComponents.Should().HaveCount(4);
     }
 
+    [TestMethod]
+    public async Task CondaComponentDetector_CircularDependenciesDoNotOverflowAsync()
+    {
+        var condaLockContent =
+@"version: 1
+metadata:
+  platforms:
+  - linux-64
+package:
+- name: python
+  version: 3.12.13
+  manager: conda
+  platform: linux-64
+  dependencies:
+    pip: ''
+  category: main
+  optional: false
+- name: pip
+  version: 26.2.1
+  manager: conda
+  platform: linux-64
+  dependencies:
+    python: ''
+  category: main
+  optional: false
+";
+
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
+            .WithFile("conda-lock.yml", condaLockContent)
+            .ExecuteDetectorAsync();
+
+        var detectedComponents = componentRecorder.GetDetectedComponents();
+        var dependencyGraph = componentRecorder.GetDependencyGraphsByLocation().Values.First();
+        var pythonId = detectedComponents.Single(component => component.Component is CondaComponent { Name: "python" }).Component.Id;
+        var pipId = detectedComponents.Single(component => component.Component is PipComponent { Name: "pip" }).Component.Id;
+
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+        detectedComponents.Should().HaveCount(2);
+        dependencyGraph.GetDependenciesForComponent(pythonId).Should().Contain(pipId);
+        dependencyGraph.GetDependenciesForComponent(pipId).Should().Contain(pythonId);
+    }
+
     private void AssertCondaLockComponentNameAndVersion(IEnumerable<DetectedComponent> detectedComponents, string name, string version)
     {
         detectedComponents.SingleOrDefault(c =>
