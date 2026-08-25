@@ -14,9 +14,10 @@ using Moq;
 [TestCategory("Governance/ComponentDetection")]
 public class DockerServiceTests
 {
-    private const string TestImage = "governancecontainerregistry.azurecr.io/testcontainers/hello-world:latest";
+    private const string LinuxTestImage = "governancecontainerregistry.azurecr.io/testcontainers/hello-world:latest";
+    private const string WindowsTestImage = "mcr.microsoft.com/windows/nanoserver:ltsc2025";
 
-    private const string TestImageWithBaseDetails = "governancecontainerregistry.azurecr.io/testcontainers/dockertags_test:testtag";
+    private const string LinuxTestImageWithBaseDetails = "governancecontainerregistry.azurecr.io/testcontainers/dockertags_test:testtag";
 
     private readonly Mock<ILogger<DockerService>> loggerMock = new();
     private readonly DockerService dockerService;
@@ -38,17 +39,17 @@ public class DockerServiceTests
     [TestMethod]
     public async Task DockerService_CanPingDockerAsync_DoesNotThrow()
     {
-        // CanPingDockerAsync should return true or false, regardless of Operating System
+        // CanPingDockerAsync should return true or false, regardless of whether docker is running
         await this.dockerService.CanPingDockerAsync();
     }
 
     [TestMethod]
-    public async Task DockerService_CanRunLinuxContainersAsync()
+    public async Task DockerService_CanRunLinuxContainersAsync_DoesNotThrow()
     {
         await this.SkipIfDockerNotRunningAsync();
 
-        var isLinuxContainerModeEnabled = await this.dockerService.CanRunLinuxContainersAsync();
-        isLinuxContainerModeEnabled.Should().BeTrue();
+        // CanPingDockerAsync should return true or false if docker is running
+        await this.dockerService.CanRunLinuxContainersAsync();
     }
 
     [TestMethod]
@@ -56,7 +57,10 @@ public class DockerServiceTests
     {
         await this.SkipIfDockerNotRunningAsync();
 
-        var isImagePulled = await this.dockerService.TryPullImageAsync(TestImage);
+        var canRunLinuxContainers = await this.dockerService.CanRunLinuxContainersAsync();
+        var testImage = canRunLinuxContainers ? LinuxTestImage : WindowsTestImage;
+
+        var isImagePulled = await this.dockerService.TryPullImageAsync(testImage);
         isImagePulled.Should().BeTrue();
     }
 
@@ -65,10 +69,13 @@ public class DockerServiceTests
     {
         await this.SkipIfDockerNotRunningAsync();
 
-        await this.dockerService.TryPullImageAsync(TestImage);
-        var details = await this.dockerService.InspectImageAsync(TestImage);
+        var canRunLinuxContainers = await this.dockerService.CanRunLinuxContainersAsync();
+        var testImage = canRunLinuxContainers ? LinuxTestImage : WindowsTestImage;
+
+        await this.dockerService.TryPullImageAsync(testImage);
+        var details = await this.dockerService.InspectImageAsync(testImage);
         details.Should().NotBeNull();
-        details.Tags.Should().Contain("governancecontainerregistry.azurecr.io/testcontainers/hello-world:latest");
+        details.Tags.Should().Contain(testImage);
     }
 
     [TestMethod]
@@ -76,8 +83,8 @@ public class DockerServiceTests
     {
         await this.SkipIfDockerNotRunningAsync();
 
-        await this.dockerService.TryPullImageAsync(TestImageWithBaseDetails);
-        var details = await this.dockerService.InspectImageAsync(TestImageWithBaseDetails);
+        await this.dockerService.TryPullImageAsync(LinuxTestImageWithBaseDetails);
+        var details = await this.dockerService.InspectImageAsync(LinuxTestImageWithBaseDetails);
 
         details.Should().NotBeNull();
         details.Tags.Should().Contain("governancecontainerregistry.azurecr.io/testcontainers/dockertags_test:testtag");
@@ -103,7 +110,7 @@ public class DockerServiceTests
     {
         await this.SkipIfDockerNotRunningAsync();
 
-        var (stdout, stderr) = await this.dockerService.CreateAndRunContainerAsync(TestImage, []);
+        var (stdout, stderr) = await this.dockerService.CreateAndRunContainerAsync(LinuxTestImage, []);
         stdout.Should().StartWith("\nHello from Docker!");
         stderr.Should().BeEmpty();
     }
