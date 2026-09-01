@@ -212,6 +212,6 @@ public static class CondaDependencyResolver
     /// <param name="package">The CondaPackage.</param>
     /// <returns>True if the package is a python package.</returns>
     private static bool IsPythonPackage(CondaPackage package)
-        => package.Manager.Equals("pip", StringComparison.OrdinalIgnoreCase) ||
+        => package.Manager?.Equals("pip", StringComparison.OrdinalIgnoreCase) == true ||
            package.Dependencies?.Keys.Any(dependency => dependency.Equals("python", StringComparison.OrdinalIgnoreCase)) == true;
 }
