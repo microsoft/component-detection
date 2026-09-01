@@ -265,6 +265,7 @@ public class ArtifactComponentFactoryTests
                 Channel = "https://conda.anaconda.org/conda-forge",
                 Subdir = "linux-64",
                 Md5 = "abc123def456",
+                Sha256 = "def456abc123",
             },
         };
 
@@ -277,6 +278,7 @@ public class ArtifactComponentFactoryTests
         result.Channel.Should().Be("https://conda.anaconda.org/conda-forge");
         result.Subdir.Should().Be("linux-64");
         result.MD5.Should().Be("abc123def456");
+        result.SHA256.Should().Be("def456abc123");
     }
 
     [TestMethod]

@@ -14,6 +14,9 @@ public class CondaPackage
     [YamlMember(Alias = "category")]
     public string Category { get; set; }
 
+    [YamlMember(Alias = "build")]
+    public string Build { get; set; }
+
     [YamlMember(Alias = "dependencies")]
     public Dictionary<string, string> Dependencies { get; set; }
 
