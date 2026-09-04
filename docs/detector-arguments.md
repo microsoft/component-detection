@@ -29,8 +29,9 @@ dotnet run --project "src\Microsoft.ComponentDetection\Microsoft.ComponentDetect
                               components that are going to be scanned. The
                               detectors that are going to run are the ones that
                               belongs to the categories.The possible values are:
-                              Npm, NuGet, Maven, RubyGems, Cargo, Pip, GoMod,
-                              CocoaPods, Linux.
+                              Cargo, CocoaPods, Conan, Conda, DotNet,
+                              DockerReference, GoMod, Linux, Maven, Npm, NuGet,
+                              Python, RubyGems, Rust, Spdx, Swift, Vcpkg.
 
   --DetectorsFilter           A comma separated list with the identifiers of the
                               specific detectors to be used. This is meant to be
