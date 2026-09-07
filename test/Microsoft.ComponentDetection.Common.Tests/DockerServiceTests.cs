@@ -58,8 +58,8 @@ public class DockerServiceTests
     [TestMethod]
     public async Task DockerService_CanRunLinuxContainersAsync_DoesNotThrow()
     {
-        // CanRunLinuxContainersAsync should return false when docker is not running,
-        // and true or false regardless of whether docker is running
+        // CanRunLinuxContainersAsync should return false when Docker isn't running,
+        // and otherwise return true/false depending on whether Linux containers are supported.
         await this.dockerService.CanRunLinuxContainersAsync();
     }
 
