@@ -14,10 +14,8 @@ using Moq;
 [TestCategory("Governance/ComponentDetection")]
 public class DockerServiceTests
 {
-    private const string LinuxTestImage = "governancecontainerregistry.azurecr.io/testcontainers/hello-world:latest";
-    private const string WindowsTestImage = "mcr.microsoft.com/windows/nanoserver:ltsc2025";
-
-    private const string LinuxTestImageWithBaseDetails = "governancecontainerregistry.azurecr.io/testcontainers/dockertags_test:testtag";
+    private const string TestImage = "governancecontainerregistry.azurecr.io/testcontainers/hello-world:latest";
+    private const string TestImageWithBaseDetails = "governancecontainerregistry.azurecr.io/testcontainers/dockertags_test:testtag";
 
     private readonly Mock<ILogger<DockerService>> loggerMock = new();
     private readonly DockerService dockerService;
@@ -33,6 +31,20 @@ public class DockerServiceTests
         if (!isDockerRunning)
         {
             Assert.Inconclusive("docker is not running");
+        }
+    }
+
+    /// <summary>
+    /// Skip the test if Linux containers are not supported.
+    /// </summary>
+    private async Task SkipIfLinuxNotSupportedAsync()
+    {
+        await this.SkipIfDockerNotRunningAsync();
+
+        var isLinuxSupported = await this.dockerService.CanRunLinuxContainersAsync();
+        if (!isLinuxSupported)
+        {
+            Assert.Inconclusive("docker does not support Linux containers");
         }
     }
 
@@ -55,36 +67,30 @@ public class DockerServiceTests
     [TestMethod]
     public async Task DockerService_CanPullImageAsync()
     {
-        await this.SkipIfDockerNotRunningAsync();
+        await this.SkipIfLinuxNotSupportedAsync();
 
-        var canRunLinuxContainers = await this.dockerService.CanRunLinuxContainersAsync();
-        var testImage = canRunLinuxContainers ? LinuxTestImage : WindowsTestImage;
-
-        var isImagePulled = await this.dockerService.TryPullImageAsync(testImage);
+        var isImagePulled = await this.dockerService.TryPullImageAsync(TestImage);
         isImagePulled.Should().BeTrue();
     }
 
     [TestMethod]
     public async Task DockerService_CanInspectImageAsync()
     {
-        await this.SkipIfDockerNotRunningAsync();
+        await this.SkipIfLinuxNotSupportedAsync();
 
-        var canRunLinuxContainers = await this.dockerService.CanRunLinuxContainersAsync();
-        var testImage = canRunLinuxContainers ? LinuxTestImage : WindowsTestImage;
-
-        await this.dockerService.TryPullImageAsync(testImage);
-        var details = await this.dockerService.InspectImageAsync(testImage);
+        await this.dockerService.TryPullImageAsync(TestImage);
+        var details = await this.dockerService.InspectImageAsync(TestImage);
         details.Should().NotBeNull();
-        details.Tags.Should().Contain(testImage);
+        details.Tags.Should().Contain(TestImage);
     }
 
     [TestMethod]
     public async Task DockerService_PopulatesBaseImageAndLayerDetailsAsync()
     {
-        await this.SkipIfDockerNotRunningAsync();
+        await this.SkipIfLinuxNotSupportedAsync();
 
-        await this.dockerService.TryPullImageAsync(LinuxTestImageWithBaseDetails);
-        var details = await this.dockerService.InspectImageAsync(LinuxTestImageWithBaseDetails);
+        await this.dockerService.TryPullImageAsync(TestImageWithBaseDetails);
+        var details = await this.dockerService.InspectImageAsync(TestImageWithBaseDetails);
 
         details.Should().NotBeNull();
         details.Tags.Should().Contain("governancecontainerregistry.azurecr.io/testcontainers/dockertags_test:testtag");
@@ -108,9 +114,9 @@ public class DockerServiceTests
     [TestMethod]
     public async Task DockerService_CanCreateAndRunImageAsync()
     {
-        await this.SkipIfDockerNotRunningAsync();
+        await this.SkipIfLinuxNotSupportedAsync();
 
-        var (stdout, stderr) = await this.dockerService.CreateAndRunContainerAsync(LinuxTestImage, []);
+        var (stdout, stderr) = await this.dockerService.CreateAndRunContainerAsync(TestImage, []);
         stdout.Should().StartWith("\nHello from Docker!");
         stderr.Should().BeEmpty();
     }
