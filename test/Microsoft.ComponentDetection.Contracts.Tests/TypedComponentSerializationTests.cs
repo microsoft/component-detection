@@ -81,6 +81,73 @@ public class TypedComponentSerializationTests
     }
 
     [TestMethod]
+    public void TypedComponent_Serialization_Conda_WithHashes()
+    {
+        TypedComponent tc = new CondaComponent(
+            "sample",
+            "1.2.3",
+            "build_0",
+            "https://conda.example/channel",
+            "linux-64",
+            null,
+            "https://conda.example/channel/linux-64/sample-1.2.3-build_0.conda",
+            "md5-placeholder",
+            "sha256-placeholder");
+
+        var result = JsonSerializer.Serialize(tc);
+        var condaComponent = JsonSerializer.Deserialize<TypedComponent>(result)
+            .Should().BeOfType<CondaComponent>().Subject;
+
+        condaComponent.MD5.Should().Be("md5-placeholder");
+        condaComponent.SHA256.Should().Be("sha256-placeholder");
+        condaComponent.DownloadUrl.Should().Be(
+            new Uri("https://conda.example/channel/linux-64/sample-1.2.3-build_0.conda"));
+        condaComponent.BaseId.Should().Be("sample 1.2.3 - Conda");
+        condaComponent.Id.Should().Be(
+            "sample 1.2.3 - Conda [Build:build_0 Channel:https://conda.example/channel Subdir:linux-64]");
+        condaComponent.Id.Should().NotContainAny("md5-placeholder", "sha256-placeholder", condaComponent.Url);
+    }
+
+    [TestMethod]
+    public void CondaComponent_Identity_ExcludesArtifactProvenance()
+    {
+        var componentA = new CondaComponent(
+            "sample",
+            "1.2.3",
+            "build_0",
+            "https://conda.example/channel",
+            "linux-64",
+            null,
+            "https://mirror-a.example/sample-1.2.3-build_0.conda",
+            "md5-a",
+            "sha256-a");
+        var componentB = new CondaComponent(
+            "sample",
+            "1.2.3",
+            "build_0",
+            "https://conda.example/channel",
+            "linux-64",
+            null,
+            "https://mirror-b.example/sample-1.2.3-build_0.conda",
+            "md5-b",
+            "sha256-b");
+
+        componentA.Id.Should().Be(componentB.Id);
+    }
+
+    [TestMethod]
+    public void CondaComponent_Identity_DistinguishesPlatformArtifacts()
+    {
+        var linuxComponent = new CondaComponent(
+            "sample", "1.2.3", "linux_build", "conda-forge", "linux-64", null, null, null);
+        var windowsComponent = new CondaComponent(
+            "sample", "1.2.3", "windows_build", "conda-forge", "win-64", null, null, null);
+
+        linuxComponent.BaseId.Should().Be(windowsComponent.BaseId);
+        linuxComponent.Id.Should().NotBe(windowsComponent.Id);
+    }
+
+    [TestMethod]
     public void TypedComponent_Serialization_Maven()
     {
         TypedComponent tc = new MavenComponent("SomeGroupId", "SomeArtifactId", "1.2.3");

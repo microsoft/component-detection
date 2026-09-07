@@ -28,7 +28,7 @@ internal class CondaComponentFactory : ArtifactComponentFactoryBase
             return null;
         }
 
-        // Syft provides conda metadata including build, channel, subdir, url, and md5
+        // Syft provides conda metadata including build, channel, subdir, URL, and hashes.
         var metadata = artifact.Metadata;
 
         return new CondaComponent(
@@ -39,7 +39,8 @@ internal class CondaComponentFactory : ArtifactComponentFactoryBase
             subdir: metadata?.Subdir,
             @namespace: null, // Syft doesn't provide namespace
             url: metadata?.Url?.String,
-            md5: metadata?.Md5
+            md5: metadata?.Md5,
+            sha256: metadata?.Sha256
         );
     }
 }

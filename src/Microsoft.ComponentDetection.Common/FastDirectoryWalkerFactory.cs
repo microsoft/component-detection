@@ -142,19 +142,26 @@ internal class FastDirectoryWalkerFactory : IObservableDirectoryWalkerFactory
                     var scan = new ActionBlock<DirectoryInfo>(
                         di =>
                         {
-                            var enumerator = new FileSystemEnumerable<FileSystemInfo>(di.FullName, this.Transform, new EnumerationOptions()
+                            try
                             {
-                                RecurseSubdirectories = true,
-                                IgnoreInaccessible = true,
-                                ReturnSpecialDirectories = false,
-                            })
-                            {
-                                ShouldRecursePredicate = shouldRecurse,
-                            };
+                                var enumerator = new FileSystemEnumerable<FileSystemInfo>(di.FullName, this.Transform, new EnumerationOptions()
+                                {
+                                    RecurseSubdirectories = true,
+                                    IgnoreInaccessible = true,
+                                    ReturnSpecialDirectories = false,
+                                })
+                                {
+                                    ShouldRecursePredicate = shouldRecurse,
+                                };
 
-                            foreach (var fileSystemInfo in enumerator)
+                                foreach (var fileSystemInfo in enumerator)
+                                {
+                                    observer.OnNext(fileSystemInfo);
+                                }
+                            }
+                            catch (DirectoryNotFoundException)
                             {
-                                observer.OnNext(fileSystemInfo);
+                                this.logger.LogDebug("Directory disappeared during enumeration: {DirectoryFullName}", di.FullName);
                             }
                         },
                         new ExecutionDataflowBlockOptions() { MaxDegreeOfParallelism = Environment.ProcessorCount });
@@ -183,6 +190,12 @@ internal class FastDirectoryWalkerFactory : IObservableDirectoryWalkerFactory
                     }
 
                     s.OnNext(info);
+                },
+                error =>
+                {
+                    sw.Stop();
+                    this.logger.LogError(error, "Directory enumeration failed for {RootFullName}", root.FullName);
+                    s.OnError(error);
                 },
                 () =>
                 {
