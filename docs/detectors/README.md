@@ -89,6 +89,12 @@
 | NuGetProjectModelProjectCentricComponentDetector | Stable     |
 | MSBuildBinaryLogComponentDetector                | Experimental |
 
+- [Paket](paket.md)
+
+| Detector              | Status     |
+| --------------------- | ---------- |
+| PaketComponentDetector | DefaultOff |
+
 - [Pip](pip.md)
 
 | Detector                   | Status     |
