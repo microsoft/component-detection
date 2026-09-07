@@ -37,6 +37,7 @@ public class ExperimentDiff
         var developmentDependencyChanges = new List<DevelopmentDependencyChange>();
         var addedRootIds = new Dictionary<string, IReadOnlySet<string>>();
         var removedRootIds = new Dictionary<string, IReadOnlySet<string>>();
+        var locationChanges = new Dictionary<string, LocationChange>();
         var controlDetectorList = new List<ExperimentDetector>();
         var experimentDetectorList = new List<ExperimentDetector>();
 
@@ -54,6 +55,16 @@ public class ExperimentDiff
                         id,
                         oldValue: false,
                         newValue: newComponent.DevelopmentDependency));
+                }
+
+                // Track locations for newly added components
+                if (newComponent.Locations.Count > 0)
+                {
+                    // Pass HashSet directly - no conversion needed
+                    locationChanges[id] = new LocationChange(
+                        id,
+                        controlLocations: [],
+                        experimentLocations: newComponent.Locations);
                 }
 
                 continue;
@@ -78,6 +89,32 @@ public class ExperimentDiff
             if (removedRoots.Count > 0)
             {
                 removedRootIds[id] = removedRoots;
+            }
+
+            // Track location changes if counts differ or either set has locations
+            // Note: We don't check SetEquals() here as it's O(n) and expensive for large sets.
+            // The LocationChange uses lazy evaluation, so no diff is computed unless accessed.
+            if (oldComponent.Locations.Count != newComponent.Locations.Count)
+            {
+                // Pass HashSets directly - LocationChange will compute diffs lazily if needed
+                locationChanges[id] = new LocationChange(
+                    id,
+                    controlLocations: oldComponent.Locations,
+                    experimentLocations: newComponent.Locations);
+            }
+        }
+
+        // Track locations for removed components
+        foreach (var oldComponentPair in oldComponentDictionary)
+        {
+            var id = oldComponentPair.Key;
+            if (!newComponentDictionary.ContainsKey(id) && oldComponentPair.Value.Locations.Count > 0)
+            {
+                // Pass HashSet directly - no conversion needed
+                locationChanges[id] = new LocationChange(
+                    id,
+                    controlLocations: oldComponentPair.Value.Locations,
+                    experimentLocations: []);
             }
         }
 
@@ -104,6 +141,7 @@ public class ExperimentDiff
         this.DevelopmentDependencyChanges = developmentDependencyChanges.AsReadOnly();
         this.AddedRootIds = addedRootIds.ToImmutableDictionary();
         this.RemovedRootIds = removedRootIds.ToImmutableDictionary();
+        this.LocationChanges = locationChanges.ToImmutableDictionary();
     }
 
     /// <summary>
@@ -151,6 +189,11 @@ public class ExperimentDiff
     public IReadOnlyDictionary<string, IReadOnlySet<string>> RemovedRootIds { get; init; }
 
     /// <summary>
+    /// Gets a dictionary of component IDs to the location changes for that component.
+    /// </summary>
+    public IReadOnlyDictionary<string, LocationChange> LocationChanges { get; init; }
+
+    /// <summary>
     /// Any additional metrics that were captured for the experiment.
     /// </summary>
     public IReadOnlyCollection<KeyValuePair<string, string>> AdditionalProperties { get; init; }
@@ -187,6 +230,95 @@ public class ExperimentDiff
         /// Gets the new value of the development dependency status.
         /// </summary>
         public bool NewValue { get; }
+    }
+
+    /// <summary>
+    /// Stores information about changes to the file path locations where a component was found.
+    /// </summary>
+    public class LocationChange
+    {
+        private IReadOnlySet<string> addedLocations;
+        private IReadOnlySet<string> removedLocations;
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="LocationChange"/> class.
+        /// </summary>
+        /// <param name="componentId">The component ID.</param>
+        /// <param name="controlLocations">The locations found by the control detector.</param>
+        /// <param name="experimentLocations">The locations found by the experimental detector.</param>
+        public LocationChange(
+            string componentId,
+            IEnumerable<string> controlLocations,
+            IEnumerable<string> experimentLocations)
+        {
+            this.ComponentId = componentId;
+
+            // Store as HashSet if not already, or keep the reference if it's already a HashSet
+            this.ControlLocations = controlLocations as IReadOnlySet<string> ?? controlLocations.ToHashSet();
+            this.ExperimentLocations = experimentLocations as IReadOnlySet<string> ?? experimentLocations.ToHashSet();
+
+            this.ControlLocationCount = this.ControlLocations.Count;
+            this.ExperimentLocationCount = this.ExperimentLocations.Count;
+            this.LocationCountDelta = this.ExperimentLocationCount - this.ControlLocationCount;
+        }
+
+        /// <summary>
+        /// Gets the component ID.
+        /// </summary>
+        public string ComponentId { get; }
+
+        /// <summary>
+        /// Gets the locations found by the control detector.
+        /// </summary>
+        public IReadOnlySet<string> ControlLocations { get; }
+
+        /// <summary>
+        /// Gets the locations found by the experimental detector.
+        /// </summary>
+        public IReadOnlySet<string> ExperimentLocations { get; }
+
+        /// <summary>
+        /// Gets the locations found by the experimental detector but not the control detector.
+        /// Computed lazily to avoid allocations if not accessed.
+        /// </summary>
+        public IReadOnlySet<string> AddedLocations
+        {
+            get
+            {
+                this.addedLocations ??= this.ExperimentLocations.Except(this.ControlLocations).ToHashSet();
+                return this.addedLocations;
+            }
+        }
+
+        /// <summary>
+        /// Gets the locations found by the control detector but not the experimental detector.
+        /// Computed lazily to avoid allocations if not accessed.
+        /// </summary>
+        public IReadOnlySet<string> RemovedLocations
+        {
+            get
+            {
+                this.removedLocations ??= this.ControlLocations.Except(this.ExperimentLocations).ToHashSet();
+                return this.removedLocations;
+            }
+        }
+
+        /// <summary>
+        /// Gets the number of locations found by the control detector.
+        /// </summary>
+        public int ControlLocationCount { get; }
+
+        /// <summary>
+        /// Gets the number of locations found by the experimental detector.
+        /// </summary>
+        public int ExperimentLocationCount { get; }
+
+        /// <summary>
+        /// Gets the difference in location count (experiment - control).
+        /// A positive value means the experiment found more locations.
+        /// A negative value means the experiment found fewer locations.
+        /// </summary>
+        public int LocationCountDelta { get; }
     }
 
     /// <summary>
