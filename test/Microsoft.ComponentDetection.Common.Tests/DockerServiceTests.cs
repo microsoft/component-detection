@@ -60,7 +60,7 @@ public class DockerServiceTests
     {
         await this.SkipIfDockerNotRunningAsync();
 
-        // CanPingDockerAsync should return true or false if docker is running
+        // CanRunLinuxContainersAsync should return true or false if docker is running
         await this.dockerService.CanRunLinuxContainersAsync();
     }
 
