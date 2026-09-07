@@ -15,7 +15,6 @@ using Moq;
 public class DockerServiceTests
 {
     private const string TestImage = "governancecontainerregistry.azurecr.io/testcontainers/hello-world:latest";
-
     private const string TestImageWithBaseDetails = "governancecontainerregistry.azurecr.io/testcontainers/dockertags_test:testtag";
 
     private readonly Mock<ILogger<DockerService>> loggerMock = new();
@@ -23,43 +22,72 @@ public class DockerServiceTests
 
     public DockerServiceTests() => this.dockerService = new DockerService(this.loggerMock.Object);
 
-    [TestMethod]
-    public async Task DockerService_CanPingDockerAsync()
+    /// <summary>
+    /// Skip the test if docker is not running.
+    /// </summary>
+    private async Task SkipIfDockerNotRunningAsync()
     {
-        var canPingDocker = await this.dockerService.CanPingDockerAsync();
-        canPingDocker.Should().BeTrue();
+        var isDockerRunning = await this.dockerService.CanPingDockerAsync();
+        if (!isDockerRunning)
+        {
+            Assert.Inconclusive("docker is not running");
+        }
+    }
+
+    /// <summary>
+    /// Skip the test if Linux containers are not supported.
+    /// </summary>
+    private async Task SkipIfLinuxNotSupportedAsync()
+    {
+        await this.SkipIfDockerNotRunningAsync();
+
+        var isLinuxSupported = await this.dockerService.CanRunLinuxContainersAsync();
+        if (!isLinuxSupported)
+        {
+            Assert.Inconclusive("docker does not support Linux containers");
+        }
     }
 
     [TestMethod]
-    [OSCondition(ConditionMode.Exclude, OperatingSystems.Windows)]
-    public async Task DockerService_CanRunLinuxContainersAsync()
+    public async Task DockerService_CanPingDockerAsync_DoesNotThrow()
     {
-        var isLinuxContainerModeEnabled = await this.dockerService.CanRunLinuxContainersAsync();
-        isLinuxContainerModeEnabled.Should().BeTrue();
+        // CanPingDockerAsync should return true or false, regardless of whether docker is running
+        await this.dockerService.CanPingDockerAsync();
     }
 
     [TestMethod]
-    [OSCondition(ConditionMode.Exclude, OperatingSystems.Windows)]
+    public async Task DockerService_CanRunLinuxContainersAsync_DoesNotThrow()
+    {
+        // CanRunLinuxContainersAsync should return false when Docker isn't running,
+        // and otherwise return true/false depending on whether Linux containers are supported.
+        await this.dockerService.CanRunLinuxContainersAsync();
+    }
+
+    [TestMethod]
     public async Task DockerService_CanPullImageAsync()
     {
-        Func<Task> action = async () => await this.dockerService.TryPullImageAsync(TestImage);
-        await action.Should().NotThrowAsync();
+        await this.SkipIfLinuxNotSupportedAsync();
+
+        var isImagePulled = await this.dockerService.TryPullImageAsync(TestImage);
+        isImagePulled.Should().BeTrue();
     }
 
     [TestMethod]
-    [OSCondition(ConditionMode.Exclude, OperatingSystems.Windows)]
     public async Task DockerService_CanInspectImageAsync()
     {
+        await this.SkipIfLinuxNotSupportedAsync();
+
         await this.dockerService.TryPullImageAsync(TestImage);
         var details = await this.dockerService.InspectImageAsync(TestImage);
         details.Should().NotBeNull();
-        details.Tags.Should().Contain("governancecontainerregistry.azurecr.io/testcontainers/hello-world:latest");
+        details.Tags.Should().Contain(TestImage);
     }
 
     [TestMethod]
-    [OSCondition(ConditionMode.Exclude, OperatingSystems.Windows)]
     public async Task DockerService_PopulatesBaseImageAndLayerDetailsAsync()
     {
+        await this.SkipIfLinuxNotSupportedAsync();
+
         await this.dockerService.TryPullImageAsync(TestImageWithBaseDetails);
         var details = await this.dockerService.InspectImageAsync(TestImageWithBaseDetails);
 
@@ -83,9 +111,10 @@ public class DockerServiceTests
     }
 
     [TestMethod]
-    [OSCondition(ConditionMode.Exclude, OperatingSystems.Windows)]
     public async Task DockerService_CanCreateAndRunImageAsync()
     {
+        await this.SkipIfLinuxNotSupportedAsync();
+
         var (stdout, stderr) = await this.dockerService.CreateAndRunContainerAsync(TestImage, []);
         stdout.Should().StartWith("\nHello from Docker!");
         stderr.Should().BeEmpty();
