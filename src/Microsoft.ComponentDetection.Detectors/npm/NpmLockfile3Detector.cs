@@ -1,5 +1,6 @@
 namespace Microsoft.ComponentDetection.Detectors.Npm;
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
@@ -102,7 +103,7 @@ public class NpmLockfile3Detector : NpmLockfileDetectorBase
             this.RecordComponent(singleFileComponentRecorder, component, lockPackage.Dev ?? false, component);
 
             // Enqueue nested dependencies
-            this.EnqueueNestedDependencies(subQueue, path, lockPackage, packageLookup, singleFileComponentRecorder, component);
+            this.EnqueueNestedDependencies(subQueue, path, lockPackage, packageLookup, component);
 
             // Process sub-dependencies
             while (subQueue.Count > 0)
@@ -127,7 +128,7 @@ public class NpmLockfile3Detector : NpmLockfileDetectorBase
 
                 this.RecordComponent(singleFileComponentRecorder, subComponent, subPackage.Dev ?? false, component, parentComponent.Id);
 
-                this.EnqueueNestedDependencies(subQueue, subPath, subPackage, packageLookup, singleFileComponentRecorder, subComponent);
+                this.EnqueueNestedDependencies(subQueue, subPath, subPackage, packageLookup, subComponent);
             }
         }
     }
@@ -157,7 +158,6 @@ public class NpmLockfile3Detector : NpmLockfileDetectorBase
         string currentPath,
         PackageLockV3Package package,
         Dictionary<string, (string Path, PackageLockV3Package Package)> packageLookup,
-        ISingleFileComponentRecorder componentRecorder,
         TypedComponent parent)
     {
         if (package.Dependencies is null)
@@ -167,31 +167,26 @@ public class NpmLockfile3Detector : NpmLockfileDetectorBase
 
         foreach (var dep in package.Dependencies)
         {
-            // First, check if there is an entry in the lockfile for this dependency nested in its ancestors
-            var ancestors = componentRecorder.DependencyGraph.GetAncestors(parent.Id);
-            ancestors.Add(parent.Id);
-
-            // Remove version information from ancestor IDs
-            ancestors = ancestors.Select(x => x.Split(' ')[0]).ToList();
-
             var found = false;
 
-            // Depth-first search through ancestors
-            for (var i = 0; i < ancestors.Count && !found; i++)
+            // Resolve using lockfile paths: current package path first, then each ancestor path, then top-level.
+            var currentAncestorPath = currentPath;
+            while (!string.IsNullOrEmpty(currentAncestorPath) && !found)
             {
-                var possiblePath = ancestors.Skip(i).ToList();
-                var ancestorNodeModulesPath = string.Format(
-                    "{0}/{1}/{0}/{2}",
-                    NodeModules,
-                    string.Join($"/{NodeModules}/", possiblePath),
-                    dep.Key);
+                var ancestorNodeModulesPath = $"{currentAncestorPath}/{NodeModules}/{dep.Key}";
 
                 if (packageLookup.TryGetValue(ancestorNodeModulesPath, out var nestedPkg))
                 {
                     this.Logger.LogDebug("Found nested dependency {Dependency} in {AncestorNodeModulesPath}", dep.Key, ancestorNodeModulesPath);
                     queue.Enqueue((nestedPkg.Path, nestedPkg.Package, parent));
                     found = true;
+                    continue;
                 }
+
+                var parentNodeModulesIndex = currentAncestorPath.LastIndexOf($"/{NodeModules}/", StringComparison.Ordinal);
+                currentAncestorPath = parentNodeModulesIndex >= 0
+                    ? currentAncestorPath[..parentNodeModulesIndex]
+                    : null;
             }
 
             if (found)
