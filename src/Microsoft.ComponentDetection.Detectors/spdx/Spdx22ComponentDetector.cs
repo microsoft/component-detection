@@ -39,7 +39,7 @@ public class Spdx22ComponentDetector : FileComponentDetector, IDefaultOffCompone
 
     public override IEnumerable<ComponentType> SupportedComponentTypes { get; } = [ComponentType.Spdx];
 
-    public override int Version => 1;
+    public override int Version => 2;
 
     public override IList<string> SearchPatterns => ["*.spdx.json"];
 
@@ -50,7 +50,7 @@ public class Spdx22ComponentDetector : FileComponentDetector, IDefaultOffCompone
 
         try
         {
-            var hash = this.GetSHA1HashFromStream(file.Stream);
+            var hash = this.GetSHA256HashFromStream(file.Stream);
 
             // Reset buffer to starting position after hash generation.
             file.Stream.Seek(0, SeekOrigin.Begin);
@@ -160,10 +160,10 @@ public class Spdx22ComponentDetector : FileComponentDetector, IDefaultOffCompone
         return component;
     }
 
-    private string GetSHA1HashFromStream(Stream stream)
+    private string GetSHA256HashFromStream(Stream stream)
     {
-#pragma warning disable CA5350 // Suppress Do Not Use Weak Cryptographic Algorithms because we use SHA1 intentionally in SPDX format
-        return BitConverter.ToString(SHA1.Create().ComputeHash(stream)).Replace("-", string.Empty).ToLower(); // CodeQL [SM02196] Sha1 is used in SPDX 2.2 format this file is parsing (https://spdx.github.io/spdx-spec/v2.2.2/file-information/).
-#pragma warning restore CA5350
+#pragma warning disable CA1308 // Component checksums are serialized as lowercase hexadecimal.
+        return Convert.ToHexString(SHA256.HashData(stream)).ToLowerInvariant();
+#pragma warning restore CA1308
     }
 }

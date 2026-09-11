@@ -116,9 +116,9 @@ public class Spdx22ComponentDetectorTests
 
         sbomComponent.Should().NotBeNull();
 
-#pragma warning disable CA5350 // Suppress Do Not Use Weak Cryptographic Algorithms because we use SHA1 intentionally in SPDX format
-        var checksum = BitConverter.ToString(SHA1.HashData(Encoding.UTF8.GetBytes(spdxFile))).Replace("-", string.Empty).ToLower();
-#pragma warning restore CA5350
+#pragma warning disable CA1308 // Component checksums are serialized as lowercase hexadecimal.
+        var checksum = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(spdxFile))).ToLowerInvariant();
+#pragma warning restore CA1308
 
         components.Should().ContainSingle();
         sbomComponent.Name.Should().Be("Test 1.0.0");
@@ -126,6 +126,7 @@ public class Spdx22ComponentDetectorTests
         sbomComponent.DocumentNamespace.Should().Be(new Uri("https://sbom.microsoft/Test/1.0.0/61de1a5-57cc-4732-9af5-edb321b4a7ee"));
         sbomComponent.SpdxVersion.Should().Be("SPDX-2.2");
         sbomComponent.Checksum.Should().Be(checksum);
+        sbomComponent.Id.Should().Be($"Test 1.0.0-SPDX-2.2-{checksum}");
         sbomComponent.Path.Should().Be(Path.Combine(Path.GetTempPath(), spdxFileName));
 
         sbomComponent.CreatorTool.Should().Be("Microsoft.SBOMTool-1.0.0");
