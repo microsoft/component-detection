@@ -13,7 +13,7 @@ The SPDX detector (`Spdx22ComponentDetector`) discovers SPDX SBOM (Software Bill
 The detector:
 - Searches for files matching the pattern `*.spdx.json`
 - Validates that the SPDX version is `SPDX-2.2` (currently the only supported version)
-- Computes a SHA-1 hash of the SPDX file for identification
+- Computes a SHA-256 hash of the SPDX file for identification
 - Extracts metadata including:
   - Document namespace
   - Document name
