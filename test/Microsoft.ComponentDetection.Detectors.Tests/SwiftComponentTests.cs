@@ -3,6 +3,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests.Swift;
 
 using System;
 using System.Collections.Generic;
+using System.Text.Json;
 using AwesomeAssertions;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -17,14 +18,48 @@ public class SwiftComponentTests
         var name = "alamofire";
         var version = "5.9.1";
         var packageUrl = "https://github.com/Alamofire/Alamofire";
-        var hash = "f455c2975872ccd2d9c81594c658af65716e9b9a";
+        var kind = "remoteSourceControl";
+        var commitHash = "f455c2975872ccd2d9c81594c658af65716e9b9a";
 
-        var component = new SwiftComponent(name, version, packageUrl, hash);
+        var component = new SwiftComponent(name, version, packageUrl, kind, commitHash);
 
         component.Name.Should().Be(name);
         component.Version.Should().Be(version);
+        component.Kind.Should().Be(kind);
+        component.CommitHash.Should().Be(commitHash);
         component.Type.Should().Be(ComponentType.Swift);
         component.Id.Should().Be($"{name} {version} - {component.Type}");
+    }
+
+    [TestMethod]
+    public void Serialization_ShouldIncludeCommitHash()
+    {
+        var commitHash = "f455c2975872ccd2d9c81594c658af65716e9b9a";
+        TypedComponent component = new SwiftComponent(
+            "alamofire",
+            "5.9.1",
+            "https://github.com/Alamofire/Alamofire",
+            "remoteSourceControl",
+            commitHash);
+
+        using var json = JsonDocument.Parse(JsonSerializer.Serialize(component));
+
+        json.RootElement.GetProperty("kind").GetString().Should().Be("remoteSourceControl");
+        json.RootElement.GetProperty("commitHash").GetString().Should().Be(commitHash);
+    }
+
+    [TestMethod]
+    public void Constructor_ShouldThrowException_WhenKindIsNull()
+    {
+        Action action = () =>
+            new SwiftComponent(
+                "alamofire",
+                "5.9.1",
+                "https://github.com/Alamofire/Alamofire",
+                null,
+                "f455c2975872ccd2d9c81594c658af65716e9b9a"
+            );
+        action.Should().Throw<ArgumentException>().WithMessage("*kind*");
     }
 
     [TestMethod]

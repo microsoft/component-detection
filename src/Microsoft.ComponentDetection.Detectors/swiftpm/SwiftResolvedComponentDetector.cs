@@ -39,7 +39,7 @@ public class SwiftResolvedComponentDetector : FileComponentDetector, IExperiment
 
     public override IEnumerable<ComponentType> SupportedComponentTypes => [ComponentType.Swift];
 
-    public override int Version => 1;
+    public override int Version => 2;
 
     protected override Task OnFileFoundAsync(
         ProcessRequest processRequest,
@@ -81,18 +81,10 @@ public class SwiftResolvedComponentDetector : FileComponentDetector, IExperiment
                         name: package.Identity,
                         version: version,
                         packageUrl: package.Location,
+                        kind: package.Kind,
                         hash: package.State.Revision);
                     var newDetectedSwiftComponent = new DetectedComponent(component: detectedSwiftComponent);
                     singleFileComponentRecorder.RegisterUsage(newDetectedSwiftComponent);
-
-                    // We also register a Git component for the same package so that the git URL is registered.
-                    // Swift Package Manager directly downloads the package from the git URL.
-                    var detectedGitComponent = new GitComponent(
-                        repositoryUrl: new Uri(package.Location),
-                        commitHash: package.State.Revision,
-                        tag: version);
-                    var newDetectedGitComponent = new DetectedComponent(component: detectedGitComponent);
-                    singleFileComponentRecorder.RegisterUsage(newDetectedGitComponent);
                 }
             }
             catch (Exception exception)

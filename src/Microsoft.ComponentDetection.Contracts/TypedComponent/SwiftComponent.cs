@@ -11,9 +11,9 @@ using PackageUrl;
 /// </summary>
 public class SwiftComponent : TypedComponent
 {
-    private readonly Uri packageUrl;
+    private const string RemoteSourceControlKind = "remoteSourceControl";
 
-    private readonly string hash;
+    private readonly Uri packageUrl;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="SwiftComponent"/> class.
@@ -21,14 +21,28 @@ public class SwiftComponent : TypedComponent
     /// <param name="name">The name of the component.</param>
     /// <param name="version">The version of the component.</param>
     /// <param name="packageUrl">The package URL of the component.</param>
-    /// <param name="hash">The hash of the component.</param>
+    /// <param name="hash">The Git commit hash of the component.</param>
     public SwiftComponent(string name, string version, string packageUrl, string hash)
+        : this(name, version, packageUrl, RemoteSourceControlKind, hash)
+    {
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="SwiftComponent"/> class.
+    /// </summary>
+    /// <param name="name">The name of the component.</param>
+    /// <param name="version">The version of the component.</param>
+    /// <param name="packageUrl">The package URL of the component.</param>
+    /// <param name="kind">The Swift package kind.</param>
+    /// <param name="hash">The Git commit hash of the component.</param>
+    public SwiftComponent(string name, string version, string packageUrl, string kind, string hash)
     {
         this.Name = this.ValidateRequiredInput(name, nameof(name), nameof(ComponentType.Swift));
         this.Version = this.ValidateRequiredInput(version, nameof(version), nameof(ComponentType.Swift));
         this.ValidateRequiredInput(packageUrl, nameof(packageUrl), nameof(ComponentType.Swift));
         this.packageUrl = new Uri(packageUrl);
-        this.hash = this.ValidateRequiredInput(hash, nameof(hash), nameof(ComponentType.Swift));
+        this.Kind = this.ValidateRequiredInput(kind, nameof(kind), nameof(ComponentType.Swift));
+        this.CommitHash = this.ValidateRequiredInput(hash, nameof(hash), nameof(ComponentType.Swift));
     }
 
     [JsonPropertyName("name")]
@@ -36,6 +50,12 @@ public class SwiftComponent : TypedComponent
 
     [JsonPropertyName("version")]
     public string Version { get; }
+
+    [JsonPropertyName("kind")]
+    public string Kind { get; }
+
+    [JsonPropertyName("commitHash")]
+    public string CommitHash { get; }
 
     [JsonIgnore]
     public override ComponentType Type => ComponentType.Swift;

@@ -1,7 +1,6 @@
 #nullable disable
 namespace Microsoft.ComponentDetection.Detectors.Tests.Swift;
 
-using System;
 using System.Linq;
 using System.Threading.Tasks;
 using AwesomeAssertions;
@@ -44,8 +43,7 @@ public class SwiftResolvedDetectorTests
 
         var detectedComponents = componentRecorder.GetDetectedComponents();
 
-        // Two components are detected because this detector registers a SwiftPM and Git component.
-        detectedComponents.Should().HaveCount(2);
+        detectedComponents.Should().ContainSingle();
 
         var typedComponents = detectedComponents.Select(c => c.Component).ToList();
 
@@ -55,12 +53,6 @@ public class SwiftResolvedDetectorTests
                 version: "5.9.1",
                 packageUrl: "https://github.com/Alamofire/Alamofire",
                 hash: "f455c2975872ccd2d9c81594c658af65716e9b9a"));
-
-        typedComponents.Should().ContainEquivalentOf(
-            new GitComponent(
-                repositoryUrl: new Uri("https://github.com/Alamofire/Alamofire"),
-                commitHash: "f455c2975872ccd2d9c81594c658af65716e9b9a",
-                tag: "5.9.1"));
     }
 
     // Test for several packages
@@ -78,8 +70,7 @@ public class SwiftResolvedDetectorTests
 
         var detectedComponents = componentRecorder.GetDetectedComponents();
 
-        // Two components are detected because this detector registers a SwiftPM and Git component.
-        detectedComponents.Should().HaveCount(6);
+        detectedComponents.Should().HaveCount(3);
 
         var typedComponents = detectedComponents.Select(c => c.Component).ToList();
 
@@ -89,18 +80,6 @@ public class SwiftResolvedDetectorTests
                 version: "5.6.0",
                 packageUrl: "https://github.com/Alamofire/Alamofire",
                 hash: "63dfa86548c4e5d5c6fd6ed42f638e388cbce529"));
-
-        typedComponents.Should().ContainEquivalentOf(
-            new GitComponent(
-                repositoryUrl: new Uri("https://github.com/sideeffect-io/AsyncExtensions"),
-                commitHash: "3442d3d046800f1974bda096faaf0ac510b21154",
-                tag: "0.5.3"));
-
-        typedComponents.Should().ContainEquivalentOf(
-            new GitComponent(
-                repositoryUrl: new Uri("https://github.com/devicekit/DeviceKit.git"),
-                commitHash: "d37e70cb2646666dcf276d7d3d4a9760a41ff8a6",
-                tag: "4.9.0"));
     }
 
     // Duplicate packages
@@ -142,9 +121,8 @@ public class SwiftResolvedDetectorTests
 
         var detectedComponents = componentRecorder.GetDetectedComponents();
 
-        // Two components are detected because this detector registers a SwiftPM and Git component.
         // The duplicate package is not registered.
-        detectedComponents.Should().HaveCount(2);
+        detectedComponents.Should().ContainSingle();
 
         var typedComponents = detectedComponents.Select(c => c.Component).ToList();
 
@@ -154,12 +132,6 @@ public class SwiftResolvedDetectorTests
                 version: "5.9.1",
                 packageUrl: "https://github.com/Alamofire/Alamofire",
                 hash: "f455c2975872ccd2d9c81594c658af65716e9b9a"));
-
-        typedComponents.Should().ContainEquivalentOf(
-            new GitComponent(
-                repositoryUrl: new Uri("https://github.com/Alamofire/Alamofire"),
-                commitHash: "f455c2975872ccd2d9c81594c658af65716e9b9a",
-                tag: "5.9.1"));
     }
 
     [TestMethod]
@@ -409,7 +381,7 @@ public class SwiftResolvedDetectorTests
             .ExecuteDetectorAsync();
 
         scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
-        componentRecorder.GetDetectedComponents().Should().HaveCount(2);
+        componentRecorder.GetDetectedComponents().Should().ContainSingle();
 
         var detectedComponents = componentRecorder.GetDetectedComponents();
         var typedComponents = detectedComponents.Select(c => c.Component).ToList();
@@ -420,12 +392,6 @@ public class SwiftResolvedDetectorTests
                 version: "f455c2975872ccd2d9c81594c658af65716e9b9a",
                 packageUrl: "https://github.com/Alamofire/Alamofire",
                 hash: "f455c2975872ccd2d9c81594c658af65716e9b9a"));
-
-        typedComponents.Should().ContainEquivalentOf(
-            new GitComponent(
-                repositoryUrl: new Uri("https://github.com/Alamofire/Alamofire"),
-                commitHash: "f455c2975872ccd2d9c81594c658af65716e9b9a",
-                tag: "f455c2975872ccd2d9c81594c658af65716e9b9a"));
     }
 
     [System.Diagnostics.CodeAnalysis.SuppressMessage("StyleCop.CSharp.OrderingRules", "SA1201:Elements should appear in the correct order", Justification = "Test data that is better placed at the end of the file.")]
