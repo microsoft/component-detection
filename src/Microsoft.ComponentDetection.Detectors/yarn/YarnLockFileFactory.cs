@@ -1,3 +1,4 @@
+#nullable disable
 namespace Microsoft.ComponentDetection.Detectors.Yarn;
 
 using System.Collections.Generic;
@@ -7,7 +8,7 @@ using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Detectors.Yarn.Parsers;
 using Microsoft.Extensions.Logging;
 
-public class YarnLockFileFactory : IYarnLockFileFactory
+internal class YarnLockFileFactory : IYarnLockFileFactory
 {
     private readonly IEnumerable<IYarnLockParser> parsers;
 

@@ -5,12 +5,17 @@ using Microsoft.ComponentDetection.Common.Telemetry;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Detectors.CocoaPods;
 using Microsoft.ComponentDetection.Detectors.Conan;
+using Microsoft.ComponentDetection.Detectors.CondaLock;
+using Microsoft.ComponentDetection.Detectors.DockerCompose;
 using Microsoft.ComponentDetection.Detectors.Dockerfile;
 using Microsoft.ComponentDetection.Detectors.DotNet;
 using Microsoft.ComponentDetection.Detectors.Go;
 using Microsoft.ComponentDetection.Detectors.Gradle;
+using Microsoft.ComponentDetection.Detectors.Helm;
 using Microsoft.ComponentDetection.Detectors.Ivy;
 using Microsoft.ComponentDetection.Detectors.Linux;
+using Microsoft.ComponentDetection.Detectors.Linux.Factories;
+using Microsoft.ComponentDetection.Detectors.Linux.Filters;
 using Microsoft.ComponentDetection.Detectors.Maven;
 using Microsoft.ComponentDetection.Detectors.Npm;
 using Microsoft.ComponentDetection.Detectors.NuGet;
@@ -21,6 +26,7 @@ using Microsoft.ComponentDetection.Detectors.Ruby;
 using Microsoft.ComponentDetection.Detectors.Rust;
 using Microsoft.ComponentDetection.Detectors.Spdx;
 using Microsoft.ComponentDetection.Detectors.Swift;
+using Microsoft.ComponentDetection.Detectors.Uv;
 using Microsoft.ComponentDetection.Detectors.Vcpkg;
 using Microsoft.ComponentDetection.Detectors.Yarn;
 using Microsoft.ComponentDetection.Detectors.Yarn.Parsers;
@@ -53,21 +59,23 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IGraphTranslationService, DefaultGraphTranslationService>();
         services.AddSingleton<IPathUtilityService, PathUtilityService>();
         services.AddSingleton<ISafeFileEnumerableFactory, SafeFileEnumerableFactory>();
+        services.AddSingleton<IRustMetadataContextBuilder, RustMetadataContextBuilder>();
+        services.AddSingleton<IRustCargoLockParser, RustCargoLockParser>();
+        services.AddSingleton<IRustCliParser, RustCliParser>();
+        services.AddSingleton<IRustSbomParser, RustSbomParser>();
 
         // Command line services
         services.AddSingleton<IScanExecutionService, ScanExecutionService>();
         services.AddSingleton<IDetectorProcessingService, DetectorProcessingService>();
         services.AddSingleton<IDetectorRestrictionService, DetectorRestrictionService>();
-        services.AddSingleton<IArgumentHelper, ArgumentHelper>();
 
         // Experiments
         services.AddSingleton<IExperimentService, ExperimentService>();
         services.AddSingleton<IExperimentProcessor, DefaultExperimentProcessor>();
         services.AddSingleton<IExperimentConfiguration, SimplePipExperiment>();
-        services.AddSingleton<IExperimentConfiguration, RustCliDetectorExperiment>();
-        services.AddSingleton<IExperimentConfiguration, RustSbomVsCliExperiment>();
-        services.AddSingleton<IExperimentConfiguration, RustSbomVsCrateExperiment>();
-        services.AddSingleton<IExperimentConfiguration, Go117DetectorExperiment>();
+        services.AddSingleton<IExperimentConfiguration, CondaLockDetectorExperiment>();
+        services.AddSingleton<IExperimentConfiguration, LinuxApplicationLayerExperiment>();
+        services.AddSingleton<IExperimentConfiguration, MSBuildBinaryLogExperiment>();
 
         // Detectors
         // CocoaPods
@@ -79,6 +87,9 @@ public static class ServiceCollectionExtensions
         // Conda
         services.AddSingleton<IComponentDetector, CondaLockComponentDetector>();
 
+        // Docker Compose
+        services.AddSingleton<IComponentDetector, DockerComposeComponentDetector>();
+
         // Dockerfile
         services.AddSingleton<IComponentDetector, DockerfileComponentDetector>();
 
@@ -87,18 +98,32 @@ public static class ServiceCollectionExtensions
 
         // Go
         services.AddSingleton<IComponentDetector, GoComponentDetector>();
-        services.AddSingleton<IComponentDetector, Go117ComponentDetector>();
         services.AddSingleton<IGoParserFactory, GoParserFactory>();
 
         // Gradle
         services.AddSingleton<IComponentDetector, GradleComponentDetector>();
+
+        // Helm
+        services.AddSingleton<IComponentDetector, HelmComponentDetector>();
 
         // Ivy
         services.AddSingleton<IComponentDetector, IvyDetector>();
 
         // Linux
         services.AddSingleton<ILinuxScanner, LinuxScanner>();
+        services.AddSingleton<IArtifactComponentFactory, LinuxComponentFactory>();
+        services.AddSingleton<IArtifactComponentFactory, NpmComponentFactory>();
+        services.AddSingleton<IArtifactComponentFactory, PipComponentFactory>();
+        services.AddSingleton<IArtifactComponentFactory, DotnetComponentFactory>();
+        services.AddSingleton<IArtifactComponentFactory, RubyGemsComponentFactory>();
+        services.AddSingleton<IArtifactComponentFactory, GoComponentFactory>();
+        services.AddSingleton<IArtifactComponentFactory, CargoComponentFactory>();
+        services.AddSingleton<IArtifactComponentFactory, PodComponentFactory>();
+        services.AddSingleton<IArtifactComponentFactory, CondaComponentFactory>();
+        services.AddSingleton<IArtifactComponentFactory, MavenComponentFactory>();
+        services.AddSingleton<IArtifactFilter, Mariner2ArtifactFilter>();
         services.AddSingleton<IComponentDetector, LinuxContainerDetector>();
+        services.AddSingleton<IComponentDetector, LinuxApplicationLayerDetector>();
 
         // Maven
         services.AddSingleton<IMavenCommandService, MavenCommandService>();
@@ -114,6 +139,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IComponentDetector, NuGetComponentDetector>();
         services.AddSingleton<IComponentDetector, NuGetPackagesConfigDetector>();
         services.AddSingleton<IComponentDetector, NuGetProjectModelProjectCentricComponentDetector>();
+        services.AddSingleton<IComponentDetector, MSBuildBinaryLogComponentDetector>();
 
         // PIP
         services.AddSingleton<IPyPiClient, PyPiClient>();
@@ -136,8 +162,6 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IComponentDetector, RubyComponentDetector>();
 
         // Rust
-        services.AddSingleton<IComponentDetector, RustCrateDetector>();
-        services.AddSingleton<IComponentDetector, RustCliDetector>();
         services.AddSingleton<IComponentDetector, RustSbomDetector>();
 
         // SPDX
@@ -153,6 +177,9 @@ public static class ServiceCollectionExtensions
 
         // Swift Package Manager
         services.AddSingleton<IComponentDetector, SwiftResolvedComponentDetector>();
+
+        // uv
+        services.AddSingleton<IComponentDetector, UvLockComponentDetector>();
 
         return services;
     }

@@ -1,9 +1,10 @@
+#nullable disable
 namespace Microsoft.ComponentDetection.Orchestrator.Tests.Services;
 
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using FluentAssertions;
+using AwesomeAssertions;
 using Microsoft.ComponentDetection.Common.DependencyGraph;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.BcdeModels;
@@ -37,6 +38,278 @@ public class DefaultGraphTranslationServiceTests
         this.componentDetectorMock.SetupGet(x => x.Version).Returns(1);
         this.sourceDirectory = new DirectoryInfo(Path.Combine(Path.GetTempPath(), Path.GetRandomFileName()));
         this.sourceDirectory.Create();
+    }
+
+    [TestMethod]
+    public void GenerateScanResultFromResult_MergesLicensesConcluded()
+    {
+        var singleFileRecorder1 = this.componentRecorder.CreateSingleFileComponentRecorder(Path.Join(this.sourceDirectory.FullName, "/file1"));
+        var singleFileRecorder2 = this.componentRecorder.CreateSingleFileComponentRecorder(Path.Join(this.sourceDirectory.FullName, "/file2"));
+
+        var component1 = new DetectedComponent(new NpmComponent("pkg", "1.0.0"))
+        {
+            LicensesConcluded = ["MIT"],
+        };
+
+        var component2 = new DetectedComponent(new NpmComponent("pkg", "1.0.0"))
+        {
+            LicensesConcluded = ["MIT", "Apache-2.0"],
+        };
+
+        singleFileRecorder1.RegisterUsage(component1);
+        singleFileRecorder2.RegisterUsage(component2);
+
+        var processingResult = new DetectorProcessingResult
+        {
+            ResultCode = ProcessingResultCode.Success,
+            ContainersDetailsMap = [],
+            ComponentRecorders = [(this.componentDetectorMock.Object, this.componentRecorder)],
+        };
+
+        var result = this.serviceUnderTest.GenerateScanResultFromProcessingResult(
+            processingResult, new ScanSettings { SourceDirectory = this.sourceDirectory });
+
+        var merged = result.ComponentsFound.Single();
+        merged.LicensesConcluded.Should().BeEquivalentTo(["MIT", "Apache-2.0"]);
+    }
+
+    [TestMethod]
+    public void GenerateScanResultFromResult_MergesSuppliers()
+    {
+        var singleFileRecorder1 = this.componentRecorder.CreateSingleFileComponentRecorder(Path.Join(this.sourceDirectory.FullName, "/file1"));
+        var singleFileRecorder2 = this.componentRecorder.CreateSingleFileComponentRecorder(Path.Join(this.sourceDirectory.FullName, "/file2"));
+
+        var supplier1 = new ActorInfo { Name = "Contoso", Type = "Organization" };
+        var supplier2 = new ActorInfo { Name = "contoso", Type = "organization" };
+        var supplier3 = new ActorInfo { Name = "Fabrikam", Type = "Organization" };
+
+        var component1 = new DetectedComponent(new NpmComponent("pkg", "1.0.0"))
+        {
+            Suppliers = [supplier1],
+        };
+
+        var component2 = new DetectedComponent(new NpmComponent("pkg", "1.0.0"))
+        {
+            Suppliers = [supplier2, supplier3],
+        };
+
+        singleFileRecorder1.RegisterUsage(component1);
+        singleFileRecorder2.RegisterUsage(component2);
+
+        var processingResult = new DetectorProcessingResult
+        {
+            ResultCode = ProcessingResultCode.Success,
+            ContainersDetailsMap = [],
+            ComponentRecorders = [(this.componentDetectorMock.Object, this.componentRecorder)],
+        };
+
+        var result = this.serviceUnderTest.GenerateScanResultFromProcessingResult(
+            processingResult, new ScanSettings { SourceDirectory = this.sourceDirectory });
+
+        var merged = result.ComponentsFound.Single();
+
+        // "Contoso"/"Organization" and "contoso"/"organization" are equal (case-insensitive); "Fabrikam" is kept
+        merged.Suppliers.Should().HaveCount(2);
+        merged.Suppliers.Should().Contain(s => string.Equals(s.Name, "Contoso", System.StringComparison.OrdinalIgnoreCase));
+        merged.Suppliers.Should().Contain(s => s.Name == "Fabrikam");
+    }
+
+    [TestMethod]
+    public void GenerateScanResultFromResult_NullLicensesConcluded_PreservesNonNull()
+    {
+        var singleFileRecorder1 = this.componentRecorder.CreateSingleFileComponentRecorder(Path.Join(this.sourceDirectory.FullName, "/file1"));
+        var singleFileRecorder2 = this.componentRecorder.CreateSingleFileComponentRecorder(Path.Join(this.sourceDirectory.FullName, "/file2"));
+
+        var component1 = new DetectedComponent(new NpmComponent("pkg", "1.0.0"))
+        {
+            LicensesConcluded = null,
+        };
+
+        var component2 = new DetectedComponent(new NpmComponent("pkg", "1.0.0"))
+        {
+            LicensesConcluded = ["MIT"],
+        };
+
+        singleFileRecorder1.RegisterUsage(component1);
+        singleFileRecorder2.RegisterUsage(component2);
+
+        var processingResult = new DetectorProcessingResult
+        {
+            ResultCode = ProcessingResultCode.Success,
+            ContainersDetailsMap = [],
+            ComponentRecorders = [(this.componentDetectorMock.Object, this.componentRecorder)],
+        };
+
+        var result = this.serviceUnderTest.GenerateScanResultFromProcessingResult(
+            processingResult, new ScanSettings { SourceDirectory = this.sourceDirectory });
+
+        var merged = result.ComponentsFound.Single();
+        merged.LicensesConcluded.Should().BeEquivalentTo(["MIT"]);
+    }
+
+    [TestMethod]
+    public void GenerateScanResultFromResult_SameComponentInMultipleFiles_MergesLicensesConcluded()
+    {
+        // Exercises the ComponentRecorder.GetDetectedComponents() merge path
+        // where the same component is registered across different file recorders
+        var recorder1 = this.componentRecorder.CreateSingleFileComponentRecorder(Path.Join(this.sourceDirectory.FullName, "/manifest1.json"));
+        var recorder2 = this.componentRecorder.CreateSingleFileComponentRecorder(Path.Join(this.sourceDirectory.FullName, "/manifest2.json"));
+
+        var comp1 = new DetectedComponent(new NpmComponent("shared-pkg", "1.0.0"))
+        {
+            LicensesConcluded = ["MIT"],
+        };
+
+        var comp2 = new DetectedComponent(new NpmComponent("shared-pkg", "1.0.0"))
+        {
+            LicensesConcluded = ["Apache-2.0"],
+        };
+
+        recorder1.RegisterUsage(comp1);
+        recorder2.RegisterUsage(comp2);
+
+        var processingResult = new DetectorProcessingResult
+        {
+            ResultCode = ProcessingResultCode.Success,
+            ContainersDetailsMap = [],
+            ComponentRecorders = [(this.componentDetectorMock.Object, this.componentRecorder)],
+        };
+
+        var result = this.serviceUnderTest.GenerateScanResultFromProcessingResult(
+            processingResult, new ScanSettings { SourceDirectory = this.sourceDirectory });
+
+        var scanned = result.ComponentsFound.Single();
+        scanned.LicensesConcluded.Should().HaveCount(2);
+        scanned.LicensesConcluded.Should().Contain("MIT");
+        scanned.LicensesConcluded.Should().Contain("Apache-2.0");
+    }
+
+    [TestMethod]
+    public void GenerateScanResultFromResult_SameComponentInMultipleFiles_MergesSuppliers()
+    {
+        var recorder1 = this.componentRecorder.CreateSingleFileComponentRecorder(Path.Join(this.sourceDirectory.FullName, "/manifest1.json"));
+        var recorder2 = this.componentRecorder.CreateSingleFileComponentRecorder(Path.Join(this.sourceDirectory.FullName, "/manifest2.json"));
+
+        var comp1 = new DetectedComponent(new NpmComponent("shared-pkg", "1.0.0"))
+        {
+            Suppliers = [new ActorInfo { Name = "Contoso", Type = "Organization" }],
+        };
+
+        var comp2 = new DetectedComponent(new NpmComponent("shared-pkg", "1.0.0"))
+        {
+            Suppliers = [new ActorInfo { Name = "Contoso", Type = "Organization" }, new ActorInfo { Name = "Fabrikam", Type = "Organization" }],
+        };
+
+        recorder1.RegisterUsage(comp1);
+        recorder2.RegisterUsage(comp2);
+
+        var processingResult = new DetectorProcessingResult
+        {
+            ResultCode = ProcessingResultCode.Success,
+            ContainersDetailsMap = [],
+            ComponentRecorders = [(this.componentDetectorMock.Object, this.componentRecorder)],
+        };
+
+        var result = this.serviceUnderTest.GenerateScanResultFromProcessingResult(
+            processingResult, new ScanSettings { SourceDirectory = this.sourceDirectory });
+
+        var scanned = result.ComponentsFound.Single();
+        scanned.Suppliers.Should().HaveCount(2);
+        scanned.Suppliers.Should().Contain(s => s.Name == "Contoso");
+        scanned.Suppliers.Should().Contain(s => s.Name == "Fabrikam");
+    }
+
+    [TestMethod]
+    public void GenerateScanResultFromResult_DifferentComponentsInDifferentFiles_FieldsIsolated()
+    {
+        var recorder1 = this.componentRecorder.CreateSingleFileComponentRecorder(Path.Join(this.sourceDirectory.FullName, "/manifest1.json"));
+        var recorder2 = this.componentRecorder.CreateSingleFileComponentRecorder(Path.Join(this.sourceDirectory.FullName, "/manifest2.json"));
+
+        var compA = new DetectedComponent(new NpmComponent("pkg-a", "1.0.0"))
+        {
+            LicensesConcluded = ["MIT"],
+            Suppliers = [new ActorInfo { Name = "Alice", Type = "Person" }],
+        };
+
+        var compB = new DetectedComponent(new NpmComponent("pkg-b", "2.0.0"))
+        {
+            LicensesConcluded = ["GPL-3.0"],
+            Suppliers = [new ActorInfo { Name = "Bob", Type = "Person" }],
+        };
+
+        recorder1.RegisterUsage(compA);
+        recorder2.RegisterUsage(compB);
+
+        var processingResult = new DetectorProcessingResult
+        {
+            ResultCode = ProcessingResultCode.Success,
+            ContainersDetailsMap = [],
+            ComponentRecorders = [(this.componentDetectorMock.Object, this.componentRecorder)],
+        };
+
+        var result = this.serviceUnderTest.GenerateScanResultFromProcessingResult(
+            processingResult, new ScanSettings { SourceDirectory = this.sourceDirectory });
+
+        result.ComponentsFound.Should().HaveCount(2);
+
+        var scannedA = result.ComponentsFound.Single(c => c.Component is NpmComponent npm && npm.Name == "pkg-a");
+        scannedA.LicensesConcluded.Should().BeEquivalentTo(["MIT"]);
+        scannedA.Suppliers.Should().ContainSingle().Which.Name.Should().Be("Alice");
+
+        var scannedB = result.ComponentsFound.Single(c => c.Component is NpmComponent npm && npm.Name == "pkg-b");
+        scannedB.LicensesConcluded.Should().BeEquivalentTo(["GPL-3.0"]);
+        scannedB.Suppliers.Should().ContainSingle().Which.Name.Should().Be("Bob");
+    }
+
+    [TestMethod]
+    public void GenerateScanResultFromResult_SameDetectorMultipleRecorders_MergesFields()
+    {
+        // Two separate ComponentRecorders for the same detector, each detecting the same component.
+        // This exercises FlattenAndMergeComponents → MergeComponents (grouping by Component.Id + DetectedBy.Id).
+        var recorder1 = new ComponentRecorder(new Mock<ILogger>().Object);
+        var recorder2 = new ComponentRecorder(new Mock<ILogger>().Object);
+
+        var file1 = recorder1.CreateSingleFileComponentRecorder(Path.Join(this.sourceDirectory.FullName, "/manifest1.json"));
+        var file2 = recorder2.CreateSingleFileComponentRecorder(Path.Join(this.sourceDirectory.FullName, "/manifest2.json"));
+
+        var comp1 = new DetectedComponent(new NpmComponent("shared-pkg", "1.0.0"))
+        {
+            LicensesConcluded = ["MIT"],
+            Suppliers = [new ActorInfo { Name = "Contoso", Type = "Organization" }],
+        };
+
+        var comp2 = new DetectedComponent(new NpmComponent("shared-pkg", "1.0.0"))
+        {
+            LicensesConcluded = ["Apache-2.0"],
+            Suppliers = [new ActorInfo { Name = "Contoso", Type = "Organization" }, new ActorInfo { Name = "Fabrikam", Type = "Organization" }],
+        };
+
+        file1.RegisterUsage(comp1);
+        file2.RegisterUsage(comp2);
+
+        var processingResult = new DetectorProcessingResult
+        {
+            ResultCode = ProcessingResultCode.Success,
+            ContainersDetailsMap = [],
+            ComponentRecorders =
+            [
+                (this.componentDetectorMock.Object, recorder1),
+                (this.componentDetectorMock.Object, recorder2),
+            ],
+        };
+
+        var result = this.serviceUnderTest.GenerateScanResultFromProcessingResult(
+            processingResult, new ScanSettings { SourceDirectory = this.sourceDirectory });
+
+        // Same detector + same component ID → merged into one ScannedComponent
+        var scanned = result.ComponentsFound.Single();
+        scanned.LicensesConcluded.Should().HaveCount(2);
+        scanned.LicensesConcluded.Should().Contain("MIT");
+        scanned.LicensesConcluded.Should().Contain("Apache-2.0");
+
+        scanned.Suppliers.Should().HaveCount(2);
+        scanned.Suppliers.Should().Contain(s => s.Name == "Contoso");
+        scanned.Suppliers.Should().Contain(s => s.Name == "Fabrikam");
     }
 
     [TestMethod]
@@ -165,5 +438,388 @@ public class DefaultGraphTranslationServiceTests
 
         actualNpmComponent.Should().BeEquivalentTo(expectedNpmComponent);
         actualNugetComponent.Should().BeEquivalentTo(expectedNugetComponent);
+    }
+
+    [TestMethod]
+    public void GenerateScanResult_RichComponentPicksUpGraphDataFromBareIdGraph()
+    {
+        // A rich component (with DownloadUrl) should pick up roots, ancestors, devDep, and file paths
+        // from a graph that registered the same package under the bare Id.
+        var file1Path = Path.Join(this.sourceDirectory.FullName, "package.json");
+        var file2Path = Path.Join(this.sourceDirectory.FullName, "package-lock.json");
+
+        var recorder1 = this.componentRecorder.CreateSingleFileComponentRecorder(file1Path);
+        var recorder2 = this.componentRecorder.CreateSingleFileComponentRecorder(file2Path);
+
+        var root = new NpmComponent("app", "1.0.0");
+        var bareComponent = new NpmComponent("lodash", "4.17.23");
+        var richComponent = new NpmComponent("lodash", "4.17.23") { DownloadUrl = new System.Uri("https://registry.npmjs.org/lodash/-/lodash-4.17.23.tgz") };
+
+        // File 1 (package.json): root → bare lodash, marked as explicit reference
+        recorder1.RegisterUsage(new DetectedComponent(root), isExplicitReferencedDependency: true);
+        recorder1.RegisterUsage(new DetectedComponent(bareComponent), parentComponentId: root.Id, isDevelopmentDependency: true);
+
+        // File 2 (lockfile): root → rich lodash
+        recorder2.RegisterUsage(new DetectedComponent(root), isExplicitReferencedDependency: true);
+        recorder2.RegisterUsage(new DetectedComponent(richComponent), parentComponentId: root.Id, isDevelopmentDependency: false);
+
+        var processingResult = new DetectorProcessingResult
+        {
+            ResultCode = ProcessingResultCode.Success,
+            ContainersDetailsMap = [],
+            ComponentRecorders = [(this.componentDetectorMock.Object, this.componentRecorder)],
+        };
+
+        var result = this.serviceUnderTest.GenerateScanResultFromProcessingResult(
+            processingResult, new ScanSettings { SourceDirectory = this.sourceDirectory });
+
+        // After reconciliation: bare is subsumed into rich. Only root + rich lodash should remain.
+        var lodashResult = result.ComponentsFound.Single(c => ((NpmComponent)c.Component).Name == "lodash");
+        lodashResult.Component.Id.Should().Be(richComponent.Id);
+
+        // Rich component should have graph data from BOTH graphs (file1 bare-Id graph + file2 rich-Id graph)
+        lodashResult.LocationsFoundAt.Should().Contain(l => l.Contains("package.json"));
+        lodashResult.LocationsFoundAt.Should().Contain(l => l.Contains("package-lock.json"));
+
+        // DevDep: bare graph said true, rich graph said false → AND logic = false
+        lodashResult.IsDevelopmentDependency.Should().BeFalse();
+
+        // Should have roots (app is the root referrer)
+        lodashResult.TopLevelReferrers.Should().NotBeEmpty();
+    }
+
+    [TestMethod]
+    public void GenerateScanResult_BareOnlyComponent_GraphDataPreserved()
+    {
+        // When no rich entry exists, the bare component keeps its graph data.
+        var filePath = Path.Join(this.sourceDirectory.FullName, "package.json");
+        var recorder = this.componentRecorder.CreateSingleFileComponentRecorder(filePath);
+
+        var root = new NpmComponent("app", "1.0.0");
+        var bareComponent = new NpmComponent("lodash", "4.17.23");
+
+        recorder.RegisterUsage(new DetectedComponent(root), isExplicitReferencedDependency: true);
+        recorder.RegisterUsage(new DetectedComponent(bareComponent), parentComponentId: root.Id, isDevelopmentDependency: true);
+
+        var processingResult = new DetectorProcessingResult
+        {
+            ResultCode = ProcessingResultCode.Success,
+            ContainersDetailsMap = [],
+            ComponentRecorders = [(this.componentDetectorMock.Object, this.componentRecorder)],
+        };
+
+        var result = this.serviceUnderTest.GenerateScanResultFromProcessingResult(
+            processingResult, new ScanSettings { SourceDirectory = this.sourceDirectory });
+
+        var lodashResult = result.ComponentsFound.Single(c => ((NpmComponent)c.Component).Name == "lodash");
+        lodashResult.Component.Id.Should().Be(bareComponent.Id);
+        lodashResult.IsDevelopmentDependency.Should().BeTrue();
+        lodashResult.TopLevelReferrers.Should().NotBeEmpty();
+        lodashResult.LocationsFoundAt.Should().Contain(l => l.Contains("package.json"));
+    }
+
+    [TestMethod]
+    public void GenerateScanResult_MultipleRichAndBare_BareGraphDataAbsorbedByAllRich()
+    {
+        // Two rich entries + one bare. The bare's graph data should be absorbed by both rich entries.
+        var file1Path = Path.Join(this.sourceDirectory.FullName, "package.json");
+        var file2Path = Path.Join(this.sourceDirectory.FullName, "lockfile-a.json");
+        var file3Path = Path.Join(this.sourceDirectory.FullName, "lockfile-b.json");
+
+        var recorder1 = this.componentRecorder.CreateSingleFileComponentRecorder(file1Path);
+        var recorder2 = this.componentRecorder.CreateSingleFileComponentRecorder(file2Path);
+        var recorder3 = this.componentRecorder.CreateSingleFileComponentRecorder(file3Path);
+
+        var root = new NpmComponent("app", "1.0.0");
+        var bareComponent = new NpmComponent("lodash", "4.17.23");
+        var richA = new NpmComponent("lodash", "4.17.23") { DownloadUrl = new System.Uri("https://registry-a.example.com/lodash-4.17.23.tgz") };
+        var richB = new NpmComponent("lodash", "4.17.23") { DownloadUrl = new System.Uri("https://registry-b.example.com/lodash-4.17.23.tgz") };
+
+        // File 1 (package.json): root → bare lodash
+        recorder1.RegisterUsage(new DetectedComponent(root), isExplicitReferencedDependency: true);
+        recorder1.RegisterUsage(new DetectedComponent(bareComponent), parentComponentId: root.Id);
+
+        // File 2 (lockfile A): root → rich A
+        recorder2.RegisterUsage(new DetectedComponent(root), isExplicitReferencedDependency: true);
+        recorder2.RegisterUsage(new DetectedComponent(richA), parentComponentId: root.Id);
+
+        // File 3 (lockfile B): root → rich B
+        recorder3.RegisterUsage(new DetectedComponent(root), isExplicitReferencedDependency: true);
+        recorder3.RegisterUsage(new DetectedComponent(richB), parentComponentId: root.Id);
+
+        var processingResult = new DetectorProcessingResult
+        {
+            ResultCode = ProcessingResultCode.Success,
+            ContainersDetailsMap = [],
+            ComponentRecorders = [(this.componentDetectorMock.Object, this.componentRecorder)],
+        };
+
+        var result = this.serviceUnderTest.GenerateScanResultFromProcessingResult(
+            processingResult, new ScanSettings { SourceDirectory = this.sourceDirectory });
+
+        // Two rich entries, bare dropped
+        var lodashResults = result.ComponentsFound.Where(c => ((NpmComponent)c.Component).Name == "lodash").ToList();
+        lodashResults.Should().HaveCount(2);
+
+        // Both rich entries should have the bare graph's file path (package.json)
+        lodashResults.Should().OnlyContain(c => c.LocationsFoundAt.Any(l => l.Contains("package.json")));
+    }
+
+    [TestMethod]
+    public void ExcludeBaseImageComponents_RemovesComponentsExclusivelyFromBaseImageLayers()
+    {
+        var singleFileRecorder = this.componentRecorder.CreateSingleFileComponentRecorder(Path.Join(this.sourceDirectory.FullName, "file1"));
+
+        var baseImageComponent = new DetectedComponent(new NpmComponent("base-pkg", "1.0.0"), containerDetailsId: 1, containerLayerId: 0);
+        singleFileRecorder.RegisterUsage(baseImageComponent);
+
+        var containerDetailsMap = new Dictionary<int, ContainerDetails>
+        {
+            [1] = new ContainerDetails
+            {
+                Id = 1,
+                Layers = [new DockerLayer { LayerIndex = 0, IsBaseImage = true }, new DockerLayer { LayerIndex = 1, IsBaseImage = false }],
+            },
+        };
+
+        var processingResult = new DetectorProcessingResult
+        {
+            ResultCode = ProcessingResultCode.Success,
+            ContainersDetailsMap = containerDetailsMap,
+            ComponentRecorders = [(this.componentDetectorMock.Object, this.componentRecorder)],
+        };
+
+        var result = this.serviceUnderTest.GenerateScanResultFromProcessingResult(
+            processingResult, new ScanSettings { SourceDirectory = this.sourceDirectory, ExcludeBaseImageComponents = true });
+
+        result.ComponentsFound.Should().BeEmpty();
+    }
+
+    [TestMethod]
+    public void ExcludeBaseImageComponents_RetainsComponentsWithMixedLayers()
+    {
+        var singleFileRecorder = this.componentRecorder.CreateSingleFileComponentRecorder(Path.Join(this.sourceDirectory.FullName, "file1"));
+
+        var mixedComponent = new DetectedComponent(new NpmComponent("mixed-pkg", "1.0.0"), containerDetailsId: 1, containerLayerId: 0);
+        mixedComponent.ContainerLayerIds[1] = [0, 1];
+        singleFileRecorder.RegisterUsage(mixedComponent);
+
+        var containerDetailsMap = new Dictionary<int, ContainerDetails>
+        {
+            [1] = new ContainerDetails
+            {
+                Id = 1,
+                Layers = [new DockerLayer { LayerIndex = 0, IsBaseImage = true }, new DockerLayer { LayerIndex = 1, IsBaseImage = false }],
+            },
+        };
+
+        var processingResult = new DetectorProcessingResult
+        {
+            ResultCode = ProcessingResultCode.Success,
+            ContainersDetailsMap = containerDetailsMap,
+            ComponentRecorders = [(this.componentDetectorMock.Object, this.componentRecorder)],
+        };
+
+        var result = this.serviceUnderTest.GenerateScanResultFromProcessingResult(
+            processingResult, new ScanSettings { SourceDirectory = this.sourceDirectory, ExcludeBaseImageComponents = true });
+
+        result.ComponentsFound.Should().HaveCount(1);
+        ((NpmComponent)result.ComponentsFound.Single().Component).Name.Should().Be("mixed-pkg");
+    }
+
+    [TestMethod]
+    public void ExcludeBaseImageComponents_RetainsComponentsWithNoContainerReferences()
+    {
+        var singleFileRecorder = this.componentRecorder.CreateSingleFileComponentRecorder(Path.Join(this.sourceDirectory.FullName, "file1"));
+
+        var filesystemComponent = new DetectedComponent(new NpmComponent("fs-pkg", "2.0.0"));
+        singleFileRecorder.RegisterUsage(filesystemComponent);
+
+        var containerDetailsMap = new Dictionary<int, ContainerDetails>
+        {
+            [1] = new ContainerDetails
+            {
+                Id = 1,
+                Layers = [new DockerLayer { LayerIndex = 0, IsBaseImage = true }],
+            },
+        };
+
+        var processingResult = new DetectorProcessingResult
+        {
+            ResultCode = ProcessingResultCode.Success,
+            ContainersDetailsMap = containerDetailsMap,
+            ComponentRecorders = [(this.componentDetectorMock.Object, this.componentRecorder)],
+        };
+
+        var result = this.serviceUnderTest.GenerateScanResultFromProcessingResult(
+            processingResult, new ScanSettings { SourceDirectory = this.sourceDirectory, ExcludeBaseImageComponents = true });
+
+        result.ComponentsFound.Should().HaveCount(1);
+        ((NpmComponent)result.ComponentsFound.Single().Component).Name.Should().Be("fs-pkg");
+    }
+
+    [TestMethod]
+    public void ExcludeBaseImageComponents_NoOpWhenFlagIsDisabled()
+    {
+        var singleFileRecorder = this.componentRecorder.CreateSingleFileComponentRecorder(Path.Join(this.sourceDirectory.FullName, "file1"));
+
+        var baseImageComponent = new DetectedComponent(new NpmComponent("base-pkg", "1.0.0"), containerDetailsId: 1, containerLayerId: 0);
+        singleFileRecorder.RegisterUsage(baseImageComponent);
+
+        var containerDetailsMap = new Dictionary<int, ContainerDetails>
+        {
+            [1] = new ContainerDetails
+            {
+                Id = 1,
+                Layers = [new DockerLayer { LayerIndex = 0, IsBaseImage = true }],
+            },
+        };
+
+        var processingResult = new DetectorProcessingResult
+        {
+            ResultCode = ProcessingResultCode.Success,
+            ContainersDetailsMap = containerDetailsMap,
+            ComponentRecorders = [(this.componentDetectorMock.Object, this.componentRecorder)],
+        };
+
+        var result = this.serviceUnderTest.GenerateScanResultFromProcessingResult(
+            processingResult, new ScanSettings { SourceDirectory = this.sourceDirectory, ExcludeBaseImageComponents = false });
+
+        result.ComponentsFound.Should().HaveCount(1);
+        ((NpmComponent)result.ComponentsFound.Single().Component).Name.Should().Be("base-pkg");
+    }
+
+    [TestMethod]
+    public void ExcludeBaseImageComponents_PrunesFilteredComponentsFromDependencyGraphs()
+    {
+        var filePath = Path.Join(this.sourceDirectory.FullName, "file1");
+        var singleFileRecorder = this.componentRecorder.CreateSingleFileComponentRecorder(filePath);
+
+        // Register a retained (non-base-image) component and a base-image component with a dependency edge.
+        var retainedComponent = new DetectedComponent(new NpmComponent("app-pkg", "1.0.0"), containerDetailsId: 1, containerLayerId: 1);
+        var baseImageComponent = new DetectedComponent(new NpmComponent("base-pkg", "2.0.0"), containerDetailsId: 1, containerLayerId: 0);
+
+        singleFileRecorder.RegisterUsage(retainedComponent, isExplicitReferencedDependency: true);
+        singleFileRecorder.RegisterUsage(baseImageComponent, parentComponentId: retainedComponent.Component.Id);
+
+        var containerDetailsMap = new Dictionary<int, ContainerDetails>
+        {
+            [1] = new ContainerDetails
+            {
+                Id = 1,
+                Layers = [new DockerLayer { LayerIndex = 0, IsBaseImage = true }, new DockerLayer { LayerIndex = 1, IsBaseImage = false }],
+            },
+        };
+
+        var processingResult = new DetectorProcessingResult
+        {
+            ResultCode = ProcessingResultCode.Success,
+            ContainersDetailsMap = containerDetailsMap,
+            ComponentRecorders = [(this.componentDetectorMock.Object, this.componentRecorder)],
+        };
+
+        var result = (DefaultGraphScanResult)this.serviceUnderTest.GenerateScanResultFromProcessingResult(
+            processingResult, new ScanSettings { SourceDirectory = this.sourceDirectory, ExcludeBaseImageComponents = true });
+
+        // Only the non-base-image component should remain.
+        result.ComponentsFound.Should().HaveCount(1);
+        ((NpmComponent)result.ComponentsFound.Single().Component).Name.Should().Be("app-pkg");
+
+        // The dependency graph should not reference the filtered component.
+        var graphEntry = result.DependencyGraphs.Should().ContainSingle().Which;
+        var graph = graphEntry.Value.Graph;
+        graph.Should().ContainKey(retainedComponent.Component.Id);
+        graph.Should().NotContainKey(baseImageComponent.Component.Id);
+
+        // The retained component should be a leaf node (null edges) after its only dependency was pruned.
+        var retainedEdges = graph[retainedComponent.Component.Id];
+        retainedEdges.Should().BeNull();
+
+        // Metadata sets should also be cleaned.
+        graphEntry.Value.ExplicitlyReferencedComponentIds.Should().NotContain(baseImageComponent.Component.Id);
+    }
+
+    [TestMethod]
+    public void ExcludeBaseImageComponents_DependencyGraphsUnchangedWhenFlagDisabled()
+    {
+        var filePath = Path.Join(this.sourceDirectory.FullName, "file1");
+        var singleFileRecorder = this.componentRecorder.CreateSingleFileComponentRecorder(filePath);
+
+        var retainedComponent = new DetectedComponent(new NpmComponent("app-pkg", "1.0.0"), containerDetailsId: 1, containerLayerId: 1);
+        var baseImageComponent = new DetectedComponent(new NpmComponent("base-pkg", "2.0.0"), containerDetailsId: 1, containerLayerId: 0);
+
+        singleFileRecorder.RegisterUsage(retainedComponent, isExplicitReferencedDependency: true);
+        singleFileRecorder.RegisterUsage(baseImageComponent, parentComponentId: retainedComponent.Component.Id);
+
+        var containerDetailsMap = new Dictionary<int, ContainerDetails>
+        {
+            [1] = new ContainerDetails
+            {
+                Id = 1,
+                Layers = [new DockerLayer { LayerIndex = 0, IsBaseImage = true }, new DockerLayer { LayerIndex = 1, IsBaseImage = false }],
+            },
+        };
+
+        var processingResult = new DetectorProcessingResult
+        {
+            ResultCode = ProcessingResultCode.Success,
+            ContainersDetailsMap = containerDetailsMap,
+            ComponentRecorders = [(this.componentDetectorMock.Object, this.componentRecorder)],
+        };
+
+        var result = (DefaultGraphScanResult)this.serviceUnderTest.GenerateScanResultFromProcessingResult(
+            processingResult, new ScanSettings { SourceDirectory = this.sourceDirectory, ExcludeBaseImageComponents = false });
+
+        // Both components should be present.
+        result.ComponentsFound.Should().HaveCount(2);
+
+        // The dependency graph should still contain both component IDs.
+        var graph = result.DependencyGraphs.Single().Value.Graph;
+        graph.Should().ContainKey(retainedComponent.Component.Id);
+        graph.Should().ContainKey(baseImageComponent.Component.Id);
+    }
+
+    [TestMethod]
+    public void ExcludeBaseImageComponents_PrunesReferrersToFilteredComponents()
+    {
+        var filePath = Path.Join(this.sourceDirectory.FullName, "file1");
+        var singleFileRecorder = this.componentRecorder.CreateSingleFileComponentRecorder(filePath);
+
+        // base-pkg is a root that depends on child-pkg (non-base-image).
+        var baseImageComponent = new DetectedComponent(new NpmComponent("base-pkg", "1.0.0"), containerDetailsId: 1, containerLayerId: 0);
+        var childComponent = new DetectedComponent(new NpmComponent("child-pkg", "1.0.0"), containerDetailsId: 1, containerLayerId: 1);
+
+        singleFileRecorder.RegisterUsage(baseImageComponent, isExplicitReferencedDependency: true);
+        singleFileRecorder.RegisterUsage(childComponent, parentComponentId: baseImageComponent.Component.Id);
+
+        var containerDetailsMap = new Dictionary<int, ContainerDetails>
+        {
+            [1] = new ContainerDetails
+            {
+                Id = 1,
+                Layers = [new DockerLayer { LayerIndex = 0, IsBaseImage = true }, new DockerLayer { LayerIndex = 1, IsBaseImage = false }],
+            },
+        };
+
+        var processingResult = new DetectorProcessingResult
+        {
+            ResultCode = ProcessingResultCode.Success,
+            ContainersDetailsMap = containerDetailsMap,
+            ComponentRecorders = [(this.componentDetectorMock.Object, this.componentRecorder)],
+        };
+
+        var result = this.serviceUnderTest.GenerateScanResultFromProcessingResult(
+            processingResult, new ScanSettings { SourceDirectory = this.sourceDirectory, ExcludeBaseImageComponents = true });
+
+        // Only child-pkg should remain (base-pkg is exclusively from base image layer).
+        result.ComponentsFound.Should().HaveCount(1);
+        var child = result.ComponentsFound.Single();
+        ((NpmComponent)child.Component).Name.Should().Be("child-pkg");
+
+        // TopLevelReferrers should not reference the filtered base-image component.
+        child.TopLevelReferrers?.Should().NotContain(c => c.Id == baseImageComponent.Component.Id);
+
+        // AncestralReferrers should not reference the filtered base-image component.
+        child.AncestralReferrers?.Should().NotContain(c => c.Id == baseImageComponent.Component.Id);
     }
 }

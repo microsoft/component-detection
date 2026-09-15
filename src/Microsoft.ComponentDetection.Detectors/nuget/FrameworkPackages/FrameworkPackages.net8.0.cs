@@ -1,3 +1,4 @@
+#nullable disable
 namespace Microsoft.ComponentDetection.Detectors.NuGet;
 
 using static global::NuGet.Frameworks.FrameworkConstants.CommonFrameworks;

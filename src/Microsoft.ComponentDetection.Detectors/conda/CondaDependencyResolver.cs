@@ -1,3 +1,4 @@
+#nullable disable
 namespace Microsoft.ComponentDetection.Detectors.CondaLock;
 
 using System;
@@ -17,7 +18,7 @@ public static class CondaDependencyResolver
     /// <param name="condaLock">The full condaLock object.</param>
     /// <param name="singleFileComponentRecorder">The SingleFileComponentRecorder.</param>
     public static void RecordDependencyGraphFromFile(CondaLock condaLock, ISingleFileComponentRecorder singleFileComponentRecorder)
-        => GetPackages(condaLock).ForEach(package => RegisterPackageWithDependencies(package, null, condaLock, singleFileComponentRecorder));
+        => GetPackages(condaLock).ForEach(package => RegisterPackageWithDependencies(package, null, condaLock, singleFileComponentRecorder, []));
 
     /// <summary>
     /// Updates all registered packages that don't have any ancestors.
@@ -59,7 +60,8 @@ public static class CondaDependencyResolver
     /// <param name="parentId">The id of the parent package.</param>
     /// <param name="condaLock">The full condaLock object.</param>
     /// <param name="singleFileComponentRecorder">The SingleFileComponentRecorder.</param>
-    private static void RegisterPackageWithDependencies(CondaPackage package, string parentId, CondaLock condaLock, ISingleFileComponentRecorder singleFileComponentRecorder)
+    /// <param name="currentPath">The component ids in the current dependency path.</param>
+    private static void RegisterPackageWithDependencies(CondaPackage package, string parentId, CondaLock condaLock, ISingleFileComponentRecorder singleFileComponentRecorder, HashSet<string> currentPath)
     {
         if (package == null)
         {
@@ -71,13 +73,22 @@ public static class CondaDependencyResolver
         //// Register the package itself.
         RegisterPackage(component, parentId, false, singleFileComponentRecorder);
 
+        //// Conda lockfiles can contain dependency cycles; retain the edge above but do not traverse the same path indefinitely.
+        if (!currentPath.Add(component.Id))
+        {
+            return;
+        }
+
         //// Register all dependencies of the package.
         package.Dependencies.Keys.ToList().ForEach(dependency =>
             RegisterPackageWithDependencies(
                 condaLock?.Package.FirstOrDefault(condaPackage => condaPackage.Name == dependency && condaPackage.Platform == package.Platform),
                 component.Id,
                 condaLock,
-                singleFileComponentRecorder));
+                singleFileComponentRecorder,
+                currentPath));
+
+        currentPath.Remove(component.Id);
     }
 
     /// <summary>
@@ -108,22 +119,89 @@ public static class CondaDependencyResolver
     /// If the condapackage is a python package it will be converted to a
     /// PipComponent. Otherwise it will be converted to a CondaComponent.
     ///
-    /// For the conda component, only the most necessary information that are
-    /// required for component governance are passed. This way duplicates
-    /// will be avoided. For example the URL of the package is platform-specific.
-    /// That is, the same package with the same version will exist multiple
-    /// times in the conda-lock files with different urls. If we were to add
-    /// the url, we would register these duplicates. As the information is
-    /// anyway not required for compoment governance, we don't pass it and
-    /// this way avoid duplicates.
-    ///
+    /// Conda package metadata is populated from the lock entry and, for older
+    /// lock files, from the package URL.
     /// </summary>
     /// <param name="package">The CondaPackage to convert.</param>
     /// <returns>The TypedComponent.</returns>
     private static TypedComponent CreateComponent(CondaPackage package)
-        => IsPythonPackage(package)
-                ? new PipComponent(package.Name, package.Version)
-                : new CondaComponent(package.Name, package.Version, null, package.Category, null, null, null, null);
+    {
+        if (IsPythonPackage(package))
+        {
+            var pipComponent = new PipComponent(package.Name, package.Version);
+            if (Uri.TryCreate(package.Url, UriKind.Absolute, out var downloadUrl))
+            {
+                pipComponent.DownloadUrl = downloadUrl;
+            }
+
+            return pipComponent;
+        }
+
+        var (channel, subdir, fileName) = GetPackageUrlMetadata(package.Url);
+        var md5 = package.Hash != null && package.Hash.TryGetValue("md5", out var hash)
+            ? hash
+            : null;
+
+        var sha256 = package.Hash != null && package.Hash.TryGetValue("sha256", out var sha256Hash)
+            ? sha256Hash
+            : null;
+
+        return new CondaComponent(
+            name: package.Name,
+            version: package.Version,
+            build: package.Build ?? GetBuildFromFileName(package, fileName),
+            channel: channel,
+            subdir: subdir ?? package.Platform,
+            @namespace: null,
+            url: package.Url,
+            md5: md5,
+            sha256: sha256);
+    }
+
+    private static string GetBuildFromFileName(CondaPackage package, string fileName)
+    {
+        if (string.IsNullOrWhiteSpace(fileName))
+        {
+            return null;
+        }
+
+        var packageFileName = fileName.EndsWith(".tar.bz2", StringComparison.OrdinalIgnoreCase)
+            ? fileName[..^8]
+            : fileName.EndsWith(".conda", StringComparison.OrdinalIgnoreCase)
+                ? fileName[..^6]
+                : fileName;
+        var buildPrefix = $"{package.Name}-{package.Version}-";
+
+        return packageFileName.StartsWith(buildPrefix, StringComparison.Ordinal)
+            ? packageFileName[buildPrefix.Length..]
+            : null;
+    }
+
+    private static (string Channel, string Subdir, string FileName) GetPackageUrlMetadata(string packageUrl)
+    {
+        if (!Uri.TryCreate(packageUrl, UriKind.Absolute, out var uri))
+        {
+            return (null, null, null);
+        }
+
+        var segments = uri.AbsolutePath.Split('/', StringSplitOptions.RemoveEmptyEntries);
+        if (segments.Length < 2)
+        {
+            return (null, null, null);
+        }
+
+        var channelUri = new UriBuilder(uri)
+        {
+            Path = segments.Length == 2 ? "/" : $"/{string.Join("/", segments[..^2])}",
+            Query = string.Empty,
+            Fragment = string.Empty,
+        }.Uri.GetLeftPart(UriPartial.Path).TrimEnd('/');
+
+        return (
+            channelUri,
+            Uri.UnescapeDataString(segments[^2]),
+            Uri.UnescapeDataString(segments[^1]));
+    }
 
     /// <summary>
     /// Checks if a package is a python package.
@@ -134,6 +212,6 @@ public static class CondaDependencyResolver
     /// <param name="package">The CondaPackage.</param>
     /// <returns>True if the package is a python package.</returns>
     private static bool IsPythonPackage(CondaPackage package)
-        => package.Manager.Equals("pip", StringComparison.OrdinalIgnoreCase) ||
-           package.Dependencies.Keys.Any(dependency => dependency.Equals("python", StringComparison.OrdinalIgnoreCase));
+        => package.Manager?.Equals("pip", StringComparison.OrdinalIgnoreCase) == true ||
+           package.Dependencies?.Keys.Any(dependency => dependency.Equals("python", StringComparison.OrdinalIgnoreCase)) == true;
 }

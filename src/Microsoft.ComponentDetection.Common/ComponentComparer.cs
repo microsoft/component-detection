@@ -1,3 +1,4 @@
+#nullable disable
 namespace Microsoft.ComponentDetection.Common;
 
 using System.Collections.Generic;
@@ -6,7 +7,7 @@ using Microsoft.ComponentDetection.Contracts.TypedComponent;
 /// <summary>
 /// Compares two <see cref="TypedComponent"/>s by their <see cref="TypedComponent.Id"/>.
 /// </summary>
-public class ComponentComparer : EqualityComparer<TypedComponent>
+internal class ComponentComparer : EqualityComparer<TypedComponent>
 {
     /// <summary>
     /// Determines whether the specified objects are equal.

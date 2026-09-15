@@ -4,13 +4,16 @@
 
   <PropertyGroup>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <!-- Shows the failed test output inline when using 'dotnet test' with Microsoft Testing Platform. -->
+    <TestingPlatformShowTestsFailure>true</TestingPlatformShowTestsFailure>
+    <!-- Exclude slow integration tests by default. Set ExcludeIntegrationTests=false to run the full suite. -->
+    <ExcludeIntegrationTests Condition="'$(ExcludeIntegrationTests)' == ''">true</ExcludeIntegrationTests>
+    <TestingPlatformCommandLineArguments Condition="'$(ExcludeIntegrationTests)' == 'true'">$(TestingPlatformCommandLineArguments) --filter TestCategory!=Integration</TestingPlatformCommandLineArguments>
   </PropertyGroup>
-  
+
   <ItemGroup Label="Package References">
-    <PackageReference Include="MSTest.TestFramework"/>
-    <PackageReference Include="MSTest.Analyzers "/>
     <PackageReference Include="Moq"/>
-    <PackageReference Include="FluentAssertions"/>
+    <PackageReference Include="AwesomeAssertions"/>
     <PackageReference Include="Faker.net"/>
   </ItemGroup>
 

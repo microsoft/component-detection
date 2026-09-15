@@ -1,3 +1,4 @@
+#nullable disable
 namespace Microsoft.ComponentDetection.Contracts;
 
 using System.Collections.Generic;
@@ -66,6 +67,12 @@ public class DetectedComponent
 
     /// <summary> Gets Target Frameworks where the component was consumed.</summary>
     public ConcurrentHashSet<string> TargetFrameworks { get; set; }
+
+    /// <summary>Gets or sets Licenses resolved/concluded (e.g., via ClearlyDefined or curation).</summary>
+    public IList<string> LicensesConcluded { get; set; }
+
+    /// <summary>Gets or sets the entity/entities that supplied/published this component.</summary>
+    public IList<TypedComponent.ActorInfo> Suppliers { get; set; }
 
     private string DebuggerDisplay => $"{this.Component.DebuggerDisplay}";
 

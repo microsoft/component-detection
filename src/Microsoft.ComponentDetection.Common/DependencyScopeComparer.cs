@@ -6,7 +6,7 @@ using Microsoft.ComponentDetection.Contracts.BcdeModels;
 /// Merges dependnecy Scope in their order of Priority.
 /// Higher priority scope, as indicated by its lower enum value is given precendence.
 /// </summary>
-public static class DependencyScopeComparer
+internal static class DependencyScopeComparer
 {
     public static DependencyScope? GetMergedDependencyScope(DependencyScope? scope1, DependencyScope? scope2)
     {

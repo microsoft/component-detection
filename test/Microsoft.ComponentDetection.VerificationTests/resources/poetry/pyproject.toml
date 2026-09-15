@@ -10,10 +10,10 @@ colorama = {version = "^0.4.3", optional = true}
 setuptools = {version = "*", optional = true}
 
 [tool.poetry.dev-dependencies]
-black = {version = "^21.10b0", allow-prereleases = true}
+black = {version = "^24.3.0", allow-prereleases = true}
 coverage = {version = "^6.0b1", allow-prereleases = true}
 mypy = "^0.902"
-ipython = "^7.7"
+ipython = "^8.10"
 pytest = "^6.0"
 pytest-cov = "^2.7"
 pytest-mock = "^1.10"

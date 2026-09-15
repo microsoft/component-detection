@@ -1,10 +1,11 @@
+#nullable disable
 namespace Microsoft.ComponentDetection.Common.Tests;
 
 using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
-using FluentAssertions;
+using AwesomeAssertions;
 using Microsoft.ComponentDetection.Common.Exceptions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 

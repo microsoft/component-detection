@@ -1,11 +1,11 @@
-name: 'Generate docs'
+name: "Generate docs"
 
 on:
   push:
     branches:
       - main
     paths:
-      - 'src/Microsoft.ComponentDetection.Orchestrator/ArgumentSets/*.cs'
+      - "src/Microsoft.ComponentDetection.Orchestrator/ArgumentSets/*.cs"
 
 permissions:
   contents: read
@@ -13,26 +13,31 @@ permissions:
 jobs:
   gen-docs:
     permissions:
-      contents: write  # for stefanzweifel/git-auto-commit-action to push code in repo
+      contents: write # for stefanzweifel/git-auto-commit-action to push code in repo
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - name: Harden Runner
+        uses: step-security/harden-runner@fa2e9d605c4eeb9fcad4c99c224cee0c6c7f3594 # v2.16.0
         with:
-          fetch-depth: 0
+          egress-policy: audit
+
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: 0 # zizmor: ignore[artipacked] git-auto-commit-action needs credentials to push
 
       - name: Setup .NET Core
-        uses: actions/setup-dotnet@3951f0dfe7a07e2313ec93c75700083e2005cbab # v4.3.0
+        uses: actions/setup-dotnet@c2fa09f4bde5ebb9d1777cf28262a3eb3db3ced7 # v5.2.0
 
       - name: Generate docs
         run: |
           touch version.json
           touch version_dev.json
-          
+
           # Run CLI
           dotnet run -p src/Microsoft.ComponentDetection help scan 2> help.txt || true
           cat <<EOF > docs/detector-arguments.md
           # Detector arguments
-          
+
           \`\`\`shell
           dotnet run -p './src/Microsoft.ComponentDetection' help scan
           \`\`\`
@@ -43,7 +48,7 @@ jobs:
           EOF
 
       - name: Commit
-        uses: stefanzweifel/git-auto-commit-action@8621497c8c39c72f3e2a999a26b4ca1b5058a842 # v5.0.1
+        uses: stefanzweifel/git-auto-commit-action@04702edda442b2e678b25b537cec683a1493fcb9 # v7.1.0
         with:
-          commit_message: 'Update docs'
-          file_pattern: '*.md'
+          commit_message: "Update docs"
+          file_pattern: "*.md"

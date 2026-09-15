@@ -1,4 +1,3 @@
-#nullable enable
 namespace Microsoft.ComponentDetection.Detectors.Npm.Contracts;
 
 using System.Collections.Generic;
@@ -9,6 +8,13 @@ using System.Text.Json.Serialization;
 /// </summary>
 internal sealed record PackageLockV2Package
 {
+    /// <summary>
+    /// The package name. This is only present when the package name does not match the folder name in node_modules,
+    /// for example when a package is aliased via the <c>npm:@scope/name@version</c> syntax.
+    /// </summary>
+    [JsonPropertyName("name")]
+    public string? Name { get; init; }
+
     /// <summary>
     /// The version found in package.json.
     /// </summary>
@@ -81,6 +87,7 @@ internal sealed record PackageLockV2Package
     public string? License { get; init; }
 
     [JsonPropertyName("engines")]
+    [JsonConverter(typeof(PackageJsonEnginesConverter))]
     public IDictionary<string, string>? Engines { get; init; }
 
     [JsonPropertyName("dependencies")]

@@ -1,0 +1,36 @@
+replicaCount: 3
+
+image:
+  repository: myregistry.io/myapp
+  tag: "2.0.0"
+
+sidecar:
+  image: nginx:1.21
+
+backend:
+  image:
+    registry: ghcr.io
+    repository: org/backend
+    tag: "v1.0"
+
+monitoring:
+  image:
+    repository: prom/prometheus
+    tag: "v2.45.0"
+
+digestOnly:
+  image: nginx@sha256:0d17b565c37bcbd895e9d92315a05c1c3c9a29f762b011a10c54a66cd53c9b31
+
+tagAndDigest:
+  image: redis:7-alpine@sha256:0d17b565c37bcbd895e9d92315a05c1c3c9a29f762b011a10c54a66cd53c9b31
+
+structuredDigest:
+  image:
+    repository: busybox
+    digest: "sha256:0d17b565c37bcbd895e9d92315a05c1c3c9a29f762b011a10c54a66cd53c9b31"
+
+structuredTagAndDigest:
+  image:
+    repository: alpine
+    tag: "3.18"
+    digest: "sha256:0d17b565c37bcbd895e9d92315a05c1c3c9a29f762b011a10c54a66cd53c9b31"

@@ -1,7 +1,8 @@
+#nullable disable
 namespace Microsoft.ComponentDetection.Orchestrator.Tests;
 
 using System;
-using FluentAssertions;
+using AwesomeAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using Serilog.Core;

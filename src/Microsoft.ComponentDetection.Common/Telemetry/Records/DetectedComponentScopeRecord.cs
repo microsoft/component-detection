@@ -2,7 +2,7 @@ namespace Microsoft.ComponentDetection.Common.Telemetry.Records;
 
 using System.Runtime.CompilerServices;
 
-public class DetectedComponentScopeRecord : BaseDetectionTelemetryRecord
+internal class DetectedComponentScopeRecord : BaseDetectionTelemetryRecord
 {
     public override string RecordName => "ComponentScopeRecord";
 

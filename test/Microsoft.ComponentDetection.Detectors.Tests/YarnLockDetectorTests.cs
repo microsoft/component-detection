@@ -1,3 +1,4 @@
+#nullable disable
 namespace Microsoft.ComponentDetection.Detectors.Tests;
 
 using System;
@@ -5,8 +6,9 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Text.Json;
 using System.Threading.Tasks;
-using FluentAssertions;
+using AwesomeAssertions;
 using Microsoft.ComponentDetection.Common;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
@@ -17,14 +19,15 @@ using Microsoft.ComponentDetection.TestsUtilities;
 using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
-using Newtonsoft.Json;
 using static Microsoft.ComponentDetection.Detectors.Tests.Utilities.TestUtilityExtensions;
 
 [TestClass]
 [TestCategory("Governance/All")]
 [TestCategory("Governance/ComponentDetection")]
-public class YarnLockDetectorTests : BaseDetectorTest<YarnLockComponentDetector>
+public class YarnLockDetectorTests
 {
+    private readonly DetectorTestUtilityBuilder<YarnLockComponentDetector> detectorTestUtility = new();
+
     private readonly IYarnLockParser yarnLockParser;
     private readonly IYarnLockFileFactory yarnLockFileFactory;
 
@@ -41,7 +44,7 @@ public class YarnLockDetectorTests : BaseDetectorTest<YarnLockComponentDetector>
         yarnLockFileFactoryMock.Setup(x => x.ParseYarnLockFileAsync(It.IsAny<ISingleFileComponentRecorder>(), It.IsAny<Stream>(), It.IsAny<ILogger>()))
             .Returns((ISingleFileComponentRecorder recorder, Stream stream, ILogger logger) => this.yarnLockFileFactory.ParseYarnLockFileAsync(recorder, stream, logger));
 
-        this.DetectorTestUtility.AddServiceMock(yarnLockFileFactoryMock);
+        this.detectorTestUtility.AddServiceMock(yarnLockFileFactoryMock);
     }
 
     [TestMethod]
@@ -50,7 +53,7 @@ public class YarnLockDetectorTests : BaseDetectorTest<YarnLockComponentDetector>
         var yarnLock = YarnTestUtilities.GetWellFormedEmptyYarnV1LockFile();
         var packageJson = NpmTestUtilities.GetPackageJsonNoDependencies();
 
-        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile("yarn.lock", yarnLock)
             .WithFile("package.json", packageJson, ["package.json"])
             .ExecuteDetectorAsync();
@@ -65,7 +68,7 @@ public class YarnLockDetectorTests : BaseDetectorTest<YarnLockComponentDetector>
         var yarnLock = YarnTestUtilities.GetWellFormedEmptyYarnV2LockFile();
         var packageJson = NpmTestUtilities.GetPackageJsonNoDependencies();
 
-        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile("yarn.lock", yarnLock)
             .WithFile("package.json", packageJson, ["package.json"])
             .ExecuteDetectorAsync();
@@ -94,7 +97,7 @@ public class YarnLockDetectorTests : BaseDetectorTest<YarnLockComponentDetector>
         var yarnLock = builder.ToString();
         var (packageJsonName, packageJsonContent, packageJsonPath) = NpmTestUtilities.GetPackageJsonOneRoot(componentName0, providedVersion0);
 
-        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile("yarn.lock", yarnLock)
             .WithFile("package.json", packageJsonContent, ["package.json"])
             .ExecuteDetectorAsync();
@@ -121,7 +124,7 @@ public class YarnLockDetectorTests : BaseDetectorTest<YarnLockComponentDetector>
         var yarnLock = builder.ToString();
         var (packageJsonName, packageJsonContent, packageJsonPath) = NpmTestUtilities.GetPackageJsonOneRoot(componentName0, providedVersion0);
 
-        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile("yarn.lock", yarnLock)
             .WithFile("package.json", packageJsonContent, ["package.json"])
             .ExecuteDetectorAsync();
@@ -145,7 +148,7 @@ public class YarnLockDetectorTests : BaseDetectorTest<YarnLockComponentDetector>
         var yarnLock = this.CreateYarnLockV1FileContent([componentA]);
         var (packageJsonName, packageJsonContent, packageJsonPath) = NpmTestUtilities.GetPackageJsonOneRoot(componentA.Name, componentA.RequestedVersion);
 
-        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile("yarn.lock", yarnLock)
             .WithFile("package.json", packageJsonContent, ["package.json"])
             .ExecuteDetectorAsync();
@@ -177,7 +180,7 @@ public class YarnLockDetectorTests : BaseDetectorTest<YarnLockComponentDetector>
         var yarnLock = this.CreateYarnLockV2FileContent([componentA]);
         var (packageJsonName, packageJsonContent, packageJsonPath) = NpmTestUtilities.GetPackageJsonOneRoot(componentA.Name, componentA.RequestedVersion);
 
-        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile("yarn.lock", yarnLock)
             .WithFile("package.json", packageJsonContent, ["package.json"])
             .ExecuteDetectorAsync();
@@ -218,11 +221,11 @@ public class YarnLockDetectorTests : BaseDetectorTest<YarnLockComponentDetector>
             workspaces = new[] { "workspace" },
         };
 
-        var workspaceJsonComponentStream = new ComponentStream { Location = directory.ToString(), Pattern = "package.json", Stream = JsonConvert.SerializeObject(workspaceJson).ToStream() };
+        var workspaceJsonComponentStream = new ComponentStream { Location = directory.ToString(), Pattern = "package.json", Stream = JsonSerializer.Serialize(workspaceJson).ToStream() };
 
         var packageStream = NpmTestUtilities.GetPackageJsonOneRootComponentStream(componentA.Name, componentA.RequestedVersion);
 
-        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile("yarn.lock", componentStream.Stream)
             .WithFile("package.json", packageStream.Stream, ["package.json"])
             .WithFile("package.json", workspaceJsonComponentStream.Stream, ["package.json"], Path.Combine(Path.GetTempPath(), "workspace", "package.json"))
@@ -263,12 +266,12 @@ public class YarnLockDetectorTests : BaseDetectorTest<YarnLockComponentDetector>
             @private = true,
             workspaces = new[] { "workspace" },
         };
-        var str = JsonConvert.SerializeObject(workspaceJson);
+        var str = JsonSerializer.Serialize(workspaceJson);
         var workspaceJsonComponentStream = new ComponentStream { Location = directory.ToString(), Pattern = "package.json", Stream = str.ToStream() };
 
         var packageStream = NpmTestUtilities.GetPackageJsonOneRootComponentStream(componentA.Name, componentA.RequestedVersion);
 
-        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile("yarn.lock", componentStream.Stream)
             .WithFile("package.json", workspaceJsonComponentStream.Stream, ["package.json"], Path.Combine(Path.GetTempPath(), "package.json"))
             .WithFile("package.json", packageStream.Stream, ["package.json"], Path.Combine(Path.GetTempPath(), "workspace", "package.json"))
@@ -310,11 +313,11 @@ public class YarnLockDetectorTests : BaseDetectorTest<YarnLockComponentDetector>
             workspaces = new[] { "workspace" },
         };
 
-        var workspaceJsonComponentStream = new ComponentStream { Location = directory.ToString(), Pattern = "package.json", Stream = JsonConvert.SerializeObject(workspaceJson).ToStream() };
+        var workspaceJsonComponentStream = new ComponentStream { Location = directory.ToString(), Pattern = "package.json", Stream = JsonSerializer.Serialize(workspaceJson).ToStream() };
 
         var packageStream = NpmTestUtilities.GetPackageJsonOneRootComponentStream(componentA.Name, componentA.RequestedVersion);
 
-        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile("yarn.lock", componentStream.Stream)
             .WithFile("package.json", packageStream.Stream, ["package.json"])
             .WithFile("package.json", workspaceJsonComponentStream.Stream, ["package.json"], Path.Combine(Path.GetTempPath(), "workspace", "package.json"))
@@ -356,11 +359,11 @@ public class YarnLockDetectorTests : BaseDetectorTest<YarnLockComponentDetector>
             workspaces = new { packages = new[] { "workspace" } },
         };
 
-        var workspaceJsonComponentStream = new ComponentStream { Location = directory.ToString(), Pattern = "package.json", Stream = JsonConvert.SerializeObject(workspaceJson).ToStream() };
+        var workspaceJsonComponentStream = new ComponentStream { Location = directory.ToString(), Pattern = "package.json", Stream = JsonSerializer.Serialize(workspaceJson).ToStream() };
 
         var packageStream = NpmTestUtilities.GetPackageJsonOneRootComponentStream(componentA.Name, componentA.RequestedVersion);
 
-        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile("yarn.lock", componentStream.Stream)
             .WithFile("package.json", packageStream.Stream, ["package.json"])
             .WithFile("package.json", workspaceJsonComponentStream.Stream, ["package.json"], Path.Combine(Path.GetTempPath(), "workspace", "package.json"))
@@ -402,11 +405,11 @@ public class YarnLockDetectorTests : BaseDetectorTest<YarnLockComponentDetector>
             workspaces = new { packages = new[] { "workspace" } },
         };
 
-        var workspaceJsonComponentStream = new ComponentStream { Location = directory.ToString(), Pattern = "package.json", Stream = JsonConvert.SerializeObject(workspaceJson).ToStream() };
+        var workspaceJsonComponentStream = new ComponentStream { Location = directory.ToString(), Pattern = "package.json", Stream = JsonSerializer.Serialize(workspaceJson).ToStream() };
 
         var packageStream = NpmTestUtilities.GetPackageJsonOneRootComponentStream(componentA.Name, componentA.RequestedVersion);
 
-        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile("yarn.lock", componentStream.Stream)
             .WithFile("package.json", packageStream.Stream, ["package.json"])
             .WithFile("package.json", workspaceJsonComponentStream.Stream, ["package.json"], Path.Combine(Path.GetTempPath(), "workspace", "package.json"))
@@ -422,6 +425,133 @@ public class YarnLockDetectorTests : BaseDetectorTest<YarnLockComponentDetector>
         componentRecorder.AssertAllExplicitlyReferencedComponents<NpmComponent>(
             detectedComponents.Single().Component.Id,
             parentComponent => parentComponent.Name == componentA.Name && parentComponent.Version == version0);
+    }
+
+    [TestMethod]
+    public async Task WellFormedYarnLockWithMultipleWorkspaces_FindsAllComponentsAsync()
+    {
+        // Regression test for the workspace resolution performance fix: a single
+        // filesystem traversal must still discover every workspace package.json that a
+        // glob workspace pattern expands to, and register the dependencies declared in
+        // each of them.
+        var version0 = NewRandomVersion();
+        var version1 = NewRandomVersion();
+        var version2 = NewRandomVersion();
+
+        var componentA = new YarnTestComponentDefinition { ActualVersion = version0, RequestedVersion = $"^{version0}", ResolvedVersion = "https://resolved0/a/resolved", Name = Guid.NewGuid().ToString("N") };
+        var componentB = new YarnTestComponentDefinition { ActualVersion = version1, RequestedVersion = $"^{version1}", ResolvedVersion = "https://resolved1/b/resolved", Name = Guid.NewGuid().ToString("N") };
+        var componentC = new YarnTestComponentDefinition { ActualVersion = version2, RequestedVersion = $"^{version2}", ResolvedVersion = "https://resolved2/c/resolved", Name = Guid.NewGuid().ToString("N") };
+
+        var yarnLockStream = YarnTestUtilities.GetMockedYarnLockStream("yarn.lock", this.CreateYarnLockV1FileContent([componentA, componentB, componentC]));
+
+        var rootJson = JsonSerializer.Serialize(new
+        {
+            name = "testworkspace",
+            version = "1.0.0",
+            @private = true,
+            workspaces = new[] { "packages/*" },
+        });
+
+        var app1Json = JsonSerializer.Serialize(new
+        {
+            name = "app1",
+            version = "1.0.0",
+            dependencies = new Dictionary<string, string> { [componentA.Name] = componentA.RequestedVersion },
+        });
+
+        var app2Json = JsonSerializer.Serialize(new
+        {
+            name = "app2",
+            version = "1.0.0",
+            dependencies = new Dictionary<string, string>
+            {
+                [componentB.Name] = componentB.RequestedVersion,
+                [componentC.Name] = componentC.RequestedVersion,
+            },
+        });
+
+        var app1Path = Path.Combine(Path.GetTempPath(), "packages", "app1", "package.json");
+        var app2Path = Path.Combine(Path.GetTempPath(), "packages", "app2", "package.json");
+
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
+            .WithFile("yarn.lock", yarnLockStream.Stream)
+            .WithFile("package.json", rootJson.ToStream(), ["package.json"], Path.Combine(Path.GetTempPath(), "package.json"))
+            .WithFile("package.json", app1Json.ToStream(), ["package.json"], app1Path)
+            .WithFile("package.json", app2Json.ToStream(), ["package.json"], app2Path)
+            .ExecuteDetectorAsync();
+
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+
+        var detectedComponents = componentRecorder.GetDetectedComponents().ToList();
+        detectedComponents.Should().HaveCount(3);
+
+        var detectedA = detectedComponents.Single(x => ((NpmComponent)x.Component).Name == componentA.Name);
+        var detectedB = detectedComponents.Single(x => ((NpmComponent)x.Component).Name == componentB.Name);
+        var detectedC = detectedComponents.Single(x => ((NpmComponent)x.Component).Name == componentC.Name);
+
+        ((NpmComponent)detectedA.Component).Version.Should().Be(version0);
+        ((NpmComponent)detectedB.Component).Version.Should().Be(version1);
+        ((NpmComponent)detectedC.Component).Version.Should().Be(version2);
+
+        // Each component is an explicitly referenced (root) dependency of its workspace.
+        componentRecorder.AssertAllExplicitlyReferencedComponents<NpmComponent>(detectedA.Component.Id, parent => parent.Name == componentA.Name);
+        componentRecorder.AssertAllExplicitlyReferencedComponents<NpmComponent>(detectedB.Component.Id, parent => parent.Name == componentB.Name);
+        componentRecorder.AssertAllExplicitlyReferencedComponents<NpmComponent>(detectedC.Component.Id, parent => parent.Name == componentC.Name);
+
+        // The dependency's file path must point at the workspace package.json that declared it.
+        detectedA.FilePaths.Should().Contain(app1Path);
+        detectedB.FilePaths.Should().Contain(app2Path);
+        detectedC.FilePaths.Should().Contain(app2Path);
+    }
+
+    [TestMethod]
+    public async Task WellFormedYarnLockWithWorkspaceSharedDependency_AttributesFirstWorkspaceAsync()
+    {
+        // Regression test guarding that the single-traversal workspace resolution preserves
+        // the original resolution order (workspace pattern order, then discovery order) so
+        // that first-wins location attribution stays deterministic when the same dependency
+        // is declared by more than one workspace.
+        var version0 = NewRandomVersion();
+        var componentA = new YarnTestComponentDefinition { ActualVersion = version0, RequestedVersion = $"^{version0}", ResolvedVersion = "https://resolved0/a/resolved", Name = Guid.NewGuid().ToString("N") };
+
+        var yarnLockStream = YarnTestUtilities.GetMockedYarnLockStream("yarn.lock", this.CreateYarnLockV1FileContent([componentA]));
+
+        var rootJson = JsonSerializer.Serialize(new
+        {
+            name = "testworkspace",
+            version = "1.0.0",
+            @private = true,
+            workspaces = new[] { "packages/app1", "packages/app2" },
+        });
+
+        var memberJson = JsonSerializer.Serialize(new
+        {
+            name = "member",
+            version = "1.0.0",
+            dependencies = new Dictionary<string, string> { [componentA.Name] = componentA.RequestedVersion },
+        });
+
+        var app1Path = Path.Combine(Path.GetTempPath(), "packages", "app1", "package.json");
+        var app2Path = Path.Combine(Path.GetTempPath(), "packages", "app2", "package.json");
+
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
+            .WithFile("yarn.lock", yarnLockStream.Stream)
+            .WithFile("package.json", rootJson.ToStream(), ["package.json"], Path.Combine(Path.GetTempPath(), "package.json"))
+            .WithFile("package.json", memberJson.ToStream(), ["package.json"], app1Path)
+            .WithFile("package.json", memberJson.ToStream(), ["package.json"], app2Path)
+            .ExecuteDetectorAsync();
+
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+
+        var detectedComponents = componentRecorder.GetDetectedComponents();
+        detectedComponents.Should().ContainSingle();
+
+        var detectedA = detectedComponents.Single();
+        ((NpmComponent)detectedA.Component).Name.Should().Be(componentA.Name);
+
+        // The first workspace pattern (packages/app1) wins the location attribution.
+        detectedA.FilePaths.Should().ContainSingle();
+        detectedA.FilePaths.Should().Contain(app1Path);
     }
 
     [TestMethod]
@@ -450,7 +580,7 @@ public class YarnLockDetectorTests : BaseDetectorTest<YarnLockComponentDetector>
         var yarnLock = this.CreateYarnLockV1FileContent([componentA, componentB]);
         var (packageJsonName, packageJsonContent, packageJsonPath) = NpmTestUtilities.GetPackageJsonOneRoot(componentA.Name, componentA.RequestedVersion);
 
-        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile("yarn.lock", yarnLock)
             .WithFile("package.json", packageJsonContent, ["package.json"])
             .ExecuteDetectorAsync();
@@ -497,7 +627,7 @@ public class YarnLockDetectorTests : BaseDetectorTest<YarnLockComponentDetector>
         var yarnLock = this.CreateYarnLockV2FileContent([componentA, componentB]);
         var (packageJsonName, packageJsonContent, packageJsonPath) = NpmTestUtilities.GetPackageJsonOneRoot(componentA.Name, componentA.RequestedVersion);
 
-        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile("yarn.lock", yarnLock)
             .WithFile("package.json", packageJsonContent, ["package.json"])
             .ExecuteDetectorAsync();
@@ -570,7 +700,7 @@ public class YarnLockDetectorTests : BaseDetectorTest<YarnLockComponentDetector>
 
         var yarnLock = builder.ToString();
 
-        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile("yarn.lock", yarnLock)
             .WithFile("package.json", packageJsonContent, ["package.json"])
             .ExecuteDetectorAsync();
@@ -646,7 +776,7 @@ public class YarnLockDetectorTests : BaseDetectorTest<YarnLockComponentDetector>
 
         var yarnLock = builder.ToString();
 
-        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile("yarn.lock", yarnLock)
             .WithFile("package.json", packageJsonContent, ["package.json"])
             .ExecuteDetectorAsync();
@@ -705,7 +835,7 @@ public class YarnLockDetectorTests : BaseDetectorTest<YarnLockComponentDetector>
         var yarnLockFileContent = this.CreateYarnLockV1FileContent([componentA, componentB, componentC]);
         var packageJsonFileContent = this.CreatePackageJsonFileContent([componentA, componentB, componentC]);
 
-        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile("yarn.lock", yarnLockFileContent)
             .WithFile("package.json", packageJsonFileContent, ["package.json"])
             .ExecuteDetectorAsync();
@@ -761,7 +891,7 @@ public class YarnLockDetectorTests : BaseDetectorTest<YarnLockComponentDetector>
         var yarnLockFileContent = this.CreateYarnLockV2FileContent([componentA, componentB, componentC]);
         var packageJsonFileContent = this.CreatePackageJsonFileContent([componentA, componentB, componentC]);
 
-        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile("yarn.lock", yarnLockFileContent)
             .WithFile("package.json", packageJsonFileContent, ["package.json"])
             .ExecuteDetectorAsync();
@@ -803,7 +933,7 @@ public class YarnLockDetectorTests : BaseDetectorTest<YarnLockComponentDetector>
         var yarnLockFileContent = builder.ToString();
         var packageJsonFileContent = this.CreatePackageJsonFileContent([]);
 
-        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile("yarn.lock", yarnLockFileContent)
             .WithFile("package.json", packageJsonFileContent, ["package.json"])
             .ExecuteDetectorAsync();
@@ -857,9 +987,10 @@ public class YarnLockDetectorTests : BaseDetectorTest<YarnLockComponentDetector>
                     builder.Append($@"  ""{dependencyComponents[i].Name}"": ""{dependencyComponents[i].RequestedVersion}"",");
                 }
             }
+
+            builder.Append('}');
         }
 
-        builder.Append('}');
         builder.Append('}');
 
         return builder.ToString();

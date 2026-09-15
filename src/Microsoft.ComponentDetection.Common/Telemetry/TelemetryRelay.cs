@@ -49,6 +49,25 @@ public sealed class TelemetryRelay
     }
 
     /// <summary>
+    /// Flushes all buffered telemetry records to their services without shutting down.
+    /// Use this at critical checkpoints to ensure telemetry is delivered even if the process later hangs.
+    /// </summary>
+    public void FlushCurrentTelemetry()
+    {
+        foreach (var service in this.telemetryServices)
+        {
+            try
+            {
+                service.Flush();
+            }
+            catch
+            {
+                // Telemetry should never crash the application
+            }
+        }
+    }
+
+    /// <summary>
     /// Disables the sending of telemetry and flushes any messages out of the queue for each service.
     /// </summary>
     /// <returns><see cref="Task"/> representing the asynchronous operation.</returns>

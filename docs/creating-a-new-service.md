@@ -1,73 +1,85 @@
 # Creating a new service
 
-We will be using [this PR](https://github.com/microsoft/component-detection/pull/12) following `EnvironmentVariableService` as a model for adding a new service.
-The following steps are distilled and organized from that PR.
+Component Detection uses standard .NET dependency injection for service registration. This guide shows how to add a new service to the system.
 
-1. Create your new service interface in `src/Microsoft.ComponentDetection.Contracts/IMyNewService.cs`
-2. Create your new service implementation in `src/Microsoft.ComponentDetection.Common/MyNewService.cs` implementing and exporting `IMyNewService`.
+## Steps to create a new service
+
+1. **Create your service interface** in `src/Microsoft.ComponentDetection.Contracts/IMyNewService.cs`
 
 ```c#
-using System;
-using System.Composition;
+namespace Microsoft.ComponentDetection.Contracts;
+
+public interface IMyNewService
+{
+    // Define your service methods
+    string DoSomething();
+}
+```
+
+2. **Create your service implementation** in `src/Microsoft.ComponentDetection.Common/MyNewService.cs`
+
+```c#
 using Microsoft.ComponentDetection.Contracts;
 
-namespace Microsoft.ComponentDetection.Common
+namespace Microsoft.ComponentDetection.Common;
+
+public class MyNewService : IMyNewService
 {
-    [Export(typeof(IMyNewService))]
-    public class MyNewService : IMyNewService
+    // Inject any dependencies your service needs
+    public MyNewService(ILogger<MyNewService> logger)
     {
-        ...
+        // Constructor injection
+    }
+
+    public string DoSomething()
+    {
+        // Implementation
     }
 }
 ```
 
-3. Add your new service to `src/Microsoft.ComponentDetection.Contracts/IDetectorDependencies.cs`
+3. **Register your service** in `src/Microsoft.ComponentDetection.Orchestrator/Extensions/ServiceCollectionExtensions.cs`
+
+Add your service registration to the `AddComponentDetection` method:
 
 ```c#
-namespace Microsoft.ComponentDetection.Contracts
+public static IServiceCollection AddComponentDetection(this IServiceCollection services)
 {
-    public interface IDetectorDependencies
-    {
-        ...
-        IMyNewService MyNewService { get; set; }
-    }
+    // ... existing registrations ...
+
+    // Your new service
+    services.AddSingleton<IMyNewService, MyNewService>();
+
+    // ... more registrations ...
+    return services;
 }
 ```
 
-4. Add your new service to `src/Microsoft.ComponentDetection.Common/DetectorDependencies.cs`
+4. **Use your service** in detectors or other services via constructor injection:
 
 ```c#
-namespace Microsoft.ComponentDetection.Common
+public class MyDetector : FileComponentDetector
 {
-    [Export(typeof(IDetectorDependencies))]
-    public class DetectorDependencies : IDetectorDependencies
+    private readonly IMyNewService myNewService;
+
+    public MyDetector(
+        IComponentStreamEnumerableFactory componentStreamEnumerableFactory,
+        IObservableDirectoryWalkerFactory walkerFactory,
+        ILogger<MyDetector> logger,
+        IMyNewService myNewService)  // Inject your service
     {
-        ...
-        [Import]
-        public IMyNewService MyNewService { get; set; }
+        this.ComponentStreamEnumerableFactory = componentStreamEnumerableFactory;
+        this.Scanner = walkerFactory;
+        this.Logger = logger;
+        this.myNewService = myNewService;
     }
 }
 ```
 
-5. Add your new service to `src/Microsoft.ComponentDetection.Contracts/Internal/InjectionParameters.cs`
+## Service Lifetimes
 
-```c#
-namespace Microsoft.ComponentDetection.Contracts.Internal
-{
-    internal class InjectionParameters
-    {
-        internal InjectionParameters(IDetectorDependencies detectorDependencies)
-        {
-            ...
-            myNewServiceStatic = detectorDependencies.MyNewService;
-        }
-    }
-    
-    ...
-    private static IMyNewService myNewServiceStatic;
-    
-    ...
-    [Export(typeof(IMyNewService))]
-    public IMyNewService MyNewService => myNewServiceStatic;
-}
-```
+- Use `AddSingleton` for stateless services or services that should be reused across the application lifetime
+- Use `AddScoped` for services that should be created once per scan operation (rare in this codebase)
+- Use `AddTransient` for lightweight, stateless services that should be created each time they're requested
+
+Most services in Component Detection are registered as singletons.

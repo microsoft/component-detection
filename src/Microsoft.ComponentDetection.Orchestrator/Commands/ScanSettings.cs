@@ -1,3 +1,4 @@
+#nullable disable
 namespace Microsoft.ComponentDetection.Orchestrator.Commands;
 
 using System.Collections.Generic;
@@ -84,6 +85,10 @@ public class ScanSettings : BaseSettings
     [CommandOption("--CleanupCreatedFiles")]
     [Description("Whether or not to cleanup files that are created during detection, based on the rules provided in each detector. Defaults to 'true'.")]
     public bool? CleanupCreatedFiles { get; set; }
+
+    [CommandOption("--ExcludeBaseImageComponents")]
+    [Description("When enabled, filters out components that originate exclusively from base image layers when scanning containers.")]
+    public bool ExcludeBaseImageComponents { get; set; }
 
     /// <inheritdoc />
     public override ValidationResult Validate()

@@ -1,3 +1,4 @@
+#nullable disable
 namespace Microsoft.ComponentDetection.Detectors.Maven;
 
 using System;
@@ -8,7 +9,7 @@ using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.Internal;
 using Microsoft.Extensions.Logging;
 
-public class MavenCommandService : IMavenCommandService
+internal class MavenCommandService : IMavenCommandService
 {
     private const string DetectorLogPrefix = "MvnCli detector";
     internal const string MvnCLIFileLevelTimeoutSecondsEnvVar = "MvnCLIFileLevelTimeoutSeconds";
@@ -35,14 +36,14 @@ public class MavenCommandService : IMavenCommandService
         this.logger = logger;
     }
 
-    public string BcdeMvnDependencyFileName => "bcde.mvndeps";
+    public string BcdeMvnDependencyFileName => MavenConstants.BcdeMvnDependencyFileName;
 
     public async Task<bool> MavenCLIExistsAsync()
     {
         return await this.commandLineInvocationService.CanCommandBeLocatedAsync(PrimaryCommand, AdditionalValidCommands, MvnVersionArgument);
     }
 
-    public async Task GenerateDependenciesFileAsync(ProcessRequest processRequest, CancellationToken cancellationToken = default)
+    public async Task<MavenCliResult> GenerateDependenciesFileAsync(ProcessRequest processRequest, CancellationToken cancellationToken = default)
     {
         var cliFileTimeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         var timeoutSeconds = -1;
@@ -57,7 +58,7 @@ public class MavenCommandService : IMavenCommandService
         var pomFile = processRequest.ComponentStream;
         this.logger.LogDebug("{DetectorPrefix}: Running \"dependency:tree\" on {PomFileLocation}", DetectorLogPrefix, pomFile.Location);
 
-        var cliParameters = new[] { "dependency:tree", "-B", $"-DoutputFile={this.BcdeMvnDependencyFileName}", "-DoutputType=text", $"-f{pomFile.Location}" };
+        string[] cliParameters = ["dependency:tree", "-B", $"-DoutputFile={this.BcdeMvnDependencyFileName}", "-DoutputType=text", $"-f{pomFile.Location}"];
 
         var result = await this.commandLineInvocationService.ExecuteCommandAsync(PrimaryCommand, AdditionalValidCommands, cancellationToken: cliFileTimeout.Token, cliParameters);
 
@@ -77,10 +78,14 @@ public class MavenCommandService : IMavenCommandService
             {
                 this.logger.LogWarning("{DetectorPrefix}: There was a timeout in {PomFileLocation} file. Increase it using {TimeoutVar} environment variable.", DetectorLogPrefix, pomFile.Location, MvnCLIFileLevelTimeoutSecondsEnvVar);
             }
+
+            return new MavenCliResult(false, errorMessage);
         }
         else
         {
             this.logger.LogDebug("{DetectorPrefix}: Execution of \"dependency:tree\" on {PomFileLocation} completed successfully", DetectorLogPrefix, pomFile.Location);
+
+            return new MavenCliResult(true, null);
         }
     }
 

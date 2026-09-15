@@ -3,7 +3,7 @@ namespace Microsoft.ComponentDetection.Common;
 
 using System;
 
-public class DockerReferenceException : Exception
+internal class DockerReferenceException : Exception
 {
     public DockerReferenceException(string reference, string exceptionErrorMessage)
         : base($"Error while parsing docker reference {reference} : {exceptionErrorMessage}")
@@ -26,7 +26,7 @@ public class DockerReferenceException : Exception
 }
 
 // ReferenceInvalidFormat represents an error while trying to parse a string as a reference.
-public class ReferenceInvalidFormatException : DockerReferenceException
+internal class ReferenceInvalidFormatException : DockerReferenceException
 {
     private const string ErrorMessage = "invalid reference format";
 
@@ -46,7 +46,7 @@ public class ReferenceInvalidFormatException : DockerReferenceException
 }
 
 // TagInvalidFormat represents an error while trying to parse a string as a tag.
-public class ReferenceTagInvalidFormatException : DockerReferenceException
+internal class ReferenceTagInvalidFormatException : DockerReferenceException
 {
     private const string ErrorMessage = "invalid tag format";
 
@@ -66,7 +66,7 @@ public class ReferenceTagInvalidFormatException : DockerReferenceException
 }
 
 // DigestInvalidFormat represents an error while trying to parse a string as a tag.
-public class ReferenceDigestInvalidFormatException : DockerReferenceException
+internal class ReferenceDigestInvalidFormatException : DockerReferenceException
 {
     private const string ErrorMessage = "invalid digest format";
 
@@ -86,7 +86,7 @@ public class ReferenceDigestInvalidFormatException : DockerReferenceException
 }
 
 // NameContainsUppercase is returned for invalid repository names that contain uppercase characters.
-public class ReferenceNameContainsUppercaseException : DockerReferenceException
+internal class ReferenceNameContainsUppercaseException : DockerReferenceException
 {
     private const string ErrorMessage = "repository name must be lowercase";
 
@@ -106,7 +106,7 @@ public class ReferenceNameContainsUppercaseException : DockerReferenceException
 }
 
 // NameEmpty is returned for empty, invalid repository names.
-public class ReferenceNameEmptyException : DockerReferenceException
+internal class ReferenceNameEmptyException : DockerReferenceException
 {
     private const string ErrorMessage = "repository name must have at least one component";
 
@@ -126,7 +126,7 @@ public class ReferenceNameEmptyException : DockerReferenceException
 }
 
 // ErrNameTooLong is returned when a repository name is longer than NameTotalLengthMax.
-public class ReferenceNameTooLongException : DockerReferenceException
+internal class ReferenceNameTooLongException : DockerReferenceException
 {
     private const string ErrorMessage = "repository name must not be more than 255 characters";
 
@@ -146,7 +146,7 @@ public class ReferenceNameTooLongException : DockerReferenceException
 }
 
 // ErrNameNotCanonical is returned when a name is not canonical.
-public class ReferenceNameNotCanonicalException : DockerReferenceException
+internal class ReferenceNameNotCanonicalException : DockerReferenceException
 {
     private const string ErrorMessage = "repository name must be canonical";
 
@@ -165,7 +165,7 @@ public class ReferenceNameNotCanonicalException : DockerReferenceException
     }
 }
 
-public class InvalidDigestFormatError : DockerReferenceException
+internal class InvalidDigestFormatError : DockerReferenceException
 {
     private const string ErrorMessage = "invalid digest format";
 
@@ -184,7 +184,7 @@ public class InvalidDigestFormatError : DockerReferenceException
     }
 }
 
-public class UnsupportedAlgorithmError : DockerReferenceException
+internal class UnsupportedAlgorithmError : DockerReferenceException
 {
     private const string ErrorMessage = "unsupported digest algorithm";
 
@@ -203,7 +203,7 @@ public class UnsupportedAlgorithmError : DockerReferenceException
     }
 }
 
-public class InvalidDigestLengthError : DockerReferenceException
+internal class InvalidDigestLengthError : DockerReferenceException
 {
     private const string ErrorMessage = "invalid checksum digest length";
 

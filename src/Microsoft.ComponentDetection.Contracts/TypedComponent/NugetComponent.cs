@@ -1,10 +1,12 @@
+#nullable disable
 namespace Microsoft.ComponentDetection.Contracts.TypedComponent;
 
+using System.Text.Json.Serialization;
 using PackageUrl;
 
 public class NuGetComponent : TypedComponent
 {
-    private NuGetComponent()
+    public NuGetComponent()
     {
         /* Reserved for deserialization */
     }
@@ -16,15 +18,20 @@ public class NuGetComponent : TypedComponent
         this.Authors = authors;
     }
 
+    [JsonPropertyName("name")]
     public string Name { get; set; }
 
+    [JsonPropertyName("version")]
     public string Version { get; set; }
 
+    [JsonPropertyName("authors")]
     public string[] Authors { get; set; }
 
+    [JsonIgnore]
     public override ComponentType Type => ComponentType.NuGet;
 
+    [JsonPropertyName("packageUrl")]
     public override PackageURL PackageUrl => new PackageURL("nuget", null, this.Name, this.Version, null, null);
 
-    protected override string ComputeId() => $"{this.Name} {this.Version} - {this.Type}";
+    protected override string ComputeBaseId() => $"{this.Name} {this.Version} - {this.Type}";
 }

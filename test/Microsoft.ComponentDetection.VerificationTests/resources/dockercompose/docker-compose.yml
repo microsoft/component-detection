@@ -1,0 +1,37 @@
+version: '3.8'
+services:
+  web:
+    image: nginx:1.21
+    ports:
+      - "8080:80"
+    depends_on:
+      - api
+      - db
+
+  api:
+    image: ghcr.io/myorg/myapp:v2.0
+    environment:
+      - DATABASE_URL=postgres://db:5432/app
+    depends_on:
+      - db
+
+  db:
+    image: postgres:15
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_PASSWORD=secret
+
+  cache:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+
+  digest-only:
+    image: nginx@sha256:0d17b565c37bcbd895e9d92315a05c1c3c9a29f762b011a10c54a66cd53c9b31
+
+  tag-and-digest:
+    image: redis:7-alpine@sha256:0d17b565c37bcbd895e9d92315a05c1c3c9a29f762b011a10c54a66cd53c9b31
+
+volumes:
+  db-data:

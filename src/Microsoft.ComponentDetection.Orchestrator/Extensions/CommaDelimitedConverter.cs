@@ -1,3 +1,4 @@
+#nullable disable
 namespace Microsoft.ComponentDetection.Orchestrator.Extensions;
 
 using System;
@@ -7,7 +8,7 @@ using System.Globalization;
 /// <summary>
 /// Converts a comma separated string to an array of strings.
 /// </summary>
-public class CommaDelimitedConverter : TypeConverter
+internal class CommaDelimitedConverter : TypeConverter
 {
     /// <inheritdoc />
     public override object ConvertFrom(ITypeDescriptorContext context, CultureInfo culture, object value)

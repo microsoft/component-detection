@@ -1,11 +1,13 @@
+#nullable disable
 namespace Microsoft.ComponentDetection.Contracts.TypedComponent;
 
 using System;
+using System.Text.Json.Serialization;
 using PackageUrl;
 
 public class LinuxComponent : TypedComponent
 {
-    private LinuxComponent()
+    public LinuxComponent()
     {
         /* Reserved for deserialization */
     }
@@ -20,22 +22,30 @@ public class LinuxComponent : TypedComponent
         this.Author = author;
     }
 
+    [JsonPropertyName("distribution")]
     public string Distribution { get; set; }
 
+    [JsonPropertyName("release")]
     public string Release { get; set; }
 
+    [JsonPropertyName("name")]
     public string Name { get; set; }
 
+    [JsonPropertyName("version")]
     public string Version { get; set; }
 
 #nullable enable
+    [JsonPropertyName("license")]
     public string? License { get; set; }
 
+    [JsonPropertyName("author")]
     public string? Author { get; set; }
 #nullable disable
 
+    [JsonIgnore]
     public override ComponentType Type => ComponentType.Linux;
 
+    [JsonPropertyName("packageUrl")]
     public override PackageURL PackageUrl
     {
         get
@@ -60,7 +70,7 @@ public class LinuxComponent : TypedComponent
         }
     }
 
-    protected override string ComputeId() => $"{this.Distribution} {this.Release} {this.Name} {this.Version} - {this.Type}";
+    protected override string ComputeBaseId() => $"{this.Distribution} {this.Release} {this.Name} {this.Version} - {this.Type}";
 
     private bool IsUbuntu()
     {

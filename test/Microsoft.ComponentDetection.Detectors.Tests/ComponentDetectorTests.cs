@@ -1,8 +1,9 @@
+#nullable disable
 namespace Microsoft.ComponentDetection.Detectors.Tests;
 
 using System.Collections.Generic;
 using System.Linq;
-using FluentAssertions;
+using AwesomeAssertions;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Orchestrator.Extensions;
 using Microsoft.Extensions.DependencyInjection;
@@ -61,5 +62,23 @@ public class ComponentDetectorTests
         {
             detector.SupportedComponentTypes.Should().OnlyHaveUniqueItems($"because {detector.Id} should have unique supported component types");
         }
+    }
+
+    [TestMethod]
+    public void UvLockComponentDetector_DoesNotImplementIExperimentalDetector()
+    {
+        var uvLockDetector = this.detectors.SingleOrDefault(d => d.Id == "UvLock");
+
+        uvLockDetector.Should().NotBeNull("because UvLockComponentDetector should be registered");
+        uvLockDetector.Should().NotBeAssignableTo<IExperimentalDetector>("because UvLockComponentDetector should not implement IExperimentalDetector");
+    }
+
+    [TestMethod]
+    public void CondaLockComponentDetector_ImplementsIExperimentalDetector()
+    {
+        var condaLockDetector = this.detectors.SingleOrDefault(d => d.Id == "CondaLock");
+
+        condaLockDetector.Should().NotBeNull("because CondaLockComponentDetector should be registered");
+        condaLockDetector.Should().BeAssignableTo<IExperimentalDetector>("because CondaLockComponentDetector should implement IExperimentalDetector");
     }
 }

@@ -1,4 +1,7 @@
+#nullable disable
 namespace Microsoft.ComponentDetection.Contracts.TypedComponent;
+
+using System.Text.Json.Serialization;
 
 public class DockerReferenceComponent : TypedComponent
 {
@@ -13,19 +16,24 @@ public class DockerReferenceComponent : TypedComponent
     {
     }
 
-    private DockerReferenceComponent()
+    public DockerReferenceComponent()
     {
         /* Reserved for deserialization */
     }
 
+    [JsonPropertyName("repository")]
     public string Repository { get; set; }
 
+    [JsonPropertyName("digest")]
     public string Digest { get; set; }
 
+    [JsonPropertyName("tag")]
     public string Tag { get; set; }
 
+    [JsonPropertyName("domain")]
     public string Domain { get; set; }
 
+    [JsonIgnore]
     public override ComponentType Type => ComponentType.DockerReference;
 
     public DockerReference FullReference
@@ -36,5 +44,5 @@ public class DockerReferenceComponent : TypedComponent
         }
     }
 
-    protected override string ComputeId() => $"{this.Repository} {this.Tag} {this.Digest}";
+    protected override string ComputeBaseId() => $"{this.Repository} {this.Tag} {this.Digest}";
 }
