@@ -81,4 +81,14 @@ public class ComponentDetectorTests
         condaLockDetector.Should().NotBeNull("because CondaLockComponentDetector should be registered");
         condaLockDetector.Should().BeAssignableTo<IExperimentalDetector>("because CondaLockComponentDetector should implement IExperimentalDetector");
     }
+
+    [TestMethod]
+    public void SwiftResolvedComponentDetector_ImplementsIExperimentalDetector()
+    {
+        var swiftDetector = this.detectors.SingleOrDefault(d => d.Id == "Swift");
+
+        swiftDetector.Should().NotBeNull("because SwiftResolvedComponentDetector should be registered");
+        swiftDetector.Should().BeAssignableTo<IExperimentalDetector>("because SwiftResolvedComponentDetector should implement IExperimentalDetector");
+        swiftDetector.Should().NotBeAssignableTo<IDefaultOffComponentDetector>("because SwiftResolvedComponentDetector should be enabled by default");
+    }
 }
