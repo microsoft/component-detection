@@ -173,6 +173,23 @@ public class TypedComponentSerializationTests
     }
 
     [TestMethod]
+    public void TypedComponent_Serialization_Swift()
+    {
+        TypedComponent component = new SwiftComponent(
+            "alamofire",
+            "5.9.1",
+            "https://github.com/Alamofire/Alamofire",
+            "f455c2975872ccd2d9c81594c658af65716e9b9a",
+            "remoteSourceControl");
+
+        var json = JsonSerializer.Serialize(component);
+        var deserializedComponent = JsonSerializer.Deserialize<TypedComponent>(json);
+
+        deserializedComponent.Should().BeOfType<SwiftComponent>();
+        deserializedComponent.Should().BeEquivalentTo(component);
+    }
+
+    [TestMethod]
     public void TypedComponent_Serialization_RubyGems()
     {
         TypedComponent tc = new RubyGemsComponent("SomeGem", "1.2.3", "SampleSource");

@@ -17,18 +17,46 @@ public class SwiftComponentTests
     {
         var name = "alamofire";
         var version = "5.9.1";
-        var packageUrl = "https://github.com/Alamofire/Alamofire";
+        var repositoryUrl = "https://github.com/Alamofire/Alamofire";
         var kind = "remoteSourceControl";
         var commitHash = "f455c2975872ccd2d9c81594c658af65716e9b9a";
 
-        var component = new SwiftComponent(name, version, packageUrl, commitHash, kind);
+        var component = new SwiftComponent(name, version, repositoryUrl, commitHash, kind);
 
         component.Name.Should().Be(name);
         component.Version.Should().Be(version);
         component.Kind.Should().Be(kind);
         component.CommitHash.Should().Be(commitHash);
+        component.RepositoryUrl.Should().Be(new Uri(repositoryUrl));
         component.Type.Should().Be(ComponentType.Swift);
-        component.Id.Should().Be($"{name} {version} - {component.Type}");
+        component.Id.Should().Be(
+            $"{name} {version} - {component.Type} [RepositoryUrl:{repositoryUrl} CommitHash:{commitHash}]");
+    }
+
+    [TestMethod]
+    public void Id_ShouldDistinguishRepositoriesAndCommitHashes()
+    {
+        var component = new SwiftComponent(
+            "alamofire",
+            "5.9.1",
+            "https://github.com/Alamofire/Alamofire",
+            "f455c2975872ccd2d9c81594c658af65716e9b9a",
+            "remoteSourceControl");
+        var differentRepository = new SwiftComponent(
+            "alamofire",
+            "5.9.1",
+            "https://github.com/example/Alamofire",
+            "f455c2975872ccd2d9c81594c658af65716e9b9a",
+            "remoteSourceControl");
+        var differentCommit = new SwiftComponent(
+            "alamofire",
+            "5.9.1",
+            "https://github.com/Alamofire/Alamofire",
+            "63dfa86548c4e5d5c6fd6ed42f638e388cbce529",
+            "remoteSourceControl");
+
+        component.Id.Should().NotBe(differentRepository.Id);
+        component.Id.Should().NotBe(differentCommit.Id);
     }
 
     [TestMethod]
@@ -38,7 +66,7 @@ public class SwiftComponentTests
         TypedComponent component = new SwiftComponent(
             name: "alamofire",
             version: "5.9.1",
-            packageUrl: "https://github.com/Alamofire/Alamofire",
+            repositoryUrl: "https://github.com/Alamofire/Alamofire",
             hash: commitHash,
             kind: "remoteSourceControl");
 
@@ -91,7 +119,7 @@ public class SwiftComponentTests
     }
 
     [TestMethod]
-    public void Constructor_ShouldThrowException_WhenPackageUrlIsNull()
+    public void Constructor_ShouldThrowException_WhenRepositoryUrlIsNull()
     {
         Action action = () =>
             new SwiftComponent(
@@ -101,7 +129,7 @@ public class SwiftComponentTests
                 "f455c2975872ccd2d9c81594c658af65716e9b9a",
                 "remoteSourceControl"
             );
-        action.Should().Throw<ArgumentException>().WithMessage("*packageUrl*");
+        action.Should().Throw<ArgumentException>().WithMessage("*repositoryUrl*");
     }
 
     [TestMethod]
@@ -119,7 +147,7 @@ public class SwiftComponentTests
     }
 
     [TestMethod]
-    public void Constructor_ShouldThrowException_WhenPackageUrlIsInvalid()
+    public void Constructor_ShouldThrowException_WhenRepositoryUrlIsInvalid()
     {
         Action action = () =>
             new SwiftComponent(
@@ -137,17 +165,17 @@ public class SwiftComponentTests
     {
         var name = "alamofire";
         var version = "5.9.1";
-        var packageUrl = "https://github.com/Alamofire/Alamofire";
+        var repositoryUrl = "https://github.com/Alamofire/Alamofire";
         var hash = "f455c2975872ccd2d9c81594c658af65716e9b9a";
 
-        var component = new SwiftComponent(name, version, packageUrl, hash, "remoteSourceControl");
+        var component = new SwiftComponent(name, version, repositoryUrl, hash, "remoteSourceControl");
 
         var expectedPackageURL = new PackageURL(
             type: "swift",
             @namespace: "github.com/Alamofire",
             name: name,
             version: version,
-            qualifiers: new SortedDictionary<string, string> { { "repository_url", packageUrl } },
+            qualifiers: new SortedDictionary<string, string> { { "repository_url", repositoryUrl } },
             subpath: null
         );
 
@@ -159,10 +187,10 @@ public class SwiftComponentTests
     {
         var name = "alamofire";
         var version = "5.9.1";
-        var packageUrl = "https://giTHub.com/Alamofire/Alamofire";
+        var repositoryUrl = "https://giTHub.com/Alamofire/Alamofire";
         var hash = "f455c2975872ccd2d9c81594c658af65716e9b9a";
 
-        var component = new SwiftComponent(name, version, packageUrl, hash, "remoteSourceControl");
+        var component = new SwiftComponent(name, version, repositoryUrl, hash, "remoteSourceControl");
 
         var expectedPackageURL = new PackageURL(
             type: "swift",
@@ -184,17 +212,17 @@ public class SwiftComponentTests
     {
         var name = "alamofire";
         var version = "5.9.1";
-        var packageUrl = "https://otherhostname.com/Alamofire/Alamofire";
+        var repositoryUrl = "https://otherhostname.com/Alamofire/Alamofire";
         var hash = "f455c2975872ccd2d9c81594c658af65716e9b9a";
 
-        var component = new SwiftComponent(name, version, packageUrl, hash, "remoteSourceControl");
+        var component = new SwiftComponent(name, version, repositoryUrl, hash, "remoteSourceControl");
 
         var expectedPackageURL = new PackageURL(
             type: "swift",
             @namespace: "otherhostname.com",
             name: name,
             version: version,
-            qualifiers: new SortedDictionary<string, string> { { "repository_url", packageUrl } },
+            qualifiers: new SortedDictionary<string, string> { { "repository_url", repositoryUrl } },
             subpath: null
         );
 

@@ -37,7 +37,7 @@ public class SwiftResolvedComponentDetector : FileComponentDetector, IExperiment
 
     public override IList<string> SearchPatterns { get; } = ["Package.resolved"];
 
-    public override IEnumerable<ComponentType> SupportedComponentTypes => [ComponentType.Swift];
+    public override IEnumerable<ComponentType> SupportedComponentTypes => [ComponentType.Git];
 
     public override int Version => 2;
 
@@ -74,17 +74,16 @@ public class SwiftResolvedComponentDetector : FileComponentDetector, IExperiment
             {
                 if (package.Kind == TargetSwiftPackageKind)
                 {
+                    ArgumentException.ThrowIfNullOrWhiteSpace(package.Identity);
+
                     // The version of the package is not always available.
                     var version = package.State.Version ?? package.State.Branch ?? package.State.Revision;
 
-                    var detectedSwiftComponent = new SwiftComponent(
-                        name: package.Identity,
-                        version: version,
-                        packageUrl: package.Location,
-                        kind: package.Kind,
-                        hash: package.State.Revision);
-                    var newDetectedSwiftComponent = new DetectedComponent(component: detectedSwiftComponent);
-                    singleFileComponentRecorder.RegisterUsage(newDetectedSwiftComponent);
+                    var detectedGitComponent = new GitComponent(
+                        repositoryUrl: new Uri(package.Location),
+                        commitHash: package.State.Revision,
+                        tag: version);
+                    singleFileComponentRecorder.RegisterUsage(new DetectedComponent(component: detectedGitComponent));
                 }
             }
             catch (Exception exception)
