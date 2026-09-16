@@ -11,8 +11,6 @@ using PackageUrl;
 /// </summary>
 public class SwiftComponent : TypedComponent
 {
-    private const string RemoteSourceControlKind = "remoteSourceControl";
-
     private readonly Uri packageUrl;
 
     /// <summary>
@@ -22,20 +20,8 @@ public class SwiftComponent : TypedComponent
     /// <param name="version">The version of the component.</param>
     /// <param name="packageUrl">The package URL of the component.</param>
     /// <param name="hash">The Git commit hash of the component.</param>
-    public SwiftComponent(string name, string version, string packageUrl, string hash)
-        : this(name, version, packageUrl, RemoteSourceControlKind, hash)
-    {
-    }
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="SwiftComponent"/> class.
-    /// </summary>
-    /// <param name="name">The name of the component.</param>
-    /// <param name="version">The version of the component.</param>
-    /// <param name="packageUrl">The package URL of the component.</param>
     /// <param name="kind">The Swift package kind.</param>
-    /// <param name="hash">The Git commit hash of the component.</param>
-    public SwiftComponent(string name, string version, string packageUrl, string kind, string hash)
+    public SwiftComponent(string name, string version, string packageUrl, string hash, string kind)
     {
         this.Name = this.ValidateRequiredInput(name, nameof(name), nameof(ComponentType.Swift));
         this.Version = this.ValidateRequiredInput(version, nameof(version), nameof(ComponentType.Swift));
@@ -43,6 +29,11 @@ public class SwiftComponent : TypedComponent
         this.packageUrl = new Uri(packageUrl);
         this.Kind = this.ValidateRequiredInput(kind, nameof(kind), nameof(ComponentType.Swift));
         this.CommitHash = this.ValidateRequiredInput(hash, nameof(hash), nameof(ComponentType.Swift));
+    }
+
+    public SwiftComponent()
+    {
+        /* Reserved for deserialization */
     }
 
     [JsonPropertyName("name")]
