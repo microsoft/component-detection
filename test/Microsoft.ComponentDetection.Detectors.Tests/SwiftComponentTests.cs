@@ -21,7 +21,7 @@ public class SwiftComponentTests
         var kind = "remoteSourceControl";
         var commitHash = "f455c2975872ccd2d9c81594c658af65716e9b9a";
 
-        var component = new SwiftComponent(name, version, packageUrl, kind, commitHash);
+        var component = new SwiftComponent(name, version, packageUrl, commitHash, kind);
 
         component.Name.Should().Be(name);
         component.Version.Should().Be(version);
@@ -36,11 +36,11 @@ public class SwiftComponentTests
     {
         var commitHash = "f455c2975872ccd2d9c81594c658af65716e9b9a";
         TypedComponent component = new SwiftComponent(
-            "alamofire",
-            "5.9.1",
-            "https://github.com/Alamofire/Alamofire",
-            "remoteSourceControl",
-            commitHash);
+            name: "alamofire",
+            version: "5.9.1",
+            packageUrl: "https://github.com/Alamofire/Alamofire",
+            hash: commitHash,
+            kind: "remoteSourceControl");
 
         using var json = JsonDocument.Parse(JsonSerializer.Serialize(component));
 
@@ -56,8 +56,8 @@ public class SwiftComponentTests
                 "alamofire",
                 "5.9.1",
                 "https://github.com/Alamofire/Alamofire",
-                null,
-                "f455c2975872ccd2d9c81594c658af65716e9b9a"
+                "f455c2975872ccd2d9c81594c658af65716e9b9a",
+                null
             );
         action.Should().Throw<ArgumentException>().WithMessage("*kind*");
     }
@@ -70,7 +70,8 @@ public class SwiftComponentTests
                 null,
                 "5.9.1",
                 "https://github.com/Alamofire/Alamofire",
-                "f455c2975872ccd2d9c81594c658af65716e9b9a"
+                "f455c2975872ccd2d9c81594c658af65716e9b9a",
+                "remoteSourceControl"
             );
         action.Should().Throw<ArgumentException>().WithMessage("*name*");
     }
@@ -83,7 +84,8 @@ public class SwiftComponentTests
                 "alamofire",
                 null,
                 "https://github.com/Alamofire/Alamofire",
-                "f455c2975872ccd2d9c81594c658af65716e9b9a"
+                "f455c2975872ccd2d9c81594c658af65716e9b9a",
+                "remoteSourceControl"
             );
         action.Should().Throw<ArgumentException>().WithMessage("*version*");
     }
@@ -96,7 +98,8 @@ public class SwiftComponentTests
                 "alamofire",
                 "5.9.1",
                 null,
-                "f455c2975872ccd2d9c81594c658af65716e9b9a"
+                "f455c2975872ccd2d9c81594c658af65716e9b9a",
+                "remoteSourceControl"
             );
         action.Should().Throw<ArgumentException>().WithMessage("*packageUrl*");
     }
@@ -109,7 +112,8 @@ public class SwiftComponentTests
                 "alamofire",
                 "5.9.1",
                 "https://github.com/Alamofire/Alamofire",
-                null
+                null,
+                "remoteSourceControl"
             );
         action.Should().Throw<ArgumentException>().WithMessage("*hash*");
     }
@@ -122,7 +126,8 @@ public class SwiftComponentTests
                 "alamofire",
                 "5.9.1",
                 "invalid-url",
-                "f455c2975872ccd2d9c81594c658af65716e9b9a"
+                "f455c2975872ccd2d9c81594c658af65716e9b9a",
+                "remoteSourceControl"
             );
         action.Should().Throw<UriFormatException>();
     }
@@ -135,7 +140,7 @@ public class SwiftComponentTests
         var packageUrl = "https://github.com/Alamofire/Alamofire";
         var hash = "f455c2975872ccd2d9c81594c658af65716e9b9a";
 
-        var component = new SwiftComponent(name, version, packageUrl, hash);
+        var component = new SwiftComponent(name, version, packageUrl, hash, "remoteSourceControl");
 
         var expectedPackageURL = new PackageURL(
             type: "swift",
@@ -157,7 +162,7 @@ public class SwiftComponentTests
         var packageUrl = "https://giTHub.com/Alamofire/Alamofire";
         var hash = "f455c2975872ccd2d9c81594c658af65716e9b9a";
 
-        var component = new SwiftComponent(name, version, packageUrl, hash);
+        var component = new SwiftComponent(name, version, packageUrl, hash, "remoteSourceControl");
 
         var expectedPackageURL = new PackageURL(
             type: "swift",
@@ -182,7 +187,7 @@ public class SwiftComponentTests
         var packageUrl = "https://otherhostname.com/Alamofire/Alamofire";
         var hash = "f455c2975872ccd2d9c81594c658af65716e9b9a";
 
-        var component = new SwiftComponent(name, version, packageUrl, hash);
+        var component = new SwiftComponent(name, version, packageUrl, hash, "remoteSourceControl");
 
         var expectedPackageURL = new PackageURL(
             type: "swift",
