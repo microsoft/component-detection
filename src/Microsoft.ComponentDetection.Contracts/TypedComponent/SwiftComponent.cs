@@ -37,16 +37,16 @@ public class SwiftComponent : TypedComponent
     }
 
     [JsonPropertyName("name")]
-    public string Name { get; }
+    public string Name { get; set; }
 
     [JsonPropertyName("version")]
-    public string Version { get; }
+    public string Version { get; set; }
 
     [JsonPropertyName("kind")]
-    public string Kind { get; }
+    public string Kind { get; set; }
 
     [JsonPropertyName("commitHash")]
-    public string CommitHash { get; }
+    public string CommitHash { get; set; }
 
     [JsonIgnore]
     public override ComponentType Type => ComponentType.Swift;
