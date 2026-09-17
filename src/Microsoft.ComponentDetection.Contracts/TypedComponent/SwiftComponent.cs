@@ -70,12 +70,6 @@ public class SwiftComponent : TypedComponent
 
     protected override string ComputeBaseId() => $"{this.RepositoryUrl.AbsoluteUri} {this.CommitHash} - {this.Type}";
 
-    protected override IEnumerable<KeyValuePair<string, string>> GetExtendedIdProperties()
-    {
-        yield return new KeyValuePair<string, string>(nameof(this.Name), this.Name);
-        yield return new KeyValuePair<string, string>(nameof(this.Version), this.Version);
-    }
-
     private string GetNamespaceFromPackageUrl()
     {
         // In the case of github.com, the namespace should contain the user/organization
