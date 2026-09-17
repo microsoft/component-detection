@@ -110,12 +110,7 @@ public class Pnpm9Detector : IPnpmDetector
                 continue;
             }
 
-            if (!components.TryGetValue(pnpmDependencyPath, out var componentAndPackage))
-            {
-                continue;
-            }
-
-            var (component, package) = componentAndPackage;
+            var (component, package) = components[pnpmDependencyPath];
 
             // Lockfile v9 apparently removed the tagging of dev dependencies in the lockfile, so we revert to using the dependency tree to establish dev dependency state.
             // At this point, the root dependencies are marked according to which dependency group they are declared in the lockfile itself.
@@ -156,12 +151,7 @@ public class Pnpm9Detector : IPnpmDetector
             }
 
             // If this lookup fails, then pnpmDependencyPath was either parsed incorrectly or constructed incorrectly.
-            if (!components.TryGetValue(pnpmDependencyPath, out var componentAndPackage))
-            {
-                continue;
-            }
-
-            var (component, package) = componentAndPackage;
+            var (component, package) = components[pnpmDependencyPath];
             singleFileComponentRecorder.RegisterUsage(component, parentComponentId: parentComponentId, isExplicitReferencedDependency: false, isDevelopmentDependency: isDevDependency);
             seenDependencies.Add(pnpmDependencyPath);
             this.ProcessIndirectDependencies(singleFileComponentRecorder, components, component.Component.Id, package.Dependencies, isDevDependency, seenDependencies);

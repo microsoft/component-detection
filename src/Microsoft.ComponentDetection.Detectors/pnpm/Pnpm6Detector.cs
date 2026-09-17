@@ -84,10 +84,9 @@ public class Pnpm6Detector : IPnpmDetector
                 var pnpmDependencyPath = this.pnpmParsingUtilities.ReconstructPnpmDependencyPath(name, version);
 
                 // If this lookup fails, then pnpmDependencyPath was either parsed incorrectly or constructed incorrectly.
-                if (components.TryGetValue(pnpmDependencyPath, out var referencedTuple))
-                {
-                    singleFileComponentRecorder.RegisterUsage(referencedTuple.Item1, parentComponentId: component.Component.Id, isExplicitReferencedDependency: false);
-                }
+                var (referenced, _) = components[pnpmDependencyPath];
+
+                singleFileComponentRecorder.RegisterUsage(referenced, parentComponentId: component.Component.Id, isExplicitReferencedDependency: false);
             }
         }
 
@@ -125,12 +124,7 @@ public class Pnpm6Detector : IPnpmDetector
             }
 
             var pnpmDependencyPath = this.pnpmParsingUtilities.ReconstructPnpmDependencyPath(name, dep.Version);
-            if (!components.TryGetValue(pnpmDependencyPath, out var componentAndPackage))
-            {
-                continue;
-            }
-
-            var (component, package) = componentAndPackage;
+            var (component, package) = components[pnpmDependencyPath];
 
             // Determine isDevelopmentDependency using metadata on package from pnpm rather than from which dependency list this package is under.
             // This ensures that dependencies which are a direct dev dependency and an indirect non-dev dependency get listed as non-dev.
