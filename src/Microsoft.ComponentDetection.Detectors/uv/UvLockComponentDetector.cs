@@ -35,7 +35,12 @@ public class UvLockComponentDetector : FileComponentDetector
 
     internal static bool IsRootPackage(UvPackage pck)
     {
-        return pck.Source?.Virtual != null || pck.Source?.Editable != null;
+        return IsRootPath(pck.Source?.Virtual) || IsRootPath(pck.Source?.Editable);
+    }
+
+    private static bool IsRootPath(string? path)
+    {
+        return path != null && (path == "." || path == "./");
     }
 
     internal static HashSet<string> GetTransitivePackages(IEnumerable<string> roots, List<UvPackage> packages)
