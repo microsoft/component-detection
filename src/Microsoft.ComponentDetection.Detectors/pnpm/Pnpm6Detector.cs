@@ -33,7 +33,7 @@ public class Pnpm6Detector : IPnpmDetector
                     continue;
                 }
 
-                if (!components.ContainsKey(pnpmDependencyPath))
+                if (!components.TryGetValue(pnpmDependencyPath, out var existing))
                 {
                     var parentDetectedComponent = this.pnpmParsingUtilities.CreateDetectedComponentFromPnpmPath(pnpmPackagePath: pnpmDependencyPath);
                     components.Add(pnpmDependencyPath, (parentDetectedComponent, package));
@@ -43,6 +43,35 @@ public class Pnpm6Detector : IPnpmDetector
                     // but registering it now ensures nothing is missed due to a limitation in dependency traversal
                     // like skipping local dependencies which might have transitively depended on this.
                     singleFileComponentRecorder.RegisterUsage(parentDetectedComponent, isDevelopmentDependency: this.pnpmParsingUtilities.IsPnpmPackageDevDependency(package));
+                }
+                else
+                {
+                    // If the same package path occurs across multiple documents (e.g. environment and project documents),
+                    // merge package metadata and dependencies, letting a production occurrence win for development classification.
+                    var existingIsDev = this.pnpmParsingUtilities.IsPnpmPackageDevDependency(existing.Item2);
+                    var newIsDev = this.pnpmParsingUtilities.IsPnpmPackageDevDependency(package);
+                    var effectiveIsDev = existingIsDev && newIsDev;
+
+                    if (existingIsDev && !effectiveIsDev)
+                    {
+                        existing.Item2.Dev = bool.FalseString;
+                        singleFileComponentRecorder.RegisterUsage(existing.Item1, isDevelopmentDependency: false);
+                    }
+
+                    if (package.Dependencies != null)
+                    {
+                        if (existing.Item2.Dependencies == null)
+                        {
+                            existing.Item2.Dependencies = new Dictionary<string, string>(package.Dependencies);
+                        }
+                        else
+                        {
+                            foreach (var (name, version) in package.Dependencies)
+                            {
+                                existing.Item2.Dependencies.TryAdd(name, version);
+                            }
+                        }
+                    }
                 }
             }
         }

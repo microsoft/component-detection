@@ -42,7 +42,7 @@ public class Pnpm9Detector : IPnpmDetector
                     dependencyPath = pnpmDependencyPath[1..];
                 }
 
-                if (!components.ContainsKey(dependencyPath))
+                if (!components.TryGetValue(dependencyPath, out var existing))
                 {
                     var parentDetectedComponent = this.pnpmParsingUtilities.CreateDetectedComponentFromPnpmPath(pnpmPackagePath: dependencyPath);
                     components.Add(dependencyPath, (parentDetectedComponent, package));
@@ -54,6 +54,23 @@ public class Pnpm9Detector : IPnpmDetector
                     if (!isFileOrLink)
                     {
                         singleFileComponentRecorder.RegisterUsage(parentDetectedComponent);
+                    }
+                }
+                else
+                {
+                    if (package.Dependencies != null)
+                    {
+                        if (existing.Item2.Dependencies == null)
+                        {
+                            existing.Item2.Dependencies = new Dictionary<string, string>(package.Dependencies);
+                        }
+                        else
+                        {
+                            foreach (var (name, version) in package.Dependencies)
+                            {
+                                existing.Item2.Dependencies.TryAdd(name, version);
+                            }
+                        }
                     }
                 }
             }
