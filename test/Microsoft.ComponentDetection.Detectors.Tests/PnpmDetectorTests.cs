@@ -605,6 +605,10 @@ packages:
   /minimist@1.2.8:
     resolution: {integrity: sha512-2yyAR8qBkN3YuheJanUpWC5U3bb5osDywNB8RzDVlDwDHbocAJveqqj1u8+SVD7jkWT4yvsHCpWqqWqAxb0zCA==}
     dev: false
+  link:../pkg-link:
+    dev: false
+  file:../pkg-file:
+    dev: false
 ";
 
         var (scanResult, componentRecorder) = await this.detectorTestUtility
