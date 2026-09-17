@@ -1,0 +1,5 @@
+# These dependencies are intentionally outdated test fixtures and are not built or shipped.
+
+[[IgnoredVulns]]
+id = "PYSEC-2026-2074"
+reason = "The vulnerable dependency is an intentionally outdated test fixture."
