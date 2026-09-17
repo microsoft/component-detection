@@ -1048,4 +1048,152 @@ importers:
         var detectedComponents = componentRecorder.GetDetectedComponents();
         detectedComponents.Should().BeEmpty();
     }
+
+    [TestMethod]
+    public async Task TestPnpmDetector_V9_MultiDocumentLockfileAsync()
+    {
+        var yamlFile = @"
+---
+lockfileVersion: '9.0'
+
+importers:
+  .:
+    configDependencies: {}
+    packageManagerDependencies:
+      pnpm:
+        specifier: 12.3.4
+        version: 12.3.4
+
+packages:
+  pnpm@12.3.4:
+    resolution: {integrity: sha512-placeholder}
+
+snapshots:
+  pnpm@12.3.4: {}
+
+---
+lockfileVersion: '9.0'
+
+settings:
+  autoInstallPeers: false
+
+importers:
+  .:
+    dependencies:
+      fast-uri:
+        specifier: 3.1.7
+        version: 3.1.7
+
+packages:
+  fast-uri@3.1.7:
+    resolution: {integrity: sha512-placeholder}
+
+snapshots:
+  fast-uri@3.1.7: {}
+";
+
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
+            .WithFile("pnpm-lock.yaml", yamlFile)
+            .ExecuteDetectorAsync();
+
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+
+        var detectedComponents = componentRecorder.GetDetectedComponents();
+        detectedComponents.Should().HaveCount(2);
+        var npmComponents = detectedComponents.Select(x => new { Component = x.Component as NpmComponent, DetectedComponent = x });
+        npmComponents.Should().Contain(x => x.Component.Name == "pnpm" && x.Component.Version == "12.3.4");
+        npmComponents.Should().Contain(x => x.Component.Name == "fast-uri" && x.Component.Version == "3.1.7");
+    }
+
+    [TestMethod]
+    public async Task TestPnpmDetector_MultiDocumentLockfile_InconsistentVersions_FailsAsync()
+    {
+        var yamlFile = @"
+---
+lockfileVersion: '9.0'
+
+importers:
+  .:
+    dependencies:
+      pnpm:
+        specifier: 12.3.4
+        version: 12.3.4
+
+packages:
+  pnpm@12.3.4:
+    resolution: {integrity: sha512-placeholder}
+
+snapshots:
+  pnpm@12.3.4: {}
+
+---
+lockfileVersion: '6.0'
+
+importers:
+  .:
+    dependencies:
+      fast-uri:
+        specifier: 3.1.7
+        version: 3.1.7
+
+packages:
+  /fast-uri@3.1.7:
+    resolution: {integrity: sha512-placeholder}
+";
+
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
+            .WithFile("pnpm-lock.yaml", yamlFile)
+            .ExecuteDetectorAsync();
+
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+
+        var detectedComponents = componentRecorder.GetDetectedComponents();
+        detectedComponents.Should().BeEmpty();
+    }
+
+    [TestMethod]
+    public async Task TestPnpmDetector_V6_MultiDocumentLockfileAsync()
+    {
+        var yamlFile = @"
+---
+lockfileVersion: '6.0'
+
+importers:
+  .:
+    packageManagerDependencies:
+      pnpm:
+        specifier: 12.3.4
+        version: 12.3.4
+
+packages:
+  /pnpm@12.3.4:
+    resolution: {integrity: sha512-placeholder}
+
+---
+lockfileVersion: '6.0'
+
+importers:
+  .:
+    dependencies:
+      fast-uri:
+        specifier: 3.1.7
+        version: 3.1.7
+
+packages:
+  /fast-uri@3.1.7:
+    resolution: {integrity: sha512-placeholder}
+";
+
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
+            .WithFile("pnpm-lock.yaml", yamlFile)
+            .ExecuteDetectorAsync();
+
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+
+        var detectedComponents = componentRecorder.GetDetectedComponents();
+        detectedComponents.Should().HaveCount(2);
+        var npmComponents = detectedComponents.Select(x => new { Component = x.Component as NpmComponent, DetectedComponent = x });
+        npmComponents.Should().Contain(x => x.Component.Name == "pnpm" && x.Component.Version == "12.3.4");
+        npmComponents.Should().Contain(x => x.Component.Name == "fast-uri" && x.Component.Version == "3.1.7");
+    }
 }
