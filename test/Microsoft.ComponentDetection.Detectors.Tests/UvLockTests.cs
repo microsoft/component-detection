@@ -379,6 +379,43 @@ source = { virtual = '.' }
     }
 
     [TestMethod]
+    public void ParsePackage_ParsesSource_EditableOnly()
+    {
+        var toml = """
+[[package]]
+name = 'foo'
+version = '1.0.0'
+source = { editable = '.' }
+""";
+        using var ms = new MemoryStream(Encoding.UTF8.GetBytes(toml));
+        var uvLock = UvLock.Parse(ms);
+        uvLock.Packages.Should().ContainSingle();
+        var pkg = uvLock.Packages.First();
+        pkg.Source.Should().NotBeNull();
+        pkg.Source!.Registry.Should().BeNull();
+        pkg.Source.Virtual.Should().BeNull();
+        pkg.Source.Editable.Should().Be(".");
+    }
+
+    [TestMethod]
+    public void ParsePackage_ParsesSource_EditableAndRegistry()
+    {
+        var toml = """
+[[package]]
+name = 'foo'
+version = '1.0.0'
+source = { registry = 'https://example.com/', editable = '.' }
+""";
+        using var ms = new MemoryStream(Encoding.UTF8.GetBytes(toml));
+        var uvLock = UvLock.Parse(ms);
+        uvLock.Packages.Should().ContainSingle();
+        var pkg = uvLock.Packages.First();
+        pkg.Source.Should().NotBeNull();
+        pkg.Source!.Registry.Should().Be("https://example.com/");
+        pkg.Source.Editable.Should().Be(".");
+    }
+
+    [TestMethod]
     public void ParsePackage_ParsesSource_Missing()
     {
         var toml = """

@@ -611,4 +611,67 @@ dependencies = [
         graph.GetDependenciesForComponent(aId).Should().BeEquivalentTo([bId]);
         graph.GetDependenciesForComponent(bId).Should().BeEquivalentTo([aId]);
     }
+
+    [TestMethod]
+    public async Task TestUvLockDetector_EditableRootPackage_ExcludedFromDetectedComponents()
+    {
+        var uvLock = """
+version = 1
+requires-python = ">=3.8"
+
+[[package]]
+name = "pluggy"
+version = "1.5.0"
+source = { registry = "https://pypi.org/simple" }
+
+[[package]]
+name = "pytest"
+version = "8.3.4"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "pluggy" },
+]
+
+[[package]]
+name = "cowsay"
+version = "6.1"
+source = { registry = "https://pypi.org/simple" }
+
+[[package]]
+name = "uv-demo-project"
+version = "0.2"
+source = { editable = "." }
+dependencies = [
+    { name = "cowsay" },
+]
+
+[package.metadata]
+requires-dist = [{ name = "cowsay" }]
+
+[package.metadata.requires-dev]
+dev = [{ name = "pytest", specifier = ">=8.3.4" }]
+""";
+
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
+            .WithFile("uv.lock", uvLock)
+            .ExecuteDetectorAsync();
+
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+        var detected = componentRecorder.GetDetectedComponents().ToList();
+        var graph = componentRecorder.GetDependencyGraphsByLocation().Values.First();
+
+        var detectedNames = detected.Select(d => ((PipComponent)d.Component).Name).ToList();
+        detectedNames.Should().NotContain("uv-demo-project");
+        detectedNames.Should().BeEquivalentTo(["cowsay", "pytest", "pluggy"]);
+
+        var cowsayId = new PipComponent("cowsay", "6.1").Id;
+        var pytestId = new PipComponent("pytest", "8.3.4").Id;
+        var pluggyId = new PipComponent("pluggy", "1.5.0").Id;
+
+        graph.IsComponentExplicitlyReferenced(cowsayId).Should().BeTrue();
+        graph.IsDevelopmentDependency(cowsayId).Should().BeFalse();
+
+        graph.IsDevelopmentDependency(pytestId).Should().BeTrue();
+        graph.IsDevelopmentDependency(pluggyId).Should().BeTrue();
+    }
 }
