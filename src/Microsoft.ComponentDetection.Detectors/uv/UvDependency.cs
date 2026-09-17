@@ -1,8 +1,12 @@
 namespace Microsoft.ComponentDetection.Detectors.Uv;
 
+using System.Text.Json.Serialization;
+
 internal class UvDependency
 {
-    public required string Name { get; init; }
+    [JsonPropertyName("name")]
+    public string Name { get; set; } = string.Empty;
 
+    [JsonPropertyName("specifier")]
     public string? Specifier { get; set; }
 }
