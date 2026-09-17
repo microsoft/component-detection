@@ -30,7 +30,7 @@ public class SwiftComponentTests
         component.RepositoryUrl.Should().Be(new Uri(repositoryUrl));
         component.Type.Should().Be(ComponentType.Swift);
         component.Id.Should().Be(
-            $"{name} {version} - {component.Type} [RepositoryUrl:{repositoryUrl} CommitHash:{commitHash}]");
+            $"{repositoryUrl} {commitHash} - {component.Type} [Name:{name} Version:{version}]");
     }
 
     [TestMethod]

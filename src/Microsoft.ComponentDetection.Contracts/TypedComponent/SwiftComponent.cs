@@ -68,12 +68,12 @@ public class SwiftComponent : TypedComponent
         },
         subpath: null);
 
-    protected override string ComputeBaseId() => $"{this.Name} {this.Version} - {this.Type}";
+    protected override string ComputeBaseId() => $"{this.RepositoryUrl.AbsoluteUri} {this.CommitHash} - {this.Type}";
 
     protected override IEnumerable<KeyValuePair<string, string>> GetExtendedIdProperties()
     {
-        yield return new KeyValuePair<string, string>(nameof(this.RepositoryUrl), this.RepositoryUrl.AbsoluteUri);
-        yield return new KeyValuePair<string, string>(nameof(this.CommitHash), this.CommitHash);
+        yield return new KeyValuePair<string, string>(nameof(this.Name), this.Name);
+        yield return new KeyValuePair<string, string>(nameof(this.Version), this.Version);
     }
 
     private string GetNamespaceFromPackageUrl()
