@@ -2,8 +2,11 @@
 namespace Microsoft.ComponentDetection.Detectors.Tests;
 
 using System;
+using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
+using System.Threading;
 using System.Threading.Tasks;
 using AwesomeAssertions;
 using Microsoft.ComponentDetection.Contracts;
@@ -18,19 +21,34 @@ using Moq;
 [TestClass]
 [TestCategory("Governance/All")]
 [TestCategory("Governance/ComponentDetection")]
-public class NuGetProjectModelProjectCentricComponentDetectorTests
+public class MSBuildBinaryLogFallbackCompatibilityTests
 {
-    private readonly DetectorTestUtilityBuilder<NuGetProjectModelProjectCentricComponentDetector> detectorTestUtility = new();
+    private readonly DetectorTestUtilityBuilder<MSBuildBinaryLogComponentDetector> detectorTestUtility = new();
 
     private readonly string projectAssetsJsonFileName = "project.assets.json";
+    private readonly Mock<ICommandLineInvocationService> commandLineInvocationServiceMock;
     private readonly Mock<IFileUtilityService> fileUtilityServiceMock;
+    private readonly Mock<IPathUtilityService> pathUtilityServiceMock;
 
-    public NuGetProjectModelProjectCentricComponentDetectorTests()
+    public MSBuildBinaryLogFallbackCompatibilityTests()
     {
+        this.commandLineInvocationServiceMock = new Mock<ICommandLineInvocationService>();
+        this.commandLineInvocationServiceMock
+            .Setup(x => x.ExecuteCommandAsync(It.IsAny<string>(), It.IsAny<IEnumerable<string>>(), It.IsAny<DirectoryInfo>(), It.IsAny<CancellationToken>(), It.IsAny<string[]>()))
+            .ReturnsAsync(new CommandLineExecutionResult { ExitCode = 1 });
+
         this.fileUtilityServiceMock = new Mock<IFileUtilityService>();
         this.fileUtilityServiceMock.Setup(x => x.Exists(It.IsAny<string>()))
             .Returns(true);
-        this.detectorTestUtility.AddServiceMock(this.fileUtilityServiceMock);
+
+        this.pathUtilityServiceMock = new Mock<IPathUtilityService>();
+        this.pathUtilityServiceMock.Setup(x => x.NormalizePath(It.IsAny<string>())).Returns<string>(path => path);
+        this.pathUtilityServiceMock.Setup(x => x.GetParentDirectory(It.IsAny<string>())).Returns<string>(path => Path.GetDirectoryName(path) ?? string.Empty);
+
+        this.detectorTestUtility
+            .AddServiceMock(this.commandLineInvocationServiceMock)
+            .AddServiceMock(this.fileUtilityServiceMock)
+            .AddServiceMock(this.pathUtilityServiceMock);
     }
 
     [TestMethod]

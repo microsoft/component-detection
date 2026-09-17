@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using global::NuGet.Frameworks;
 using global::NuGet.ProjectModel;
 using Microsoft.Build.Framework;
+using Microsoft.ComponentDetection.Common.Telemetry.Records;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.Internal;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
@@ -18,7 +19,7 @@ using Microsoft.Extensions.Logging;
 using Task = System.Threading.Tasks.Task;
 
 /// <summary>
-/// An experimental detector that combines MSBuild binlog information with NuGet project.assets.json
+/// A detector that combines MSBuild binlog information with NuGet project.assets.json
 /// to provide enhanced component detection with project-level classifications.
 /// This detector is intended to replace both DotNetComponentDetector and NuGetProjectModelProjectCentricComponentDetector.
 /// </summary>
@@ -48,7 +49,7 @@ using Task = System.Threading.Tasks.Task;
 /// - Fallback mode: When no binlog info is available, falls back to standard NuGet detection.
 /// </para>
 /// </remarks>
-public class MSBuildBinaryLogComponentDetector : FileComponentDetector, IExperimentalDetector
+public class MSBuildBinaryLogComponentDetector : FileComponentDetector
 {
     private readonly IBinLogProcessor binLogProcessor;
     private readonly IFileUtilityService fileUtilityService;
@@ -318,6 +319,14 @@ public class MSBuildBinaryLogComponentDetector : FileComponentDetector, IExperim
         catch (Exception ex)
         {
             this.Logger.LogWarning(ex, "Failed to process binlog file: {BinlogPath}", binlogPath);
+
+            using var failedParsingRecord = new FailedParsingFileRecord
+            {
+                DetectorId = this.Id,
+                FilePath = binlogPath,
+                ExceptionMessage = ex.Message,
+                StackTrace = ex.StackTrace,
+            };
         }
     }
 
@@ -610,7 +619,8 @@ public class MSBuildBinaryLogComponentDetector : FileComponentDetector, IExperim
     /// </remarks>
     private async Task ProcessLockFileFallbackAsync(LockFile lockFile, string location, CancellationToken cancellationToken)
     {
-        var singleFileComponentRecorder = this.ComponentRecorder.CreateSingleFileComponentRecorder(location);
+        var recorderLocation = lockFile.PackageSpec?.RestoreMetadata?.ProjectPath ?? location;
+        var singleFileComponentRecorder = this.ComponentRecorder.CreateSingleFileComponentRecorder(recorderLocation);
         LockFileUtilities.ProcessLockFile(lockFile, singleFileComponentRecorder, this.Logger);
 
         // Register DotNet components (SDK version, target framework, project type)

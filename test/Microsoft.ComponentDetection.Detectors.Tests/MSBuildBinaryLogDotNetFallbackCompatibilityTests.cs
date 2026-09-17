@@ -20,7 +20,7 @@ using global::NuGet.Versioning;
 using Microsoft.ComponentDetection.Common;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
-using Microsoft.ComponentDetection.Detectors.DotNet;
+using Microsoft.ComponentDetection.Detectors.NuGet;
 using Microsoft.ComponentDetection.TestsUtilities;
 using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -29,7 +29,7 @@ using Moq;
 [TestClass]
 [TestCategory("Governance/All")]
 [TestCategory("Governance/ComponentDetection")]
-public class DotNetComponentDetectorTests
+public class MSBuildBinaryLogDotNetFallbackCompatibilityTests
 {
     private static readonly string RootDir = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "C:" : @"/";
 
@@ -41,9 +41,9 @@ public class DotNetComponentDetectorTests
         Assembly.GetExecutingAssembly().GetCustomAttribute<System.Runtime.Versioning.TargetFrameworkAttribute>().FrameworkName)
         .GetShortFolderName();
 
-    private readonly DetectorTestUtilityBuilder<DotNetComponentDetector> detectorTestUtility = new();
+    private readonly DetectorTestUtilityBuilder<MSBuildBinaryLogComponentDetector> detectorTestUtility = new();
 
-    private readonly Mock<ILogger<DotNetComponentDetector>> mockLogger = new();
+    private readonly Mock<ILogger<MSBuildBinaryLogComponentDetector>> mockLogger = new();
 
     // uses ExecuteCommandAsync
     private readonly Mock<ICommandLineInvocationService> mockCommandLineInvocationService = new();
@@ -64,9 +64,9 @@ public class DotNetComponentDetectorTests
     private Func<string, DirectoryInfo, CommandLineExecutionResult> commandLineCallback;
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="DotNetComponentDetectorTests"/> class.
+    /// Initializes a new instance of the <see cref="MSBuildBinaryLogDotNetFallbackCompatibilityTests"/> class.
     /// </summary>
-    public DotNetComponentDetectorTests()
+    public MSBuildBinaryLogDotNetFallbackCompatibilityTests()
     {
         this.detectorTestUtility.AddServiceMock(this.mockLogger)
                                 .AddServiceMock(this.mockCommandLineInvocationService)
