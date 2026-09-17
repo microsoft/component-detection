@@ -4,12 +4,9 @@ namespace Microsoft.ComponentDetection.Contracts.BcdeModels;
 using System;
 using System.Collections.Generic;
 using System.Text.Json.Serialization;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Serialization;
 
 // Summary:
 //     Details for a docker container
-[JsonObject(MemberSerialization.OptOut, NamingStrategyType = typeof(CamelCaseNamingStrategy))]
 public class ContainerDetails
 {
     // Summary:
