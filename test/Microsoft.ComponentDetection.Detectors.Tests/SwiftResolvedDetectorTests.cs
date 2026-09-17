@@ -1,7 +1,6 @@
 #nullable disable
 namespace Microsoft.ComponentDetection.Detectors.Tests.Swift;
 
-using System;
 using System.Linq;
 using System.Threading.Tasks;
 using AwesomeAssertions;
@@ -49,10 +48,12 @@ public class SwiftResolvedDetectorTests
         var typedComponents = detectedComponents.Select(c => c.Component).ToList();
 
         typedComponents.Should().ContainEquivalentOf(
-            new GitComponent(
-                repositoryUrl: new Uri("https://github.com/Alamofire/Alamofire"),
-                commitHash: "f455c2975872ccd2d9c81594c658af65716e9b9a",
-                tag: "5.9.1"));
+            new SwiftComponent(
+                name: "alamofire",
+                version: "5.9.1",
+                repositoryUrl: "https://github.com/Alamofire/Alamofire",
+                hash: "f455c2975872ccd2d9c81594c658af65716e9b9a",
+                kind: "remoteSourceControl"));
     }
 
     // Test for several packages
@@ -75,16 +76,20 @@ public class SwiftResolvedDetectorTests
         var typedComponents = detectedComponents.Select(c => c.Component).ToList();
 
         typedComponents.Should().ContainEquivalentOf(
-            new GitComponent(
-                repositoryUrl: new Uri("https://github.com/Alamofire/Alamofire"),
-                commitHash: "63dfa86548c4e5d5c6fd6ed42f638e388cbce529",
-                tag: "5.6.0"));
+            new SwiftComponent(
+                name: "alamofire",
+                version: "5.6.0",
+                repositoryUrl: "https://github.com/Alamofire/Alamofire",
+                hash: "63dfa86548c4e5d5c6fd6ed42f638e388cbce529",
+                kind: "remoteSourceControl"));
 
         typedComponents.Should().ContainEquivalentOf(
-            new GitComponent(
-                repositoryUrl: new Uri("https://github.com/sideeffect-io/AsyncExtensions"),
-                commitHash: "3442d3d046800f1974bda096faaf0ac510b21154",
-                tag: "0.5.3"));
+            new SwiftComponent(
+                name: "asyncextensions",
+                version: "0.5.3",
+                repositoryUrl: "https://github.com/sideeffect-io/AsyncExtensions",
+                hash: "3442d3d046800f1974bda096faaf0ac510b21154",
+                kind: "remoteSourceControl"));
     }
 
     // Duplicate packages
@@ -132,10 +137,12 @@ public class SwiftResolvedDetectorTests
         var typedComponents = detectedComponents.Select(c => c.Component).ToList();
 
         typedComponents.Should().ContainEquivalentOf(
-            new GitComponent(
-                repositoryUrl: new Uri("https://github.com/Alamofire/Alamofire"),
-                commitHash: "f455c2975872ccd2d9c81594c658af65716e9b9a",
-                tag: "5.9.1"));
+            new SwiftComponent(
+                name: "alamofire",
+                version: "5.9.1",
+                repositoryUrl: "https://github.com/Alamofire/Alamofire",
+                hash: "f455c2975872ccd2d9c81594c658af65716e9b9a",
+                kind: "remoteSourceControl"));
     }
 
     [TestMethod]
@@ -391,10 +398,12 @@ public class SwiftResolvedDetectorTests
         var typedComponents = detectedComponents.Select(c => c.Component).ToList();
 
         typedComponents.Should().ContainEquivalentOf(
-            new GitComponent(
-                repositoryUrl: new Uri("https://github.com/Alamofire/Alamofire"),
-                commitHash: "f455c2975872ccd2d9c81594c658af65716e9b9a",
-                tag: "f455c2975872ccd2d9c81594c658af65716e9b9a"));
+            new SwiftComponent(
+                name: "alamofire",
+                version: "f455c2975872ccd2d9c81594c658af65716e9b9a",
+                repositoryUrl: "https://github.com/Alamofire/Alamofire",
+                hash: "f455c2975872ccd2d9c81594c658af65716e9b9a",
+                kind: "remoteSourceControl"));
     }
 
     [System.Diagnostics.CodeAnalysis.SuppressMessage("StyleCop.CSharp.OrderingRules", "SA1201:Elements should appear in the correct order", Justification = "Test data that is better placed at the end of the file.")]
