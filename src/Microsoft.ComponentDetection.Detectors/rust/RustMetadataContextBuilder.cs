@@ -185,6 +185,10 @@ internal class RustMetadataContextBuilder : IRustMetadataContextBuilder
             return null;
         }
 
+        var manifestPathArg = manifestPath.Contains(' ') && !manifestPath.StartsWith('"')
+            ? $"\"{manifestPath}\""
+            : manifestPath;
+
         var res = await this.cliService.ExecuteCommandAsync(
             "cargo",
             additionalCandidateCommands: null,
@@ -192,7 +196,7 @@ internal class RustMetadataContextBuilder : IRustMetadataContextBuilder
             cancellationToken: token,
             "metadata",
             "--manifest-path",
-            manifestPath,
+            manifestPathArg,
             "--format-version=1",
             "--locked");
 
