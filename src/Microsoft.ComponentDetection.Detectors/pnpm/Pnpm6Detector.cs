@@ -23,10 +23,10 @@ public class Pnpm6Detector : IPnpmDetector
         // This includes all directly and transitively referenced dependencies.
         foreach (var (pnpmDependencyPath, package) in yaml.Packages ?? Enumerable.Empty<KeyValuePair<string, Package>>())
         {
-            // Ignore "file:" as these are local packages.
+            // Ignore "file:" and "link:" as these are local packages.
             // Such local packages should only be referenced at the top level (via ProcessDependencyList) which also skips them or from other local packages (which this skips).
             // There should be no cases where a non-local package references a local package, so skipping them here should not result in failed lookups below when adding all the graph references.
-            if (pnpmDependencyPath.StartsWith(PnpmConstants.PnpmFileDependencyPath))
+            if (pnpmDependencyPath.StartsWith(PnpmConstants.PnpmFileDependencyPath) || pnpmDependencyPath.StartsWith(PnpmConstants.PnpmLinkDependencyPath))
             {
                 continue;
             }
@@ -46,6 +46,12 @@ public class Pnpm6Detector : IPnpmDetector
         {
             foreach (var (name, version) in package.Dependencies ?? Enumerable.Empty<KeyValuePair<string, string>>())
             {
+                // Ignore local packages.
+                if (this.pnpmParsingUtilities.IsLocalDependency(new KeyValuePair<string, string>(name, version)))
+                {
+                    continue;
+                }
+
                 var pnpmDependencyPath = this.pnpmParsingUtilities.ReconstructPnpmDependencyPath(name, version);
 
                 // If this lookup fails, then pnpmDependencyPath was either parsed incorrectly or constructed incorrectly.
