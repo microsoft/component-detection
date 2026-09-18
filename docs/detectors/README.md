@@ -122,9 +122,9 @@
 
 - [Swift](swift.md)
 
-| Detector                        | Status     |
-| ------------------------------- | ---------- |
-| SwiftResolvedComponentDetector  | DefaultOff |
+| Detector                       | Status       |
+| ------------------------------ | ------------ |
+| SwiftResolvedComponentDetector | Experimental |
 
 - [Uv](uv.md)
 
