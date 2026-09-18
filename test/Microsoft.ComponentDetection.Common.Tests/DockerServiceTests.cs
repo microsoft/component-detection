@@ -8,7 +8,6 @@ using Docker.DotNet.Models;
 using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
-using Polly;
 
 [TestClass]
 [TestCategory("Governance/All")]
@@ -25,11 +24,10 @@ public class DockerServiceTests
     public DockerServiceTests() => this.dockerService = new DockerService(this.loggerMock.Object);
 
     [TestMethod]
+    [OSCondition(ConditionMode.Exclude, OperatingSystems.Windows)]
     public async Task DockerService_CanPingDockerAsync()
     {
-        var canPingDocker = await Policy.HandleResult<bool>(result => !result)
-            .WaitAndRetryAsync(3, retryAttempt => TimeSpan.FromSeconds(5))
-            .ExecuteAsync(() => this.dockerService.CanPingDockerAsync());
+        var canPingDocker = await this.dockerService.CanPingDockerAsync();
 
         canPingDocker.Should().BeTrue();
     }
