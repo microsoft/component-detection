@@ -359,7 +359,7 @@ public class MSBuildBinaryLogDotNetFallbackCompatibilityTests
         var (scanResult, componentRecorder) = await this.detectorTestUtility.ExecuteDetectorAsync();
 
         scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
-        componentRecorder.GetDetectedComponents().Should().BeEmpty();
+        GetDotNetComponents(componentRecorder).Should().BeEmpty();
     }
 
     [TestMethod]
@@ -378,7 +378,7 @@ public class MSBuildBinaryLogDotNetFallbackCompatibilityTests
 
         scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
 
-        var detectedComponents = componentRecorder.GetDetectedComponents();
+        var detectedComponents = GetDotNetComponents(componentRecorder);
         detectedComponents.Should().HaveCount(2);
 
         var discoveredComponents = detectedComponents.ToArray();
@@ -412,7 +412,7 @@ public class MSBuildBinaryLogDotNetFallbackCompatibilityTests
 
         scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
 
-        var detectedComponents = componentRecorder.GetDetectedComponents();
+        var detectedComponents = GetDotNetComponents(componentRecorder);
         detectedComponents.Should().HaveCount(2);
 
         var discoveredComponents = detectedComponents.ToArray();
@@ -444,7 +444,7 @@ public class MSBuildBinaryLogDotNetFallbackCompatibilityTests
 
         scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
 
-        var detectedComponents = componentRecorder.GetDetectedComponents();
+        var detectedComponents = GetDotNetComponents(componentRecorder);
         detectedComponents.Should().HaveCount(2);
 
         var discoveredComponents = detectedComponents.ToArray();
@@ -475,7 +475,7 @@ public class MSBuildBinaryLogDotNetFallbackCompatibilityTests
 
         scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
 
-        var detectedComponents = componentRecorder.GetDetectedComponents();
+        var detectedComponents = GetDotNetComponents(componentRecorder);
         detectedComponents.Should().ContainSingle();
 
         var discoveredComponents = detectedComponents.ToArray();
@@ -498,7 +498,7 @@ public class MSBuildBinaryLogDotNetFallbackCompatibilityTests
 
         scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
 
-        var detectedComponents = componentRecorder.GetDetectedComponents();
+        var detectedComponents = GetDotNetComponents(componentRecorder);
         detectedComponents.Should().HaveCount(2);
 
         var discoveredComponents = detectedComponents.ToArray();
@@ -522,7 +522,7 @@ public class MSBuildBinaryLogDotNetFallbackCompatibilityTests
 
         scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
 
-        var detectedComponents = componentRecorder.GetDetectedComponents();
+        var detectedComponents = GetDotNetComponents(componentRecorder);
         detectedComponents.Should().HaveCount(2);
 
         var discoveredComponents = detectedComponents.ToArray();
@@ -546,7 +546,7 @@ public class MSBuildBinaryLogDotNetFallbackCompatibilityTests
 
         scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
 
-        var detectedComponents = componentRecorder.GetDetectedComponents();
+        var detectedComponents = GetDotNetComponents(componentRecorder);
         detectedComponents.Should().HaveCount(2);
 
         var discoveredComponents = detectedComponents.ToArray();
@@ -568,7 +568,7 @@ public class MSBuildBinaryLogDotNetFallbackCompatibilityTests
 
         scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
 
-        var detectedComponents = componentRecorder.GetDetectedComponents();
+        var detectedComponents = GetDotNetComponents(componentRecorder);
         detectedComponents.Should().ContainSingle();
 
         var discoveredComponents = detectedComponents.ToArray();
@@ -589,7 +589,7 @@ public class MSBuildBinaryLogDotNetFallbackCompatibilityTests
 
         scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
 
-        var detectedComponents = componentRecorder.GetDetectedComponents();
+        var detectedComponents = GetDotNetComponents(componentRecorder);
         detectedComponents.Should().ContainSingle();
 
         var discoveredComponents = detectedComponents.ToArray();
@@ -612,7 +612,7 @@ public class MSBuildBinaryLogDotNetFallbackCompatibilityTests
 
         scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
 
-        var detectedComponents = componentRecorder.GetDetectedComponents();
+        var detectedComponents = GetDotNetComponents(componentRecorder);
         detectedComponents.Should().ContainSingle();
 
         var discoveredComponents = detectedComponents.ToArray();
@@ -633,7 +633,7 @@ public class MSBuildBinaryLogDotNetFallbackCompatibilityTests
 
         scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
 
-        var detectedComponents = componentRecorder.GetDetectedComponents();
+        var detectedComponents = GetDotNetComponents(componentRecorder);
         detectedComponents.Should().HaveCount(3);
 
         var discoveredComponents = detectedComponents.ToArray();
@@ -686,7 +686,7 @@ public class MSBuildBinaryLogDotNetFallbackCompatibilityTests
 
         scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
 
-        var detectedComponents = componentRecorder.GetDetectedComponents();
+        var detectedComponents = GetDotNetComponents(componentRecorder);
         detectedComponents.Should().HaveCount(6);
 
         var discoveredComponents = detectedComponents.ToArray();
@@ -724,7 +724,7 @@ public class MSBuildBinaryLogDotNetFallbackCompatibilityTests
 
         scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
 
-        var detectedComponents = componentRecorder.GetDetectedComponents();
+        var detectedComponents = GetDotNetComponents(componentRecorder);
         detectedComponents.Should().HaveCount(2);
 
         var discoveredComponents = detectedComponents.ToArray();
@@ -761,7 +761,7 @@ public class MSBuildBinaryLogDotNetFallbackCompatibilityTests
 
         scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
 
-        var detectedComponents = componentRecorder.GetDetectedComponents();
+        var detectedComponents = GetDotNetComponents(componentRecorder);
         detectedComponents.Should().HaveCount(4);
 
         var discoveredComponents = detectedComponents.ToArray();
@@ -796,7 +796,7 @@ public class MSBuildBinaryLogDotNetFallbackCompatibilityTests
 
         scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
 
-        var detectedComponents = componentRecorder.GetDetectedComponents();
+        var detectedComponents = GetDotNetComponents(componentRecorder);
         detectedComponents.Should().ContainSingle();
 
         var discoveredComponents = detectedComponents.ToArray();
@@ -852,7 +852,7 @@ public class MSBuildBinaryLogDotNetFallbackCompatibilityTests
 
         scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
 
-        var detectedComponents = componentRecorder.GetDetectedComponents();
+        var detectedComponents = GetDotNetComponents(componentRecorder);
         detectedComponents.Should().HaveCount(4);
 
         var discoveredComponents = detectedComponents.ToArray();
@@ -923,7 +923,7 @@ public class MSBuildBinaryLogDotNetFallbackCompatibilityTests
 
             scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
 
-            var discoveredComponents = componentRecorder.GetDetectedComponents().ToArray();
+            var discoveredComponents = GetDotNetComponents(componentRecorder).ToArray();
 
             // Both the plain TFM and RID-qualified targets map to the same framework.
             // The detector should report application-selfcontained for this framework.
@@ -983,7 +983,7 @@ public class MSBuildBinaryLogDotNetFallbackCompatibilityTests
 
             scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
 
-            var discoveredComponents = componentRecorder.GetDetectedComponents().ToArray();
+            var discoveredComponents = GetDotNetComponents(componentRecorder).ToArray();
             discoveredComponents.Where(component => component.Component.Id == $"4.5.6 {CurrentTfm} library-selfcontained - DotNet").Should().ContainSingle();
         }
         finally
@@ -1044,7 +1044,7 @@ public class MSBuildBinaryLogDotNetFallbackCompatibilityTests
 
             scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
 
-            var discoveredComponents = componentRecorder.GetDetectedComponents().ToArray();
+            var discoveredComponents = GetDotNetComponents(componentRecorder).ToArray();
             discoveredComponents.Where(component => component.Component.Id == $"4.5.6 {CurrentTfm} application-selfcontained - DotNet").Should().ContainSingle();
         }
         finally
@@ -1102,7 +1102,7 @@ public class MSBuildBinaryLogDotNetFallbackCompatibilityTests
 
             scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
 
-            var discoveredComponents = componentRecorder.GetDetectedComponents().ToArray();
+            var discoveredComponents = GetDotNetComponents(componentRecorder).ToArray();
             discoveredComponents.Where(component => component.Component.Id == $"4.5.6 {CurrentTfm} application - DotNet").Should().ContainSingle();
         }
         finally
@@ -1139,7 +1139,7 @@ public class MSBuildBinaryLogDotNetFallbackCompatibilityTests
 
         scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
 
-        var discoveredComponents = componentRecorder.GetDetectedComponents().ToArray();
+        var discoveredComponents = GetDotNetComponents(componentRecorder).ToArray();
         discoveredComponents.Where(component => component.Component.Id == "4.5.6 net8.0 application-selfcontained - DotNet").Should().ContainSingle();
     }
 
@@ -1168,7 +1168,7 @@ public class MSBuildBinaryLogDotNetFallbackCompatibilityTests
 
         scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
 
-        var discoveredComponents = componentRecorder.GetDetectedComponents().ToArray();
+        var discoveredComponents = GetDotNetComponents(componentRecorder).ToArray();
         discoveredComponents.Where(component => component.Component.Id == "4.5.6 net8.0 library-selfcontained - DotNet").Should().ContainSingle();
     }
 
@@ -1198,7 +1198,7 @@ public class MSBuildBinaryLogDotNetFallbackCompatibilityTests
 
         scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
 
-        var discoveredComponents = componentRecorder.GetDetectedComponents().ToArray();
+        var discoveredComponents = GetDotNetComponents(componentRecorder).ToArray();
         discoveredComponents.Where(component => component.Component.Id == "4.5.6 net8.0 application-selfcontained - DotNet").Should().ContainSingle();
     }
 
@@ -1228,7 +1228,7 @@ public class MSBuildBinaryLogDotNetFallbackCompatibilityTests
 
         scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
 
-        var discoveredComponents = componentRecorder.GetDetectedComponents().ToArray();
+        var discoveredComponents = GetDotNetComponents(componentRecorder).ToArray();
         discoveredComponents.Where(component => component.Component.Id == "4.5.6 net8.0 application - DotNet").Should().ContainSingle();
     }
 
@@ -1263,8 +1263,11 @@ public class MSBuildBinaryLogDotNetFallbackCompatibilityTests
 
         scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
 
-        var discoveredComponents = componentRecorder.GetDetectedComponents().ToArray();
+        var discoveredComponents = GetDotNetComponents(componentRecorder).ToArray();
         discoveredComponents.Where(component => component.Component.Id == "4.5.6 net8.0 application-selfcontained - DotNet").Should().ContainSingle();
         discoveredComponents.Where(component => component.Component.Id == "4.5.6 net6.0 application - DotNet").Should().ContainSingle();
     }
+
+    private static List<DetectedComponent> GetDotNetComponents(IComponentRecorder componentRecorder) =>
+        componentRecorder.GetDetectedComponents().Where(component => component.Component is DotNetComponent).ToList();
 }

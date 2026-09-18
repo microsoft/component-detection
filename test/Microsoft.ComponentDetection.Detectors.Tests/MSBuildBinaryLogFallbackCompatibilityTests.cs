@@ -59,7 +59,7 @@ public class MSBuildBinaryLogFallbackCompatibilityTests
             .WithFile(this.projectAssetsJsonFileName, osAgnostic)
             .ExecuteDetectorAsync();
 
-        var detectedComponents = componentRecorder.GetDetectedComponents();
+        var detectedComponents = GetNuGetComponents(componentRecorder);
 
         detectedComponents.Should().HaveCount(22);
 
@@ -84,7 +84,7 @@ public class MSBuildBinaryLogFallbackCompatibilityTests
             .WithFile(this.projectAssetsJsonFileName, osAgnostic)
             .ExecuteDetectorAsync();
 
-        var detectedComponents = componentRecorder.GetDetectedComponents();
+        var detectedComponents = GetNuGetComponents(componentRecorder);
 
         detectedComponents.Should().HaveCount(68);
 
@@ -111,7 +111,7 @@ public class MSBuildBinaryLogFallbackCompatibilityTests
             .WithFile(this.projectAssetsJsonFileName, osAgnostic)
             .ExecuteDetectorAsync();
 
-        var dependencies = componentRecorder.GetDetectedComponents();
+        var dependencies = GetNuGetComponents(componentRecorder);
         var developmentDependencies = dependencies.Where(c => componentRecorder.GetEffectiveDevDependencyValue(c.Component.Id).GetValueOrDefault());
         developmentDependencies.Should().HaveCount(19);
         developmentDependencies.Should().Contain(c => c.Component.Id.StartsWith("Microsoft.NETCore.Platforms "), "Microsoft.NETCore.Platforms should be treated as a development dependency.");
@@ -132,7 +132,7 @@ public class MSBuildBinaryLogFallbackCompatibilityTests
             "NuGet.DependencyResolver.Core 5.6.0 - NuGet",
         };
 
-        var detectedComponents = componentRecorder.GetDetectedComponents();
+        var detectedComponents = GetNuGetComponents(componentRecorder);
         var componentDetectionCommon = detectedComponents.First(x => x.Component.Id.Contains("NuGet.ProjectModel"));
         var dependencies = graph.GetDependenciesForComponent(componentDetectionCommon.Component.Id);
         foreach (var expectedId in expectedDependencyIdsForCompositionTypedParts)
@@ -142,7 +142,7 @@ public class MSBuildBinaryLogFallbackCompatibilityTests
 
         expectedDependencyIdsForCompositionTypedParts.Should().HaveSameCount(dependencies);
 
-        detectedComponents.Should().HaveSameCount(graph.GetComponents());
+        detectedComponents.Should().AllSatisfy(component => graph.GetComponents().Should().Contain(component.Component.Id));
 
         // Top level dependencies look like this:
         // (we expect all non-proj and non-framework to show up as explicit refs, so those will be absent from the check)
@@ -191,7 +191,7 @@ public class MSBuildBinaryLogFallbackCompatibilityTests
             "YamlDotNet",
         };
 
-        foreach (var componentId in graph.GetComponents())
+        foreach (var componentId in detectedComponents.Select(component => component.Component.Id))
         {
             var component = detectedComponents.First(x => x.Component.Id == componentId);
             var expectedExplicitRefValue = expectedExplicitRefs.Contains(((NuGetComponent)component.Component).Name);
@@ -208,7 +208,7 @@ public class MSBuildBinaryLogFallbackCompatibilityTests
             .ExecuteDetectorAsync();
 
         // Number of unique nodes in ProjectAssetsJson
-        var detectedComponents = componentRecorder.GetDetectedComponents();
+        var detectedComponents = GetNuGetComponents(componentRecorder);
         detectedComponents.Should().HaveCount(11);
 
         var nonDevComponents = detectedComponents.Where(c => !componentRecorder.GetEffectiveDevDependencyValue(c.Component.Id).GetValueOrDefault());
@@ -237,7 +237,7 @@ public class MSBuildBinaryLogFallbackCompatibilityTests
             .WithFile(this.projectAssetsJsonFileName, osAgnostic)
             .ExecuteDetectorAsync();
 
-        var developmentDependencies = componentRecorder.GetDetectedComponents().Where(c => componentRecorder.GetEffectiveDevDependencyValue(c.Component.Id).GetValueOrDefault());
+        var developmentDependencies = GetNuGetComponents(componentRecorder).Where(c => componentRecorder.GetEffectiveDevDependencyValue(c.Component.Id).GetValueOrDefault());
         developmentDependencies.Should().HaveCount(10, "Omitted framework assemblies are missing.");
         developmentDependencies.Should().Contain(c => c.Component.Id.StartsWith("System.Reflection "), "System.Reflection should be treated as a development dependency.");
     }
@@ -258,7 +258,7 @@ public class MSBuildBinaryLogFallbackCompatibilityTests
             "System.Text.Json 4.6.0 - NuGet",
         };
 
-        var detectedComponents = componentRecorder.GetDetectedComponents();
+        var detectedComponents = GetNuGetComponents(componentRecorder);
 
         var componentDetectionCommon = detectedComponents.First(x => x.Component.Id.Contains("Microsoft.Extensions.DependencyModel"));
         var dependencies = graph.GetDependenciesForComponent(componentDetectionCommon.Component.Id);
@@ -267,7 +267,7 @@ public class MSBuildBinaryLogFallbackCompatibilityTests
             dependencies.Should().Contain(expectedId);
         }
 
-        detectedComponents.Should().HaveSameCount(graph.GetComponents());
+        detectedComponents.Should().AllSatisfy(component => graph.GetComponents().Should().Contain(component.Component.Id));
 
         // Top level dependencies look like this:
         // (we expect all non-proj and non-framework to show up as explicit refs, so those will be absent from the check)
@@ -280,7 +280,7 @@ public class MSBuildBinaryLogFallbackCompatibilityTests
             "System.Runtime.Loader",
         };
 
-        foreach (var componentId in graph.GetComponents())
+        foreach (var componentId in detectedComponents.Select(component => component.Component.Id))
         {
             var component = detectedComponents.First(x => x.Component.Id == componentId);
             var expectedExplicitRefValue = expectedExplicitRefs.Contains(((NuGetComponent)component.Component).Name);
@@ -303,7 +303,7 @@ public class MSBuildBinaryLogFallbackCompatibilityTests
                 .WithFile(this.projectAssetsJsonFileName, testResource)
                 .ExecuteDetectorAsync();
 
-            var detectedComponents = componentRecorder.GetDetectedComponents();
+            var detectedComponents = GetNuGetComponents(componentRecorder);
             detectedComponents.Should().AllSatisfy(c =>
                 componentRecorder.GetEffectiveDevDependencyValue(c.Component.Id).Should().BeTrue($"{c.Component.Id} should be a dev dependency"));
         }
@@ -316,7 +316,7 @@ public class MSBuildBinaryLogFallbackCompatibilityTests
             .WithFile(this.projectAssetsJsonFileName, TestResources.project_assets_1_1_web)
             .ExecuteDetectorAsync();
 
-        var detectedComponents = componentRecorder.GetDetectedComponents();
+        var detectedComponents = GetNuGetComponents(componentRecorder);
         detectedComponents.Should().HaveCount(169, "Find expected dependencies.");
 
         var developmentDependencies = detectedComponents.Where(c => componentRecorder.GetEffectiveDevDependencyValue(c.Component.Id).GetValueOrDefault());
@@ -331,7 +331,7 @@ public class MSBuildBinaryLogFallbackCompatibilityTests
             .WithFile(this.projectAssetsJsonFileName, osAgnostic)
             .ExecuteDetectorAsync();
 
-        var detectedComponents = componentRecorder.GetDetectedComponents();
+        var detectedComponents = GetNuGetComponents(componentRecorder);
         detectedComponents.Should().AllSatisfy(c => componentRecorder.GetEffectiveDevDependencyValue(c.Component.Id).Should().BeTrue(), "All should be development dependencies");
     }
 
@@ -344,7 +344,7 @@ public class MSBuildBinaryLogFallbackCompatibilityTests
             .ExecuteDetectorAsync();
 
         // net42.15 is not a known framework, but it can import framework packages from the closest known framework.
-        var detectedComponents = componentRecorder.GetDetectedComponents();
+        var detectedComponents = GetNuGetComponents(componentRecorder);
         detectedComponents.Should().AllSatisfy(c => componentRecorder.GetEffectiveDevDependencyValue(c.Component.Id).Should().BeTrue(), "All should be development dependencies");
     }
 
@@ -356,7 +356,7 @@ public class MSBuildBinaryLogFallbackCompatibilityTests
             .WithFile(this.projectAssetsJsonFileName, osAgnostic)
             .ExecuteDetectorAsync();
 
-        var developmentDependencies = componentRecorder.GetDetectedComponents().Where(c => componentRecorder.GetEffectiveDevDependencyValue(c.Component.Id).GetValueOrDefault());
+        var developmentDependencies = GetNuGetComponents(componentRecorder).Where(c => componentRecorder.GetEffectiveDevDependencyValue(c.Component.Id).GetValueOrDefault());
         developmentDependencies.Should().HaveCount(3, "Omitted framework assemblies are missing.");
         developmentDependencies.Should().Contain(c => c.Component.Id.StartsWith("Microsoft.Extensions.Primitives "), "Microsoft.Extensions.Primitives should be treated as a development dependency.");
         developmentDependencies.Should().Contain(c => c.Component.Id.StartsWith("System.IO.Packaging "), "System.IO.Packaging should be treated as a development dependency.");
@@ -370,7 +370,7 @@ public class MSBuildBinaryLogFallbackCompatibilityTests
             .WithFile(this.projectAssetsJsonFileName, osAgnostic)
             .ExecuteDetectorAsync();
 
-        var developmentDependencies = componentRecorder.GetDetectedComponents().Where(c => componentRecorder.GetEffectiveDevDependencyValue(c.Component.Id).GetValueOrDefault());
+        var developmentDependencies = GetNuGetComponents(componentRecorder).Where(c => componentRecorder.GetEffectiveDevDependencyValue(c.Component.Id).GetValueOrDefault());
         developmentDependencies.Should().HaveCount(2, "Omitted framework assemblies are missing.");
         developmentDependencies.Should().Contain(c => c.Component.Id.StartsWith("Microsoft.Extensions.Primitives "), "Microsoft.Extensions.Primitives should be treated as a development dependency.");
         developmentDependencies.Should().NotContain(c => c.Component.Id.StartsWith("System.IO.Packaging "), "System.IO.Packaging should not be treated as a development dependency.");
@@ -383,7 +383,7 @@ public class MSBuildBinaryLogFallbackCompatibilityTests
             .WithFile(this.projectAssetsJsonFileName, TestResources.project_assets_packageDownload)
             .ExecuteDetectorAsync();
 
-        var dependencies = componentRecorder.GetDetectedComponents();
+        var dependencies = GetNuGetComponents(componentRecorder);
         dependencies.Should().HaveCount(3, "PackageDownload dependencies should exist.");
         dependencies.Should().AllSatisfy(c => componentRecorder.GetEffectiveDevDependencyValue(c.Component.Id).Should().BeTrue(), "All PackageDownloads should be development dependencies");
         dependencies.Select(c => c.Component).Should().AllBeOfType<NuGetComponent>();
@@ -411,6 +411,9 @@ public class MSBuildBinaryLogFallbackCompatibilityTests
 
         dependencyGraphs.Should().BeEmpty();
     }
+
+    private static List<DetectedComponent> GetNuGetComponents(IComponentRecorder componentRecorder) =>
+        componentRecorder.GetDetectedComponents().Where(component => component.Component is NuGetComponent).ToList();
 
     private string Convert22SampleToOSAgnostic(string project_assets)
     {
