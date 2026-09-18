@@ -91,4 +91,14 @@ public class ComponentDetectorTests
         swiftDetector.Should().BeAssignableTo<IExperimentalDetector>("because SwiftResolvedComponentDetector should implement IExperimentalDetector");
         swiftDetector.Should().NotBeAssignableTo<IDefaultOffComponentDetector>("because SwiftResolvedComponentDetector should be enabled by default");
     }
+
+    [TestMethod]
+    public void MSBuildBinaryLogComponentDetector_IsDefaultOnAndSupersedesLegacyDetectors()
+    {
+        var detector = this.detectors.SingleOrDefault(d => d.Id == "MSBuildBinaryLog");
+
+        detector.Should().NotBeNull("because MSBuildBinaryLogComponentDetector should be registered");
+        detector.Should().NotBeAssignableTo<IExperimentalDetector>("because MSBuildBinaryLogComponentDetector should be default-on");
+        this.detectors.Select(d => d.Id).Should().NotContain(["NuGetProjectCentric", "DotNet"]);
+    }
 }

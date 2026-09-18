@@ -30,12 +30,6 @@
 | --------------------------- | ---------- |
 | DockerfileComponentDetector | Experimental |
 
-- [DotNet](dotnet.md)
-
-| Detector                | Status |
-| ----------------------- | ------ |
-| DotNetComponentDetector | Stable |
-
 - [Go](go.md)
 
 | Detector            | Status |
@@ -86,8 +80,7 @@
 | ------------------------------------------------ | ---------- |
 | NuGetComponentDetector                           | Stable     |
 | NuGetPackagesConfigDetector                      | Stable     |
-| NuGetProjectModelProjectCentricComponentDetector | Stable     |
-| MSBuildBinaryLogComponentDetector                | Experimental |
+| MSBuildBinaryLogComponentDetector                | Stable     |
 
 - [Pip](pip.md)
 

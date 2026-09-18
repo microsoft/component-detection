@@ -15,8 +15,8 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 [TestClass]
 public class ComponentDetectionIntegrationTests
 {
-    // Detectors intentionally removed (e.g., promoted/merged into another detector). MavenWithFallback was promoted into MvnCli.
-    private static readonly HashSet<string> IntentionallyRemovedDetectors = ["MavenWithFallback"];
+    // Detectors intentionally removed after their behavior was promoted or merged into another detector.
+    private static readonly HashSet<string> IntentionallyRemovedDetectors = ["MavenWithFallback", "NuGetProjectCentric", "DotNet"];
 
     private string oldLogFileContents;
     private string newLogFileContents;
@@ -58,8 +58,8 @@ public class ComponentDetectionIntegrationTests
         // if any are lost, error, new ones should come with a bumped detector version, which is checked during the detectors counts test.
         var experimentalDetectorsId = this.GetExperimentalDetectorsId(this.newScanResult.DetectorsInScan, this.oldScanResult.DetectorsInScan);
 
-        var newComponents = this.newScanResult.ComponentsFound.Where(c => !experimentalDetectorsId.Contains(c.DetectorId));
-        var oldComponents = this.oldScanResult.ComponentsFound.Where(c => !experimentalDetectorsId.Contains(c.DetectorId));
+        var newComponents = this.newScanResult.ComponentsFound.Where(c => !experimentalDetectorsId.Contains(c.DetectorId) && !IntentionallyRemovedDetectors.Contains(c.DetectorId));
+        var oldComponents = this.oldScanResult.ComponentsFound.Where(c => !experimentalDetectorsId.Contains(c.DetectorId) && !IntentionallyRemovedDetectors.Contains(c.DetectorId));
 
         var newComponentDictionary = this.GetComponentDictionary(newComponents);
         var oldComponentDictionary = this.GetComponentDictionary(oldComponents);

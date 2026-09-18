@@ -8,7 +8,6 @@ using Microsoft.ComponentDetection.Detectors.Conan;
 using Microsoft.ComponentDetection.Detectors.CondaLock;
 using Microsoft.ComponentDetection.Detectors.DockerCompose;
 using Microsoft.ComponentDetection.Detectors.Dockerfile;
-using Microsoft.ComponentDetection.Detectors.DotNet;
 using Microsoft.ComponentDetection.Detectors.Go;
 using Microsoft.ComponentDetection.Detectors.Gradle;
 using Microsoft.ComponentDetection.Detectors.Helm;
@@ -75,7 +74,6 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IExperimentConfiguration, SimplePipExperiment>();
         services.AddSingleton<IExperimentConfiguration, CondaLockDetectorExperiment>();
         services.AddSingleton<IExperimentConfiguration, LinuxApplicationLayerExperiment>();
-        services.AddSingleton<IExperimentConfiguration, MSBuildBinaryLogExperiment>();
 
         // Detectors
         // CocoaPods
@@ -92,9 +90,6 @@ public static class ServiceCollectionExtensions
 
         // Dockerfile
         services.AddSingleton<IComponentDetector, DockerfileComponentDetector>();
-
-        // DotNet
-        services.AddSingleton<IComponentDetector, DotNetComponentDetector>();
 
         // Go
         services.AddSingleton<IComponentDetector, GoComponentDetector>();
@@ -138,7 +133,6 @@ public static class ServiceCollectionExtensions
         // NuGet
         services.AddSingleton<IComponentDetector, NuGetComponentDetector>();
         services.AddSingleton<IComponentDetector, NuGetPackagesConfigDetector>();
-        services.AddSingleton<IComponentDetector, NuGetProjectModelProjectCentricComponentDetector>();
         services.AddSingleton<IComponentDetector, MSBuildBinaryLogComponentDetector>();
 
         // PIP

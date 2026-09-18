@@ -18,8 +18,7 @@ using NuGetLockFileUtilities = Microsoft.ComponentDetection.Detectors.NuGet.Lock
 /// <summary>
 /// Resolves DotNet project and SDK information from the environment.
 /// Handles SDK version resolution, project type detection, path rebasing,
-/// and DotNet component registration. Used by both DotNetComponentDetector
-/// and MSBuildBinaryLogComponentDetector.
+/// and DotNet component registration for MSBuildBinaryLogComponentDetector fallback processing.
 /// </summary>
 internal class DotNetProjectInfoProvider
 {
@@ -64,8 +63,8 @@ internal class DotNetProjectInfoProvider
 
     /// <summary>
     /// Registers DotNet components from a lock file, determining SDK version and project type.
-    /// This is the complete DotNet component registration logic shared between DotNetComponentDetector
-    /// and MSBuildBinaryLogComponentDetector's fallback path.
+    /// This is the complete DotNet component registration logic for
+    /// MSBuildBinaryLogComponentDetector's fallback path.
     /// </summary>
     /// <param name="lockFile">The lock file to analyze.</param>
     /// <param name="assetsFileLocation">The location of the project.assets.json file.</param>
