@@ -8,19 +8,27 @@ NuGet Detection depends on the following to successfully run:
 - The files each NuGet detector searches for:  
     - [The `NuGet` detector looks for `*.nupkg`, `*.nuspec`, `nuget.config`, `paket.lock`][1]
     - [The `NuGetPackagesConfig` detector looks for `packages.config`][2]
-    - [The `NuGetProjectCentric` detector looks for `project.assets.json`][3]
+    - [The `MSBuildBinaryLog` detector looks for `project.assets.json` and optionally uses `*.binlog` files][3]
 
 [1]: https://github.com/microsoft/component-detection/blob/13f3e9f32c94bf6189fbd0bfbdf2e68cc60fccd9/src/Microsoft.ComponentDetection.Detectors/nuget/NuGetComponentDetector.cs#L40
 [2]: https://github.com/microsoft/component-detection/blob/13f3e9f32c94bf6189fbd0bfbdf2e68cc60fccd9/src/Microsoft.ComponentDetection.Detectors/nuget/NuGetPackagesConfigDetector.cs#L25
-[3]: https://github.com/microsoft/component-detection/blob/13f3e9f32c94bf6189fbd0bfbdf2e68cc60fccd9/src/Microsoft.ComponentDetection.Detectors/nuget/NuGetProjectModelProjectCentricComponentDetector.cs#L205
+[3]: https://github.com/microsoft/component-detection/blob/main/src/Microsoft.ComponentDetection.Detectors/nuget/MSBuildBinaryLogComponentDetector.cs
 
 ## Detection Strategy 
 
 NuGet Detection is performed by parsing any `*.nuspec`, `*.nupkg`, `*.packages.config`, or `*.project.assets` files found under the scan directory. By searching for all `*.nuspec,` `*.nupkg` files on disk the global NuGet cache gets searched which can include packages that are not included in the final build.
 
-## NuGetProjectCentric
+## MSBuildBinaryLog
 
-The `NuGetProjectCentric` detector raises NuGet components referenced by projects that use the latest NuGet (v3 or later) and build-integrated `PackageReference` [items][4].  These components represent both direct dependencies and transitive dependencies brought in by references from direct package and project references.  Packages that contribute no assets to the project or exclusively contribute [Compile assets][5] are treated as development dependencies.
+The default-on `MSBuildBinaryLog` detector replaces the former `NuGetProjectCentric` and `DotNet`
+detectors. It raises NuGet components referenced by projects that use the latest NuGet (v3 or later)
+and build-integrated `PackageReference` [items][4], and it records the corresponding DotNet SDK
+components. NuGet components represent both direct dependencies and transitive dependencies brought
+in by references from direct package and project references. Packages that contribute no assets to
+the project or exclusively contribute [Compile assets][5] are treated as development dependencies.
+
+It looks for `project.assets.json` files and separately discovers `*.binlog` files. The binlog provides
+build-time context that isn't available from `project.assets.json` alone.
 
 The .NET SDK will perform conflict resolution for all packages during the build.  This process will remove assets from packages that overlap with assets of the same name that come from the .NET framework that's used by the project.  For example if a project references `System.Text.Json` version `6.0.0` and targets `net8.0` which includes a newer `System.Text.Json` the .NET SDK will ignore all the assets provided by the `System.Text.Json` package and only use those provided by the framework.  Unfortunately the result of this process is not persisted in any build artifact.  To approximate this we capture a list of packages per framework version that would lose to the framework assets.  When examining packages referenced by a project for a given framework, if we find that its included in the list we'll mark it as a development dependency.
 
@@ -30,20 +38,6 @@ Future versions of the .NET SDK have moved this framework conflict resolution in
 [5]: https://learn.microsoft.com/en-us/nuget/consume-packages/package-references-in-project-files#controlling-dependency-assets
 [6]: https://github.com/NuGet/Home/blob/451c27180d14214bca60483caee57f0dc737b8cf/accepted/2024/prune-package-reference.md
 
-## NuGetPackagesConfig
-
-The `NuGetPackagesConfig` detector raises NuGet components referenced by projects or solutions that use the older NuGet (v2) `packages.config` [file][7].
-
-[7]: https://learn.microsoft.com/en-us/nuget/reference/packages-config
-
-## MSBuildBinaryLog
-
-The `MSBuildBinaryLog` detector is an **Experimental** detector intended to eventually replace both the `NuGetProjectCentric` and `DotNet` detectors. It combines MSBuild binary log (binlog) information with `project.assets.json` to provide enhanced component detection with project-level classifications.
-
-As an experimental detector, it runs automatically whenever a scan is performed, but its results are not reported as part of the normal scan output. Instead, the results are compared against the existing `NuGetProjectCentric` and `DotNet` detectors and recorded as telemetry so maintainers can evaluate parity before promoting the detector to default.
-
-It looks for `project.assets.json` files and separately discovers `*.binlog` files. The binlog provides build-time context that isn't available from `project.assets.json` alone.
-
 ### MSBuild Properties
 
 The detector extracts the following MSBuild properties from binlog data:
@@ -51,7 +45,7 @@ The detector extracts the following MSBuild properties from binlog data:
 | Property | Usage |
 | --- | --- |
 | `NETCoreSdkVersion` | Registered as the SDK version for the DotNet component. More accurate than `dotnet --version`, which can differ due to `global.json` rollforward. |
-| `OutputType` | Classifies projects as "application" (`Exe`, `WinExe`, `AppContainerExe`) or "library" (`Library`, `Module`). The `DotNet` detector uses PE header inspection, which requires compiled output. |
+| `OutputType` | Classifies projects as "application" (`Exe`, `WinExe`, `AppContainerExe`) or "library" (`Library`, `Module`). |
 | `ProjectAssetsFile` | Maps binlog project info to the corresponding `project.assets.json` on disk. |
 | `TargetFramework` / `TargetFrameworks` | Identifies inner builds for multi-targeted projects and determines per-TFM properties. |
 | `IsTestProject` | When `true`, all dependencies of the project are marked as development dependencies. |
@@ -75,16 +69,41 @@ For multi-targeted projects, the detector understands the MSBuild outer/inner bu
 
 ### Fallback Mode
 
-When no binlog is available for a project, the detector falls back to standard NuGet detection behavior (equivalent to the `NuGetProjectCentric` detector).
+When no binlog is available for a project, or a binlog cannot be parsed, the detector falls back to
+the existing `project.assets.json`-based NuGet and DotNet detection behavior. A parse failure logs a
+warning and emits `FailedParsingFile` telemetry containing the detector ID, binlog path, and exception
+message. To enable the richer build context, place a `*.binlog` in the scan directory (for example,
+build with `dotnet build -bl`).
 
-### Enabling the Detector
+For DotNet SDK detection, fallback processing starts at the project location from
+`project.assets.json` and searches parent directories for a [`global.json`][7]. It runs
+`dotnet --version` from the selected directory to resolve the SDK version, stopping the upward search
+at `SourceDirectory`, `SourceFileRoot`, or the filesystem root. If `dotnet` is unavailable, it uses
+the SDK version declared in `global.json` when possible.
 
-Pass `--DetectorArgs MSBuildBinaryLog=EnableIfDefaultOff` and ensure a `*.binlog` file is present in the scan directory (e.g., by building with `dotnet build -bl`).
+The detector registers the target frameworks from `project.assets.json` and classifies each project
+as an `application`, `library`, or `unknown`. Binlog processing uses `OutputType`; fallback processing
+uses the output assembly's [PE COFF characteristics][8] when the assembly is available. Project type
+is qualified with `-selfcontained` when either the binlog sets `SelfContained` or `PublishAot`, or the
+lock file indicates a corresponding runtime package download or a `Microsoft.DotNet.ILCompiler`
+reference. This distinction matters because self-contained applications bundle the .NET runtime and
+must service it independently.
+
+[7]: https://learn.microsoft.com/en-us/dotnet/core/tools/global-json
+[8]: https://learn.microsoft.com/en-us/windows/win32/debug/pe-format#characteristics
+
+## NuGetPackagesConfig
+
+The `NuGetPackagesConfig` detector raises NuGet components referenced by projects or solutions that
+use the older NuGet (v2) [`packages.config` file][9].
+
+[9]: https://learn.microsoft.com/en-us/nuget/reference/packages-config
 
 ## Known Limitations
 
-- Any components that are only found in `*.nuspec` or `*.nupkg` files will not be detected with the latest NuGet Detector approach, because the NuGet detector that scans `*.nuspec` or `*.nupkg` files overreports. This is due to of NuGet's [restore behaviour][8] which downloads all possible dependencies before [resolving the final dependency graph][9].
+- Any components that are only found in `*.nuspec` or `*.nupkg` files will not be detected with the latest NuGet Detector approach, because the NuGet detector that scans `*.nuspec` or `*.nupkg` files overreports. This is due to NuGet's [restore behavior][10], which downloads all possible dependencies before [resolving the final dependency graph][11].
+- Without matching binlog data, project type can be `unknown` when the output assembly is unavailable or is stored outside the output path recorded in `project.assets.json`.
+- Without matching binlog data, SDK version detection depends on `dotnet --version` or a usable `global.json`.
 
-[8]: https://learn.microsoft.com/en-us/nuget/consume-packages/package-restore#package-restore-behavior
-[9]: https://learn.microsoft.com/en-us/nuget/concepts/dependency-resolution
-
+[10]: https://learn.microsoft.com/en-us/nuget/consume-packages/package-restore#package-restore-behavior
+[11]: https://learn.microsoft.com/en-us/nuget/concepts/dependency-resolution

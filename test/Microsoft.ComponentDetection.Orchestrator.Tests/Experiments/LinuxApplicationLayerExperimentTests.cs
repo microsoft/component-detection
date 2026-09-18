@@ -48,13 +48,16 @@ public class LinuxApplicationLayerExperimentTests
         var nuGetDetector = new NuGetComponentDetector(null!, null!, null!);
         this.experiment.IsInControlGroup(nuGetDetector).Should().BeTrue();
 
-        var nuGetProjectCentricDetector = new NuGetProjectModelProjectCentricComponentDetector(
+        var msBuildBinaryLogDetector = new MSBuildBinaryLogComponentDetector(
+            null!,
+            null!,
+            null!,
             null!,
             null!,
             null!,
             null!
         );
-        this.experiment.IsInControlGroup(nuGetProjectCentricDetector).Should().BeTrue();
+        this.experiment.IsInControlGroup(msBuildBinaryLogDetector).Should().BeTrue();
 
         var nuGetPackagesConfigDetector = new NuGetPackagesConfigDetector(null!, null!, null!);
         this.experiment.IsInControlGroup(nuGetPackagesConfigDetector).Should().BeTrue();
@@ -109,13 +112,16 @@ public class LinuxApplicationLayerExperimentTests
         var nuGetDetector = new NuGetComponentDetector(null!, null!, null!);
         this.experiment.IsInExperimentGroup(nuGetDetector).Should().BeTrue();
 
-        var nuGetProjectCentricDetector = new NuGetProjectModelProjectCentricComponentDetector(
+        var msBuildBinaryLogDetector = new MSBuildBinaryLogComponentDetector(
+            null!,
+            null!,
+            null!,
             null!,
             null!,
             null!,
             null!
         );
-        this.experiment.IsInExperimentGroup(nuGetProjectCentricDetector).Should().BeTrue();
+        this.experiment.IsInExperimentGroup(msBuildBinaryLogDetector).Should().BeTrue();
 
         var nuGetPackagesConfigDetector = new NuGetPackagesConfigDetector(null!, null!, null!);
         this.experiment.IsInExperimentGroup(nuGetPackagesConfigDetector).Should().BeTrue();
@@ -171,13 +177,16 @@ public class LinuxApplicationLayerExperimentTests
         var nuGetDetector = new NuGetComponentDetector(null!, null!, null!);
         this.experiment.ShouldRecord(nuGetDetector, 0).Should().BeTrue();
 
-        var nuGetProjectCentricDetector = new NuGetProjectModelProjectCentricComponentDetector(
+        var msBuildBinaryLogDetector = new MSBuildBinaryLogComponentDetector(
+            null!,
+            null!,
+            null!,
             null!,
             null!,
             null!,
             null!
         );
-        this.experiment.ShouldRecord(nuGetProjectCentricDetector, 0).Should().BeTrue();
+        this.experiment.ShouldRecord(msBuildBinaryLogDetector, 0).Should().BeTrue();
 
         var nuGetPackagesConfigDetector = new NuGetPackagesConfigDetector(null!, null!, null!);
         this.experiment.ShouldRecord(nuGetPackagesConfigDetector, 0).Should().BeTrue();

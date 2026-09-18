@@ -28,7 +28,7 @@ public class LinuxApplicationLayerExperiment : IExperimentConfiguration
                 or NpmLockfileDetectorBase
                 or PipReportComponentDetector
                 or NuGetComponentDetector
-                or NuGetProjectModelProjectCentricComponentDetector
+                or MSBuildBinaryLogComponentDetector
                 or NuGetPackagesConfigDetector;
 
     /// <inheritdoc />
@@ -39,7 +39,7 @@ public class LinuxApplicationLayerExperiment : IExperimentConfiguration
                 or NpmLockfileDetectorBase
                 or PipReportComponentDetector
                 or NuGetComponentDetector
-                or NuGetProjectModelProjectCentricComponentDetector
+                or MSBuildBinaryLogComponentDetector
                 or NuGetPackagesConfigDetector;
 
     /// <inheritdoc />

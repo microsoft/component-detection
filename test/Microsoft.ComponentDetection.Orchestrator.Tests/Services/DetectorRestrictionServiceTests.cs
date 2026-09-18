@@ -22,6 +22,7 @@ public class DetectorRestrictionServiceTests
     private Mock<IComponentDetector> thirdDetectorMock;
     private Mock<IComponentDetector> retiredNpmDetector;
     private Mock<IComponentDetector> newNpmDetector;
+    private Mock<IComponentDetector> msBuildBinaryLogDetector;
     private IComponentDetector[] detectors;
     private DetectorRestrictionService serviceUnderTest;
 
@@ -34,6 +35,7 @@ public class DetectorRestrictionServiceTests
         this.thirdDetectorMock = this.GenerateDetector("ThirdDetector");
         this.retiredNpmDetector = this.GenerateDetector("MSLicenseDevNpm");
         this.newNpmDetector = this.GenerateDetector("NpmWithRoots");
+        this.msBuildBinaryLogDetector = this.GenerateDetector("MSBuildBinaryLog");
 
         this.detectors =
         [
@@ -41,8 +43,8 @@ public class DetectorRestrictionServiceTests
             this.secondDetectorMock.Object,
             this.thirdDetectorMock.Object,
             this.retiredNpmDetector.Object,
-
             this.newNpmDetector.Object,
+            this.msBuildBinaryLogDetector.Object,
         ];
 
         this.serviceUnderTest = new DetectorRestrictionService(this.logger.Object);
@@ -119,6 +121,35 @@ public class DetectorRestrictionServiceTests
         restrictedDetectors = this.serviceUnderTest.ApplyRestrictions(r, this.detectors);
         restrictedDetectors
             .Should().OnlyContain(item => item == this.newNpmDetector.Object);
+    }
+
+    [TestMethod]
+    [DataRow("DotNet")]
+    [DataRow("nugetprojectcentric")]
+    public void WithRestrictions_CorrectsRetiredDotNetDetector(string retiredDetectorId)
+    {
+        var restrictions = new DetectorRestrictions
+        {
+            AllowedDetectorIds = [retiredDetectorId],
+        };
+
+        var restrictedDetectors = this.serviceUnderTest.ApplyRestrictions(restrictions, this.detectors);
+
+        restrictedDetectors.Should().ContainSingle()
+            .Which.Should().Be(this.msBuildBinaryLogDetector.Object);
+    }
+
+    [TestMethod]
+    public void WithRestrictions_DeduplicatesRetiredDotNetDetectorReplacements()
+    {
+        var restrictions = new DetectorRestrictions
+        {
+            AllowedDetectorIds = ["DotNet", "NuGetProjectCentric", "MSBuildBinaryLog", "FirstDetector"],
+        };
+
+        var restrictedDetectors = this.serviceUnderTest.ApplyRestrictions(restrictions, this.detectors);
+
+        restrictedDetectors.Should().BeEquivalentTo([this.msBuildBinaryLogDetector.Object, this.firstDetectorMock.Object]);
     }
 
     [TestMethod]
