@@ -95,8 +95,6 @@ internal class GoModParser : IGoParser
                     record.GoModVersion = line[3..].Trim();
                 }
 
-                // In go >= 1.17, direct dependencies are listed as "require x/y v1.2.3", and transitive dependencies
-                // are listed in the require () section
                 if (line.StartsWith(StartString))
                 {
                     this.TryRegisterDependencyFromModLine(file, line[StartString.Length..], singleFileComponentRecorder, replacePathDirectives, moduleReplacements);
@@ -152,7 +150,10 @@ internal class GoModParser : IGoParser
             goComponent = new GoComponent(replacement.TargetPathOrModule, replacement.TargetVersion ?? goComponent.Version);
         }
 
-        singleFileComponentRecorder.RegisterUsage(new DetectedComponent(goComponent));
+        var isExplicitReferencedDependency = !line.TrimEnd().EndsWith("// indirect", StringComparison.Ordinal);
+        singleFileComponentRecorder.RegisterUsage(
+            new DetectedComponent(goComponent),
+            isExplicitReferencedDependency: isExplicitReferencedDependency);
     }
 
     private bool TryToCreateGoComponentFromModLine(string line, out GoComponent goComponent)
