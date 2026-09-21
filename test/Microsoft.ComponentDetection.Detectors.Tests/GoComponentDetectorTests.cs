@@ -111,6 +111,68 @@ require (
     }
 
     [TestMethod]
+    [DataRow(false)]
+    [DataRow(true)]
+    public async Task GoModDetector_DirectRequirementsAreExplicitlyReferenced(bool isGoCliAvailable)
+    {
+        var goMod =
+            @"module example.com/main
+
+go 1.24.3
+
+require github.com/direct/single v1.0.0
+
+require (
+    github.com/direct/block v2.0.0
+    github.com/transitive/indirect v3.0.0 // indirect
+)";
+
+        this.envVarService.Setup(x => x.IsEnvironmentVariableValueTrue("DisableGoCliScan")).Returns(false);
+        this.commandLineMock
+            .Setup(x => x.CanCommandBeLocatedAsync("go", null, null, It.IsAny<string[]>()))
+            .ReturnsAsync(isGoCliAvailable);
+        this.commandLineMock
+            .Setup(x => x.ExecuteCommandAsync(
+                "go",
+                null,
+                null,
+                It.IsAny<CancellationToken>(),
+                It.IsAny<string[]>()))
+            .ReturnsAsync(new CommandLineExecutionResult
+            {
+                ExitCode = 0,
+                StdOut = "go version go1.24.3 windows/amd64",
+            });
+        this.commandLineMock
+            .Setup(x => x.ExecuteCommandAsync(
+                "go",
+                null,
+                It.IsAny<DirectoryInfo>(),
+                It.IsAny<CancellationToken>(),
+                It.IsAny<string[]>()))
+            .ReturnsAsync(new CommandLineExecutionResult
+            {
+                ExitCode = 0,
+                StdOut =
+                    "example.com/main github.com/direct/single@v1.0.0\n" +
+                    "example.com/main github.com/direct/block@v2.0.0\n" +
+                    "example.com/main github.com/transitive/indirect@v3.0.0",
+            });
+
+        this.SetupActualGoModParser();
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
+            .WithFile("go.mod", goMod)
+            .ExecuteDetectorAsync();
+
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+
+        var dependencyGraph = componentRecorder.GetDependencyGraphsByLocation().Values.Should().ContainSingle().Which;
+        dependencyGraph.GetAllExplicitlyReferencedComponents().Should().BeEquivalentTo(
+            "github.com/direct/single v1.0.0 - Go",
+            "github.com/direct/block v2.0.0 - Go");
+    }
+
+    [TestMethod]
     public async Task TestGoModDetector_CommentsOnFile_CommentsAreIgnoredAsync()
     {
         var goMod =
