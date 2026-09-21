@@ -11,31 +11,43 @@ using PackageUrl;
 /// </summary>
 public class SwiftComponent : TypedComponent
 {
-    private readonly Uri packageUrl;
-
-    private readonly string hash;
-
     /// <summary>
     /// Initializes a new instance of the <see cref="SwiftComponent"/> class.
     /// </summary>
     /// <param name="name">The name of the component.</param>
     /// <param name="version">The version of the component.</param>
-    /// <param name="packageUrl">The package URL of the component.</param>
-    /// <param name="hash">The hash of the component.</param>
-    public SwiftComponent(string name, string version, string packageUrl, string hash)
+    /// <param name="repositoryUrl">The source repository URL of the component.</param>
+    /// <param name="hash">The Git commit hash of the component.</param>
+    /// <param name="kind">The Swift package kind.</param>
+    public SwiftComponent(string name, string version, string repositoryUrl, string hash, string kind)
     {
         this.Name = this.ValidateRequiredInput(name, nameof(name), nameof(ComponentType.Swift));
         this.Version = this.ValidateRequiredInput(version, nameof(version), nameof(ComponentType.Swift));
-        this.ValidateRequiredInput(packageUrl, nameof(packageUrl), nameof(ComponentType.Swift));
-        this.packageUrl = new Uri(packageUrl);
-        this.hash = this.ValidateRequiredInput(hash, nameof(hash), nameof(ComponentType.Swift));
+        this.ValidateRequiredInput(repositoryUrl, nameof(repositoryUrl), nameof(ComponentType.Swift));
+        this.RepositoryUrl = new Uri(repositoryUrl);
+        this.Kind = this.ValidateRequiredInput(kind, nameof(kind), nameof(ComponentType.Swift));
+        this.CommitHash = this.ValidateRequiredInput(hash, nameof(hash), nameof(ComponentType.Swift));
+    }
+
+    public SwiftComponent()
+    {
+        /* Reserved for deserialization */
     }
 
     [JsonPropertyName("name")]
-    public string Name { get; }
+    public string Name { get; set; }
 
     [JsonPropertyName("version")]
-    public string Version { get; }
+    public string Version { get; set; }
+
+    [JsonPropertyName("kind")]
+    public string Kind { get; set; }
+
+    [JsonPropertyName("commitHash")]
+    public string CommitHash { get; set; }
+
+    [JsonPropertyName("repositoryUrl")]
+    public Uri RepositoryUrl { get; set; }
 
     [JsonIgnore]
     public override ComponentType Type => ComponentType.Swift;
@@ -52,25 +64,25 @@ public class SwiftComponent : TypedComponent
         version: this.Version,
         qualifiers: new SortedDictionary<string, string>
         {
-            { "repository_url", this.packageUrl.AbsoluteUri },
+            { "repository_url", this.RepositoryUrl.AbsoluteUri },
         },
         subpath: null);
 
-    protected override string ComputeBaseId() => $"{this.Name} {this.Version} - {this.Type}";
+    protected override string ComputeBaseId() => $"{this.RepositoryUrl.AbsoluteUri} {this.CommitHash} - {this.Type}";
 
     private string GetNamespaceFromPackageUrl()
     {
         // In the case of github.com, the namespace should contain the user/organization
         // See https://github.com/package-url/purl-spec/blob/master/PURL-TYPES.rst#swift
-        var uppercaseHost = this.packageUrl.Host.ToUpperInvariant();
+        var uppercaseHost = this.RepositoryUrl.Host.ToUpperInvariant();
         if (uppercaseHost.Contains("GITHUB.COM"))
         {
             // The first segment of the URL will contain the user or organization for GitHub
-            var firstSegment = this.packageUrl.Segments[1].Trim('/');
-            return $"{this.packageUrl.Host}/{firstSegment}";
+            var firstSegment = this.RepositoryUrl.Segments[1].Trim('/');
+            return $"{this.RepositoryUrl.Host}/{firstSegment}";
         }
 
         // In the default case of a generic host, the namespace should be the just the host
-        return this.packageUrl.Host;
+        return this.RepositoryUrl.Host;
     }
 }

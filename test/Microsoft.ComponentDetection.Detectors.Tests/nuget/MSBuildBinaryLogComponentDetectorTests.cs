@@ -12,6 +12,8 @@ using System.Threading.Tasks;
 using AwesomeAssertions;
 using Microsoft.Build.Framework;
 using Microsoft.ComponentDetection.Common.DependencyGraph;
+using Microsoft.ComponentDetection.Common.Telemetry;
+using Microsoft.ComponentDetection.Common.Telemetry.Records;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.Internal;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
@@ -156,6 +158,48 @@ public class MSBuildBinaryLogComponentDetectorTests : BaseDetectorTest<MSBuildBi
             .Where(c => c.Component is NuGetComponent)
             .Single(c => ((NuGetComponent)c.Component).Name == "Microsoft.Net.Compilers.Toolset");
         recorder.GetEffectiveDevDependencyValue(download.Component.Id).Should().BeTrue();
+    }
+
+    [TestMethod]
+    [DoNotParallelize]
+    public async Task BinlogParseFailure_WarnsEmitsTelemetryAndFallsBack()
+    {
+        var telemetryServiceMock = new Mock<ITelemetryService>();
+        FailedParsingFileRecord? telemetryRecord = null;
+        telemetryServiceMock
+            .Setup(x => x.PostRecord(It.IsAny<IDetectionTelemetryRecord>()))
+            .Callback<IDetectionTelemetryRecord>(record => telemetryRecord = record as FailedParsingFileRecord);
+        TelemetryRelay.Instance.Init([telemetryServiceMock.Object]);
+
+        try
+        {
+            var loggerMock = new Mock<ILogger<MSBuildBinaryLogComponentDetector>>();
+            var logOutput = new List<string>();
+            loggerMock.CaptureLogOutput(logOutput);
+            var exception = new InvalidOperationException("Invalid binary log");
+
+            var (result, recorder) = await ExecuteWithBinlogAsync(
+                [],
+                SimpleAssetsJson("Newtonsoft.Json", "13.0.1"),
+                loggerMock: loggerMock,
+                binlogException: exception);
+
+            result.ResultCode.Should().Be(ProcessingResultCode.Success);
+            recorder.GetDetectedComponents()
+                .Where(component => component.Component is NuGetComponent)
+                .Select(component => (NuGetComponent)component.Component)
+                .Should().ContainSingle(nuget => nuget.Name == "Newtonsoft.Json");
+            logOutput.Should().Contain(message => message.Contains($"Failed to process binlog file: {BinlogFilePath}"));
+
+            telemetryRecord.Should().NotBeNull();
+            telemetryRecord.DetectorId.Should().Be("MSBuildBinaryLog");
+            telemetryRecord.FilePath.Should().Be(BinlogFilePath);
+            telemetryRecord.ExceptionMessage.Should().Be(exception.Message);
+        }
+        finally
+        {
+            TelemetryRelay.Instance.Init([]);
+        }
     }
 
     // ================================================================
@@ -669,14 +713,23 @@ public class MSBuildBinaryLogComponentDetectorTests : BaseDetectorTest<MSBuildBi
         IReadOnlyList<MSBuildProjectInfo> projectInfos,
         string assetsJson,
         string? binlogPath = null,
-        string? assetsLocation = null)
+        string? assetsLocation = null,
+        Mock<ILogger<MSBuildBinaryLogComponentDetector>>? loggerMock = null,
+        Exception? binlogException = null)
     {
         binlogPath ??= BinlogFilePath;
         assetsLocation ??= AssetsFilePath;
         var binLogProcessorMock = new Mock<IBinLogProcessor>();
-        binLogProcessorMock
-            .Setup(x => x.ExtractProjectInfo(binlogPath, It.IsAny<string?>(), It.IsAny<CancellationToken>()))
-            .Returns(projectInfos);
+        var extractProjectInfoSetup = binLogProcessorMock
+            .Setup(x => x.ExtractProjectInfo(binlogPath, It.IsAny<string?>(), It.IsAny<CancellationToken>()));
+        if (binlogException == null)
+        {
+            extractProjectInfoSetup.Returns(projectInfos);
+        }
+        else
+        {
+            extractProjectInfoSetup.Throws(binlogException);
+        }
 
         var walkerMock = new Mock<IObservableDirectoryWalkerFactory>();
         var streamFactoryMock = new Mock<IComponentStreamEnumerableFactory>();
@@ -687,7 +740,7 @@ public class MSBuildBinaryLogComponentDetectorTests : BaseDetectorTest<MSBuildBi
         var pathUtilityMock = new Mock<IPathUtilityService>();
         pathUtilityMock.Setup(x => x.NormalizePath(It.IsAny<string>())).Returns<string>(p => p);
         pathUtilityMock.Setup(x => x.GetParentDirectory(It.IsAny<string>())).Returns<string>(p => Path.GetDirectoryName(p) ?? string.Empty);
-        var loggerMock = new Mock<ILogger<MSBuildBinaryLogComponentDetector>>();
+        loggerMock ??= new Mock<ILogger<MSBuildBinaryLogComponentDetector>>();
 
         var detector = new MSBuildBinaryLogComponentDetector(
             streamFactoryMock.Object,

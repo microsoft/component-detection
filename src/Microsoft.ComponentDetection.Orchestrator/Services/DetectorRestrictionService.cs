@@ -9,8 +9,15 @@ using Microsoft.Extensions.Logging;
 
 internal class DetectorRestrictionService : IDetectorRestrictionService
 {
-    private readonly IList<string> oldDetectorIds = ["MSLicenseDevNpm", "MSLicenseDevNpmList", "MSLicenseNpm", "MSLicenseNpmList"];
-    private readonly string newDetectorId = "NpmWithRoots";
+    private static readonly IReadOnlyDictionary<string, string> DetectorReplacements = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+    {
+        ["MSLicenseDevNpm"] = "NpmWithRoots",
+        ["MSLicenseDevNpmList"] = "NpmWithRoots",
+        ["MSLicenseNpm"] = "NpmWithRoots",
+        ["MSLicenseNpmList"] = "NpmWithRoots",
+        ["DotNet"] = "MSBuildBinaryLog",
+        ["NuGetProjectCentric"] = "MSBuildBinaryLog",
+    };
 
     private readonly ILogger<DetectorRestrictionService> logger;
 
@@ -25,14 +32,18 @@ internal class DetectorRestrictionService : IDetectorRestrictionService
         // If someone specifies an "allow list", use it, otherwise assume everything is allowed
         if (restrictions.AllowedDetectorIds != null && restrictions.AllowedDetectorIds.Any())
         {
-            var allowedIds = restrictions.AllowedDetectorIds;
-
-            // If we have retired detectors in the arg specified list and don't have the new detector, add the new detector
-            if (allowedIds.Any(a => this.oldDetectorIds.Contains(a, StringComparer.OrdinalIgnoreCase)) && !allowedIds.Contains(this.newDetectorId, StringComparer.OrdinalIgnoreCase))
+            var allowedIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            foreach (var requestedId in restrictions.AllowedDetectorIds.Distinct(StringComparer.OrdinalIgnoreCase))
             {
-                allowedIds = allowedIds.Concat([
-                    this.newDetectorId,
-                ]);
+                if (DetectorReplacements.TryGetValue(requestedId, out var replacementId))
+                {
+                    allowedIds.Add(replacementId);
+                    this.logger.LogWarning("The detector '{OldId}' has been phased out, we will run the '{NewId}' detector which replaced its functionality.", requestedId, replacementId);
+                }
+                else
+                {
+                    allowedIds.Add(requestedId);
+                }
             }
 
             detectors = detectors.Where(d => allowedIds.Contains(d.Id, StringComparer.OrdinalIgnoreCase)).ToList();
@@ -41,14 +52,7 @@ internal class DetectorRestrictionService : IDetectorRestrictionService
             {
                 if (!detectors.Select(d => d.Id).Contains(id, StringComparer.OrdinalIgnoreCase))
                 {
-                    if (!this.oldDetectorIds.Contains(id, StringComparer.OrdinalIgnoreCase))
-                    {
-                        throw new InvalidDetectorFilterException($"Detector '{id}' was not found");
-                    }
-                    else
-                    {
-                        this.logger.LogWarning("The detector '{OldId}' has been phased out, we will run the '{NewId}' detector which replaced its functionality.", id, this.newDetectorId);
-                    }
+                    throw new InvalidDetectorFilterException($"Detector '{id}' was not found");
                 }
             }
         }

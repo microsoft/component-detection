@@ -12,12 +12,12 @@ using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.Extensions.Logging;
 
-// LockFileUtilities also includes self-contained detection helpers shared by
-// DotNetComponentDetector and MSBuildBinaryLogComponentDetector.
+// LockFileUtilities also includes self-contained detection helpers used by
+// MSBuildBinaryLogComponentDetector.
 
 /// <summary>
 /// Shared utility methods for processing NuGet lock files (project.assets.json).
-/// Used by both NuGetProjectModelProjectCentricComponentDetector and MSBuildBinaryLogComponentDetector.
+/// Used by MSBuildBinaryLogComponentDetector for enhanced and fallback processing.
 /// </summary>
 internal static class LockFileUtilities
 {

@@ -42,7 +42,7 @@ Component Detection supports detecting libraries from the following ecosystems:
 | [Conda (Python)](docs/detectors/conda.md)                                        | ✔                                               | ✔              |
 | [Docker Compose](docs/detectors/dockercompose.md)                                | ✔                                               | ❌              |
 | [Dockerfile](docs/detectors/dockerfile.md)                                       | ✔                                               | ❌              |
-| [DotNet SDK](docs/detectors/dotnet.md)                                           | ✔                                               | ❌              |
+| [DotNet SDK](docs/detectors/nuget.md#msbuildbinarylog)                            | ✔                                               | ❌              |
 | [Go](docs/detectors/go.md)                                                       | ✔                                               | ✔ (with Go 1.11+) |
 | [Gradle (lockfiles only)](docs/detectors/gradle.md)                              | ✔                                               | ❌              |
 | [Helm](docs/detectors/helm.md)                                                   | ✔                                               | ❌              |

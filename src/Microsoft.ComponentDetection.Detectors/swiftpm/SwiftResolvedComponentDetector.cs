@@ -15,7 +15,7 @@ using Microsoft.Extensions.Logging;
 /// <summary>
 /// Detects Swift Package Manager components.
 /// </summary>
-public class SwiftResolvedComponentDetector : FileComponentDetector, IDefaultOffComponentDetector
+public class SwiftResolvedComponentDetector : FileComponentDetector, IExperimentalDetector
 {
     // We are only interested in packages coming from remote sources such as git
     // The Package Kind is not an enum because the Swift Package Manager contract does not specify the possible values.
@@ -39,7 +39,7 @@ public class SwiftResolvedComponentDetector : FileComponentDetector, IDefaultOff
 
     public override IEnumerable<ComponentType> SupportedComponentTypes => [ComponentType.Swift];
 
-    public override int Version => 1;
+    public override int Version => 2;
 
     protected override Task OnFileFoundAsync(
         ProcessRequest processRequest,
@@ -74,25 +74,22 @@ public class SwiftResolvedComponentDetector : FileComponentDetector, IDefaultOff
             {
                 if (package.Kind == TargetSwiftPackageKind)
                 {
+                    ArgumentException.ThrowIfNullOrWhiteSpace(package.Identity);
+
                     // The version of the package is not always available.
                     var version = package.State.Version ?? package.State.Branch ?? package.State.Revision;
 
-                    var detectedSwiftComponent = new SwiftComponent(
+                    var detectedComponent = new SwiftComponent(
                         name: package.Identity,
                         version: version,
-                        packageUrl: package.Location,
-                        hash: package.State.Revision);
-                    var newDetectedSwiftComponent = new DetectedComponent(component: detectedSwiftComponent);
-                    singleFileComponentRecorder.RegisterUsage(newDetectedSwiftComponent);
-
-                    // We also register a Git component for the same package so that the git URL is registered.
-                    // Swift Package Manager directly downloads the package from the git URL.
-                    var detectedGitComponent = new GitComponent(
-                        repositoryUrl: new Uri(package.Location),
-                        commitHash: package.State.Revision,
-                        tag: version);
-                    var newDetectedGitComponent = new DetectedComponent(component: detectedGitComponent);
-                    singleFileComponentRecorder.RegisterUsage(newDetectedGitComponent);
+                        repositoryUrl: package.Location,
+                        hash: package.State.Revision,
+                        kind: package.Kind);
+                    singleFileComponentRecorder.RegisterUsage(new DetectedComponent(component: detectedComponent));
+                }
+                else
+                {
+                    this.Logger.LogWarning("Unsupported package kind: {Kind}", package.Kind);
                 }
             }
             catch (Exception exception)
