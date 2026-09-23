@@ -186,4 +186,60 @@ packages:
         // Absolute path:
         pnpmParsingUtilities.ReconstructPnpmDependencyPath("events_pkg", "/events@3.3.0").Should().BeEquivalentTo("/events@3.3.0");
     }
+
+    [TestMethod]
+    public void DeserializePnpmYamlFileVersion_MultiDocument_ConsistentVersions_ReturnsVersion()
+    {
+        var yamlFile = @"
+---
+lockfileVersion: '9.0'
+---
+lockfileVersion: '9.0'
+";
+        var version = PnpmParsingUtilitiesFactory.DeserializePnpmYamlFileVersion(yamlFile);
+        version.Should().Be("9.0");
+    }
+
+    [TestMethod]
+    public void DeserializePnpmYamlFileVersion_MultiDocument_InconsistentVersions_ThrowsInvalidOperationException()
+    {
+        var yamlFile = @"
+---
+lockfileVersion: '9.0'
+---
+lockfileVersion: '6.0'
+";
+        var action = () => PnpmParsingUtilitiesFactory.DeserializePnpmYamlFileVersion(yamlFile);
+        action.Should().Throw<InvalidOperationException>()
+            .WithMessage("*Inconsistent lockfile versions*");
+    }
+
+    [TestMethod]
+    public void DeserializePnpmYamlFileDocuments_ReturnsAllDocuments()
+    {
+        var yamlFile = @"
+---
+lockfileVersion: '9.0'
+importers:
+  .:
+    packageManagerDependencies:
+      pnpm:
+        specifier: 12.3.4
+        version: 12.3.4
+---
+lockfileVersion: '9.0'
+importers:
+  .:
+    dependencies:
+      fast-uri:
+        specifier: 3.1.7
+        version: 3.1.7
+";
+        var pnpmParsingUtilities = PnpmParsingUtilitiesFactory.Create<PnpmYamlV9>();
+        var documents = pnpmParsingUtilities.DeserializePnpmYamlFileDocuments(yamlFile);
+
+        documents.Should().HaveCount(2);
+        documents[0].Importers["."].PackageManagerDependencies.Should().ContainKey("pnpm");
+        documents[1].Importers["."].Dependencies.Should().ContainKey("fast-uri");
+    }
 }
