@@ -116,7 +116,7 @@ public static class CondaDependencyResolver
 
     /// <summary>
     /// Converts a CondaPackage to a TypedComponent.
-    /// If the condapackage is a python package it will be converted to a
+    /// If the package has a manager of "pip" it will be converted to a
     /// PipComponent. Otherwise it will be converted to a CondaComponent.
     ///
     /// Conda package metadata is populated from the lock entry and, for older
