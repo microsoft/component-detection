@@ -139,7 +139,7 @@ public class RustSbomDetector : FileComponentDetector
     public override IEnumerable<ComponentType> SupportedComponentTypes => [ComponentType.Cargo];
 
     /// <inheritdoc />
-    public override int Version => 2;
+    public override int Version => 3;
 
     /// <inheritdoc />
     public override IList<string> SearchPatterns { get; } = [CargoTomlFileName, CargoLockFileName, "*.cargo-sbom.json"];
