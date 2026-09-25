@@ -706,6 +706,11 @@ dotnet_diagnostic.IDE0240.severity = suggestion
 # IDE0241: Nullable directive is unnecessary
 dotnet_diagnostic.IDE0241.severity = suggestion
 
+# CA1515: Make class internal
+# Prevents unnecessary public types from accumulating.
+# Requires .NET 9+ SDK to enforce.
+dotnet_diagnostic.CA1515.severity = warning
+
 # Workaround for https://github.com/dotnet/roslyn-analyzers/issues/5628
 [Program.cs]
 dotnet_diagnostic.ca1812.severity = none
