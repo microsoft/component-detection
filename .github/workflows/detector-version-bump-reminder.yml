@@ -9,6 +9,8 @@ permissions:
 
 jobs:
   comment:
+    # Fork pushes cannot find PRs opened against the upstream repository.
+    if: github.event.repository.fork == false
     runs-on: ubuntu-latest
     steps:
       - name: Harden Runner
