@@ -133,7 +133,7 @@ public class RustSbomDetector : FileComponentDetector
     public override string Id => "RustSbom";
 
     /// <inheritdoc />
-    public override IEnumerable<string> Categories { get; } = ["Rust"];
+    public override IEnumerable<string> Categories { get; } = [Enum.GetName(DetectorClass.Cargo)];
 
     /// <inheritdoc />
     public override IEnumerable<ComponentType> SupportedComponentTypes => [ComponentType.Cargo];
