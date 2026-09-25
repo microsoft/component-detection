@@ -317,6 +317,106 @@ public class RustCargoLockParserTests
     }
 
     [TestMethod]
+    public async Task GitDependencyWithCommitFragment_ResolvesRegistryAndGitPackages()
+    {
+        var gitSource = "git+https://github.com/dtolnay/itoa?tag=1.0.17";
+        var toml = $"""
+                    version = 4
+
+                    [[package]]
+                    name = "cargo-source-repro"
+                    version = "0.1.0"
+                    dependencies = [
+                        "itoa 1.0.17 ({CratesIo})",
+                        "itoa 1.0.17 ({gitSource})",
+                    ]
+
+                    [[package]]
+                    name = "itoa"
+                    version = "1.0.17"
+                    source = "{CratesIo}"
+                    checksum = "92ecc6618181def0457392ccd0ee51198e065e016d1d527a7ac1b6dc7c1f09d2"
+
+                    [[package]]
+                    name = "itoa"
+                    version = "1.0.17"
+                    source = "{gitSource}#21d610902fb79eb16b7c155d25574fb7376d9e97"
+                    """;
+
+        var recorder = new Mock<ISingleFileComponentRecorder>(MockBehavior.Loose);
+        var version = await this.parser.ParseAsync(MakeStream("Cargo.lock", toml), recorder.Object);
+
+        version.Should().Be(4);
+        var (usages, explicitRoots, edges, failures) = Analyze(recorder);
+        usages.Should().Be(4);
+        explicitRoots.Should().Be(2);
+        edges.Should().Be(0);
+        failures.Should().Be(0);
+    }
+
+    [TestMethod]
+    public async Task RemoteParentDependsOnGitChildWithCommitFragment_RecordsEdge()
+    {
+        var gitSource = "git+https://github.com/dtolnay/itoa?tag=1.0.17";
+        var toml = $"""
+                    version = 4
+
+                    [[package]]
+                    name = "parent"
+                    version = "0.1.0"
+                    source = "git+https://github.com/example/parent?branch=main#0123456789abcdef0123456789abcdef01234567"
+                    dependencies = [
+                        "itoa 1.0.17 ({gitSource})",
+                    ]
+
+                    [[package]]
+                    name = "itoa"
+                    version = "1.0.17"
+                    source = "{CratesIo}"
+
+                    [[package]]
+                    name = "itoa"
+                    version = "1.0.17"
+                    source = "{gitSource}#21d610902fb79eb16b7c155d25574fb7376d9e97"
+                    """;
+
+        var recorder = new Mock<ISingleFileComponentRecorder>(MockBehavior.Loose);
+        await this.parser.ParseAsync(MakeStream("Cargo.lock", toml), recorder.Object);
+
+        var (usages, explicitRoots, edges, failures) = Analyze(recorder);
+        usages.Should().Be(6);
+        explicitRoots.Should().Be(2);
+        edges.Should().Be(1);
+        failures.Should().Be(0);
+    }
+
+    [TestMethod]
+    public async Task GitDependencyWithDifferentRef_ParseFailure()
+    {
+        var toml = """
+                   [[package]]
+                   name = "root"
+                   version = "0.1.0"
+                   dependencies = [
+                       "child 1.0.0 (git+https://github.com/example/child?branch=main)",
+                   ]
+
+                   [[package]]
+                   name = "child"
+                   version = "1.0.0"
+                   source = "git+https://github.com/example/child?branch=main-v2#0123456789abcdef0123456789abcdef01234567"
+                   """;
+
+        var recorder = new Mock<ISingleFileComponentRecorder>(MockBehavior.Loose);
+        await this.parser.ParseAsync(MakeStream("Cargo.lock", toml), recorder.Object);
+
+        var (_, explicitRoots, edges, failures) = Analyze(recorder);
+        explicitRoots.Should().Be(1);
+        edges.Should().Be(0);
+        failures.Should().Be(1);
+    }
+
+    [TestMethod]
     public async Task MalformedDependencyString_ParseFailure()
     {
         var toml = $"""

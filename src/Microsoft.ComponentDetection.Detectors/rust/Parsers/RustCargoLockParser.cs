@@ -40,6 +40,14 @@ internal class RustCargoLockParser : IRustCargoLockParser
 
     private static bool IsLocalPackage(CargoPackage package) => package.Source == null;
 
+    private static bool SourceMatches(string dependencySource, string packageSource)
+    {
+        // Cargo includes the commit in Git package sources but omits it in dependency references.
+        return string.Equals(dependencySource, packageSource, StringComparison.Ordinal) ||
+               (dependencySource.StartsWith("git+", StringComparison.Ordinal) &&
+                packageSource?.StartsWith(dependencySource + "#", StringComparison.Ordinal) == true);
+    }
+
     /// <summary>
     /// Parses a Cargo.lock file and records components.
     /// </summary>
@@ -185,7 +193,7 @@ internal class RustCargoLockParser : IRustCargoLockParser
                     continue;
                 }
 
-                if (childSource != null && candidatePackage.Source != childSource)
+                if (childSource != null && !SourceMatches(childSource, candidatePackage.Source))
                 {
                     // This does not have the requested source
                     continue;
