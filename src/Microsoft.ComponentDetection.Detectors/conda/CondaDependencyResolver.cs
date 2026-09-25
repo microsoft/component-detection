@@ -126,7 +126,7 @@ public static class CondaDependencyResolver
     /// <returns>The TypedComponent.</returns>
     private static TypedComponent CreateComponent(CondaPackage package)
     {
-        if (IsPythonPackage(package))
+        if (package.Manager is "pip")
         {
             var pipComponent = new PipComponent(package.Name, package.Version);
             if (Uri.TryCreate(package.Url, UriKind.Absolute, out var downloadUrl))
@@ -202,16 +202,4 @@ public static class CondaDependencyResolver
             Uri.UnescapeDataString(segments[^2]),
             Uri.UnescapeDataString(segments[^1]));
     }
-
-    /// <summary>
-    /// Checks if a package is a python package.
-    ///
-    /// If the package is either managed by pip, or if it depends on python
-    /// it is considered a python package.
-    /// </summary>
-    /// <param name="package">The CondaPackage.</param>
-    /// <returns>True if the package is a python package.</returns>
-    private static bool IsPythonPackage(CondaPackage package)
-        => package.Manager?.Equals("pip", StringComparison.OrdinalIgnoreCase) == true ||
-           package.Dependencies?.Keys.Any(dependency => dependency.Equals("python", StringComparison.OrdinalIgnoreCase)) == true;
 }
