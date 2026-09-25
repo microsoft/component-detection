@@ -30,7 +30,7 @@ public class CondaLockComponentDetector : FileComponentDetector, IExperimentalDe
 
     public override IEnumerable<ComponentType> SupportedComponentTypes => [ComponentType.Conda, ComponentType.Pip];
 
-    public override int Version { get; } = 3;
+    public override int Version { get; } = 4;
 
     public override IEnumerable<string> Categories => ["Python"];
 

@@ -68,6 +68,7 @@ package:
   build: pyhd8ed1ab_0
   dependencies:
     urllib3: '>=1.26.5,<2.0'
+    python: '>=3.'
   url: https://conda.anaconda.org/conda-forge/noarch/conda-lock-2.1.0-pyhd8ed1ab_0.conda
   hash:
     md5: 1e07afcf3d3e371fc3a3681fe9b78e90
@@ -337,7 +338,7 @@ package:
         var detectedComponents = componentRecorder.GetDetectedComponents();
         var dependencyGraph = componentRecorder.GetDependencyGraphsByLocation().Values.First();
         var pythonId = detectedComponents.Single(component => component.Component is CondaComponent { Name: "python" }).Component.Id;
-        var pipId = detectedComponents.Single(component => component.Component is PipComponent { Name: "pip" }).Component.Id;
+        var pipId = detectedComponents.Single(component => component.Component is CondaComponent { Name: "pip" }).Component.Id;
 
         scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
         detectedComponents.Should().HaveCount(2);
