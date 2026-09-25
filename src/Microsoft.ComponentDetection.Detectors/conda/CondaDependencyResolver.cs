@@ -126,7 +126,7 @@ public static class CondaDependencyResolver
     /// <returns>The TypedComponent.</returns>
     private static TypedComponent CreateComponent(CondaPackage package)
     {
-        if (package.Manager is "pip")
+        if (package.Manager?.Equals("pip", StringComparison.OrdinalIgnoreCase) is true)
         {
             var pipComponent = new PipComponent(package.Name, package.Version);
             if (Uri.TryCreate(package.Url, UriKind.Absolute, out var downloadUrl))
