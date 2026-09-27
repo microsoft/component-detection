@@ -2,24 +2,35 @@ namespace Microsoft.ComponentDetection.Detectors.Uv;
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Text.Json.Serialization;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 
 internal class UvPackage
 {
-    public required string Name { get; init; }
+    [JsonPropertyName("name")]
+    public string Name { get; set; } = string.Empty;
 
-    public required string Version { get; init; }
+    [JsonPropertyName("version")]
+    public string Version { get; set; } = string.Empty;
 
+    [JsonPropertyName("dependencies")]
     public List<UvDependency> Dependencies { get; set; } = [];
 
-    // Metadata dependencies (requires-dist)
-    public List<UvDependency> MetadataRequiresDist { get; set; } = [];
+    [JsonPropertyName("metadata")]
+    public UvMetadata? Metadata { get; set; }
 
-    // Metadata dev dependencies (requires-dev)
-    public List<UvDependency> MetadataRequiresDev { get; set; } = [];
-
-    // Source property for uv.lock
+    [JsonPropertyName("source")]
     public UvSource? Source { get; set; }
+
+    [JsonIgnore]
+    public List<UvDependency> MetadataRequiresDist => this.Metadata?.RequiresDist ?? [];
+
+    [JsonIgnore]
+    public List<UvDependency> MetadataRequiresDev => this.Metadata?.RequiresDev?.Values
+        .Where(group => group != null)
+        .SelectMany(group => group!)
+        .ToList() ?? [];
 
     public TypedComponent ToTypedComponent()
     {
@@ -30,6 +41,15 @@ internal class UvPackage
         }
 
         return new PipComponent(this.Name, this.Version);
+    }
+
+    public void Normalize()
+    {
+        this.Dependencies = this.Dependencies
+            .Where(d => !string.IsNullOrWhiteSpace(d.Name))
+            .ToList();
+
+        this.Metadata?.Normalize();
     }
 
     private static (Uri RepositoryUrl, string CommitHash) ParseGitUrl(string gitUrl)
