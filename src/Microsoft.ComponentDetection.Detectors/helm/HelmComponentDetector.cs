@@ -15,7 +15,7 @@ using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.Extensions.Logging;
 using YamlDotNet.RepresentationModel;
 
-public class HelmComponentDetector : FileComponentDetector, IExperimentalDetector
+public class HelmComponentDetector : FileComponentDetector
 {
     /// <summary>
     /// Maximum size (in bytes) of a values file the detector will parse. The "*values*" globs
