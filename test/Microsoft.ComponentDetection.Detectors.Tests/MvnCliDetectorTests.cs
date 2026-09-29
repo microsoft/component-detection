@@ -100,13 +100,15 @@ public class MvnCliDetectorTests : BaseDetectorTest<MvnCliComponentDetector>
     <version>1.0.0</version>
     <properties>
         <spark.group>org.apache.spark</spark.group>
+        <artifact.prefix>spark</artifact.prefix>
+        <artifact.name>${artifact.prefix}-core</artifact.name>
         <scala.version.major>2.12</scala.version.major>
         <spark.version>3.4.1</spark.version>
     </properties>
     <dependencies>
         <dependency>
             <groupId>${spark.group}</groupId>
-            <artifactId>spark-core_${scala.version.major}</artifactId>
+            <artifactId>${artifact.name}_${scala.version.major}</artifactId>
             <version>${spark.version}</version>
         </dependency>
     </dependencies>
@@ -144,6 +146,39 @@ public class MvnCliDetectorTests : BaseDetectorTest<MvnCliComponentDetector>
         <dependency>
             <groupId>org.apache.spark</groupId>
             <artifactId>spark-core_${scala.version.major}</artifactId>
+            <version>3.4.1</version>
+        </dependency>
+    </dependencies>
+</project>";
+
+        var (detectorResult, componentRecorder) = await this.DetectorTestUtility
+            .WithFile("pom.xml", pomXmlContent)
+            .ExecuteDetectorAsync();
+
+        detectorResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+        componentRecorder.GetDetectedComponents().Should().BeEmpty();
+    }
+
+    [TestMethod]
+    public async Task StaticParser_SkipsComponentWithCyclicCoordinateProperties_Async()
+    {
+        this.mavenCommandServiceMock.Setup(x => x.MavenCLIExistsAsync())
+            .ReturnsAsync(false);
+
+        var pomXmlContent = @"<?xml version=""1.0"" encoding=""UTF-8""?>
+<project xmlns=""http://maven.apache.org/POM/4.0.0"">
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>com.test</groupId>
+    <artifactId>my-app</artifactId>
+    <version>1.0.0</version>
+    <properties>
+        <artifact.name>${artifact.alias}</artifact.name>
+        <artifact.alias>${artifact.name}</artifact.alias>
+    </properties>
+    <dependencies>
+        <dependency>
+            <groupId>org.apache.spark</groupId>
+            <artifactId>${artifact.name}</artifactId>
             <version>3.4.1</version>
         </dependency>
     </dependencies>
@@ -527,6 +562,7 @@ public class MvnCliDetectorTests : BaseDetectorTest<MvnCliComponentDetector>
     <properties>
         <commons.version>3.12.0</commons.version>
         <scala.version.major>2.12</scala.version.major>
+        <scala.binary.version>${scala.version.major}</scala.binary.version>
     </properties>
 </project>";
 
@@ -542,7 +578,7 @@ public class MvnCliDetectorTests : BaseDetectorTest<MvnCliComponentDetector>
     <dependencies>
         <dependency>
             <groupId>org.apache.commons</groupId>
-            <artifactId>commons-lang3_${scala.version.major}</artifactId>
+            <artifactId>commons-lang3_${scala.binary.version}</artifactId>
             <version>${commons.version}</version>
         </dependency>
     </dependencies>

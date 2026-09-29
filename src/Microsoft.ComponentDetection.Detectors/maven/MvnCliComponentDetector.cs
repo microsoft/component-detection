@@ -228,6 +228,58 @@ public class MvnCliComponentDetector : FileComponentDetector
         return $"{uri.Scheme}://{uri.Host}{port}";
     }
 
+    private static string ResolveProperties(
+        string template,
+        Func<string, string> resolveProperty)
+    {
+        var resolvedProperties = new Dictionary<string, string>(StringComparer.Ordinal);
+        var activeProperties = new HashSet<string>(StringComparer.Ordinal);
+
+        string ResolveTemplate(string value) =>
+            PropertyReferenceRegex.Replace(
+                value,
+                match =>
+            {
+                var variable = match.Groups[1].Value;
+                if (resolvedProperties.TryGetValue(variable, out var resolvedProperty))
+                {
+                    return resolvedProperty;
+                }
+
+                if (!activeProperties.Add(variable))
+                {
+                    return match.Value;
+                }
+
+                var propertyValue = resolveProperty(variable);
+                if (propertyValue == null)
+                {
+                    activeProperties.Remove(variable);
+                    return match.Value;
+                }
+
+                resolvedProperty = ResolveTemplate(propertyValue);
+                activeProperties.Remove(variable);
+                resolvedProperties[variable] = resolvedProperty;
+                return resolvedProperty;
+            });
+
+        return ResolveTemplate(template);
+    }
+
+    private static string ResolvePropertiesFromLocalOnly(
+        string template,
+        Dictionary<string, string> localVariables)
+    {
+        return ResolveProperties(
+            template,
+            variable => localVariables.TryGetValue(variable, out var localReplacement)
+                ? localReplacement
+                : null);
+    }
+
+    private static bool ContainsPropertyReference(string value) => PropertyReferenceRegex.IsMatch(value);
+
     private void LogDebugWithId(string message) =>
         this.Logger.LogDebug("{DetectorId}: {Message}", this.Id, message);
 
@@ -985,29 +1037,6 @@ public class MvnCliComponentDetector : FileComponentDetector
         }
     }
 
-    /// <summary>
-    /// Resolves a coordinate template using only local variables from the current file.
-    /// This ensures immediate resolution only when the variable is defined in the same file (highest priority).
-    /// </summary>
-    /// <param name="template">The coordinate template with variables (e.g., "spark-core_${scala.version.major}").</param>
-    /// <param name="localVariables">Local variables from the current file.</param>
-    /// <returns>The template with all locally defined properties resolved.</returns>
-    private static string ResolvePropertiesFromLocalOnly(string template, Dictionary<string, string> localVariables)
-    {
-        return PropertyReferenceRegex.Replace(
-            template,
-            match =>
-        {
-            var variable = match.Groups[1].Value;
-
-            return localVariables.TryGetValue(variable, out var localReplacement)
-                ? localReplacement
-                : match.Value;
-        });
-    }
-
-    private static bool ContainsPropertyReference(string value) => PropertyReferenceRegex.IsMatch(value);
-
     private IEnumerable<string> ExtractFailedEndpoints(string errorMessage)
     {
         if (string.IsNullOrWhiteSpace(errorMessage))
@@ -1199,25 +1228,29 @@ public class MvnCliComponentDetector : FileComponentDetector
     /// <returns>The template with all hierarchy-defined properties resolved.</returns>
     private string ResolvePropertiesWithHierarchyAwareness(string template, string requestingFilePath)
     {
-        return PropertyReferenceRegex.Replace(
+        var unresolvedVariables = new HashSet<string>(StringComparer.Ordinal);
+
+        return ResolveProperties(
             template,
-            match =>
+            variable =>
         {
-            var variable = match.Groups[1].Value;
             var foundValue = this.FindVariableInMavenHierarchy(variable, requestingFilePath);
             if (foundValue != null)
             {
                 return foundValue.Value.Value;
             }
 
-            Interlocked.Increment(ref this.unresolvedVariableCount);
-            this.Logger.LogDebug(
-                "{DetectorId}: Variable {Variable} not found in Maven hierarchy for {File}",
-                this.Id,
-                variable,
-                Path.GetFileName(requestingFilePath));
+            if (unresolvedVariables.Add(variable))
+            {
+                Interlocked.Increment(ref this.unresolvedVariableCount);
+                this.Logger.LogDebug(
+                    "{DetectorId}: Variable {Variable} not found in Maven hierarchy for {File}",
+                    this.Id,
+                    variable,
+                    Path.GetFileName(requestingFilePath));
+            }
 
-            return match.Value;
+            return null;
         });
     }
 
