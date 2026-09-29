@@ -80,9 +80,10 @@ public class MvnCliComponentDetector : FileComponentDetector
     private const string GroupIdSelector = "groupId";
     private const string ArtifactIdSelector = "artifactId";
     private const string VersionSelector = "version";
+    private const int MaxPropertyExpansionDepth = 100;
 
-    private static readonly Regex VersionRegex = new(
-        @"^\$\{(.*)\}$",
+    private static readonly Regex PropertyReferenceRegex = new(
+        @"\$\{([^{}]+)\}",
         RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
     // Auth error patterns to detect in Maven error output
@@ -162,7 +163,7 @@ public class MvnCliComponentDetector : FileComponentDetector
 
     public override IEnumerable<ComponentType> SupportedComponentTypes => [ComponentType.Maven];
 
-    public override int Version => 5;
+    public override int Version => 6;
 
     public override IEnumerable<string> Categories => [Enum.GetName(typeof(DetectorClass), DetectorClass.Maven)];
 
@@ -227,6 +228,60 @@ public class MvnCliComponentDetector : FileComponentDetector
         var port = uri.IsDefaultPort ? string.Empty : $":{uri.Port}";
         return $"{uri.Scheme}://{uri.Host}{port}";
     }
+
+    private static string ResolveProperties(
+        string template,
+        Func<string, string> resolveProperty)
+    {
+        var resolvedProperties = new Dictionary<string, string>(StringComparer.Ordinal);
+        var activeProperties = new HashSet<string>(StringComparer.Ordinal);
+
+        string ResolveTemplate(string value, int depth) =>
+            depth >= MaxPropertyExpansionDepth
+                ? value
+                : PropertyReferenceRegex.Replace(
+                value,
+                match =>
+            {
+                var variable = match.Groups[1].Value;
+                if (resolvedProperties.TryGetValue(variable, out var resolvedProperty))
+                {
+                    return resolvedProperty;
+                }
+
+                if (!activeProperties.Add(variable))
+                {
+                    return match.Value;
+                }
+
+                var propertyValue = resolveProperty(variable);
+                if (propertyValue == null)
+                {
+                    activeProperties.Remove(variable);
+                    return match.Value;
+                }
+
+                resolvedProperty = ResolveTemplate(propertyValue, depth + 1);
+                activeProperties.Remove(variable);
+                resolvedProperties[variable] = resolvedProperty;
+                return resolvedProperty;
+            });
+
+        return ResolveTemplate(template, 0);
+    }
+
+    private static string ResolvePropertiesFromLocalOnly(
+        string template,
+        Dictionary<string, string> localVariables)
+    {
+        return ResolveProperties(
+            template,
+            variable => localVariables.TryGetValue(variable, out var localReplacement)
+                ? localReplacement
+                : null);
+    }
+
+    private static bool ContainsPropertyReference(string value) => value.Contains("${", StringComparison.Ordinal);
 
     private void LogDebugWithId(string message) =>
         this.Logger.LogDebug("{DetectorId}: {Message}", this.Id, message);
@@ -705,39 +760,27 @@ public class MvnCliComponentDetector : FileComponentDetector
                 if (version != null && !version.InnerText.Contains(','))
                 {
                     var versionRef = version.InnerText.Trim('[', ']');
+                    var resolvedGroupId = ResolvePropertiesFromLocalOnly(groupId, localVariables);
+                    var resolvedArtifactId = ResolvePropertiesFromLocalOnly(artifactId, localVariables);
+                    var resolvedVersion = ResolvePropertiesFromLocalOnly(versionRef, localVariables);
 
-                    if (versionRef.StartsWith("${"))
+                    if (!ContainsPropertyReference(resolvedGroupId)
+                        && !ContainsPropertyReference(resolvedArtifactId)
+                        && !ContainsPropertyReference(resolvedVersion))
                     {
-                        // Only resolve immediately if local variable exists (highest priority)
-                        // Otherwise, defer to second pass to ensure proper hierarchy-aware resolution
-                        var resolvedVersion = this.ResolveVersionFromLocalOnly(versionRef, localVariables);
-                        if (!resolvedVersion.StartsWith("${"))
-                        {
-                            // Local variable found - resolve immediately (highest priority)
-                            var component = new MavenComponent(groupId, artifactId, resolvedVersion);
-                            var detectedComponent = new DetectedComponent(component);
-                            singleFileComponentRecorder.RegisterUsage(detectedComponent);
-                            Interlocked.Increment(ref this.staticParserComponentCount);
-                        }
-                        else
-                        {
-                            // No local variable - defer to second pass for hierarchy-aware resolution
-                            // This ensures we consider all variable definitions before resolving
-                            this.pendingComponents.Enqueue(new PendingComponent(
-                                groupId,
-                                artifactId,
-                                versionRef,
-                                singleFileComponentRecorder,
-                                filePath));
-                        }
-                    }
-                    else
-                    {
-                        // Direct version - register immediately
-                        var component = new MavenComponent(groupId, artifactId, versionRef);
+                        var component = new MavenComponent(resolvedGroupId, resolvedArtifactId, resolvedVersion);
                         var detectedComponent = new DetectedComponent(component);
                         singleFileComponentRecorder.RegisterUsage(detectedComponent);
                         Interlocked.Increment(ref this.staticParserComponentCount);
+                    }
+                    else
+                    {
+                        this.pendingComponents.Enqueue(new PendingComponent(
+                            groupId,
+                            artifactId,
+                            versionRef,
+                            singleFileComponentRecorder,
+                            filePath));
                     }
                 }
                 else
@@ -997,32 +1040,6 @@ public class MvnCliComponentDetector : FileComponentDetector
         }
     }
 
-    /// <summary>
-    /// Resolves a version template using only local variables from the current file.
-    /// This ensures immediate resolution only when the variable is defined in the same file (highest priority).
-    /// </summary>
-    /// <param name="versionTemplate">The version template with variables (e.g., "${revision}").</param>
-    /// <param name="localVariables">Local variables from the current file.</param>
-    /// <returns>The resolved version string, or the original template if local variable not found.</returns>
-    private string ResolveVersionFromLocalOnly(string versionTemplate, Dictionary<string, string> localVariables)
-    {
-        var resolvedVersion = versionTemplate;
-        var match = VersionRegex.Match(versionTemplate);
-
-        if (match.Success)
-        {
-            var variable = match.Groups[1].Captures[0].ToString();
-
-            // Only check local variables (same file priority)
-            if (localVariables.TryGetValue(variable, out var localReplacement))
-            {
-                resolvedVersion = versionTemplate.Replace("${" + variable + "}", localReplacement);
-            }
-        }
-
-        return resolvedVersion;
-    }
-
     private IEnumerable<string> ExtractFailedEndpoints(string errorMessage)
     {
         if (string.IsNullOrWhiteSpace(errorMessage))
@@ -1158,10 +1175,21 @@ public class MvnCliComponentDetector : FileComponentDetector
         {
             try
             {
-                var resolvedVersion = this.ResolveVersionWithHierarchyAwareness(pendingComponent.VersionTemplate, pendingComponent.FilePath);
-                if (!resolvedVersion.StartsWith("${"))
+                var resolvedGroupId = this.ResolvePropertiesWithHierarchyAwareness(
+                    pendingComponent.GroupIdTemplate,
+                    pendingComponent.FilePath);
+                var resolvedArtifactId = this.ResolvePropertiesWithHierarchyAwareness(
+                    pendingComponent.ArtifactIdTemplate,
+                    pendingComponent.FilePath);
+                var resolvedVersion = this.ResolvePropertiesWithHierarchyAwareness(
+                    pendingComponent.VersionTemplate,
+                    pendingComponent.FilePath);
+
+                if (!ContainsPropertyReference(resolvedGroupId)
+                    && !ContainsPropertyReference(resolvedArtifactId)
+                    && !ContainsPropertyReference(resolvedVersion))
                 {
-                    var component = new MavenComponent(pendingComponent.GroupId, pendingComponent.ArtifactId, resolvedVersion);
+                    var component = new MavenComponent(resolvedGroupId, resolvedArtifactId, resolvedVersion);
                     var detectedComponent = new DetectedComponent(component);
                     pendingComponent.Recorder.RegisterUsage(detectedComponent);
                     Interlocked.Increment(ref this.staticParserComponentCount);
@@ -1171,10 +1199,10 @@ public class MvnCliComponentDetector : FileComponentDetector
                 {
                     skippedCount++;
                     this.Logger.LogDebug(
-                        "Version string {Version} for component {Group}/{Artifact} could not be resolved and a component will not be recorded. File: {File}",
+                        "Coordinate {Group}/{Artifact}/{Version} could not be fully resolved and a component will not be recorded. File: {File}",
+                        resolvedGroupId,
+                        resolvedArtifactId,
                         resolvedVersion,
-                        pendingComponent.GroupId,
-                        pendingComponent.ArtifactId,
                         pendingComponent.FilePath);
                 }
             }
@@ -1184,8 +1212,8 @@ public class MvnCliComponentDetector : FileComponentDetector
                 this.Logger.LogError(
                     e,
                     "Failed to resolve pending component {Group}/{Artifact} from {File}",
-                    pendingComponent.GroupId,
-                    pendingComponent.ArtifactId,
+                    pendingComponent.GroupIdTemplate,
+                    pendingComponent.ArtifactIdTemplate,
                     pendingComponent.FilePath);
             }
         }
@@ -1194,32 +1222,29 @@ public class MvnCliComponentDetector : FileComponentDetector
     }
 
     /// <summary>
-    /// Resolves a version template with hierarchy-aware precedence.
+    /// Resolves a coordinate template with hierarchy-aware precedence.
     /// When multiple variable definitions exist, picks the closest ancestor to the requesting file.
     /// This implements Maven's property inheritance rule: child properties take precedence over parent properties.
     /// </summary>
-    /// <param name="versionTemplate">The version template with variables (e.g., "${revision}").</param>
+    /// <param name="template">The coordinate template containing Maven property references.</param>
     /// <param name="requestingFilePath">The file path of the POM requesting the variable resolution.</param>
-    /// <returns>The resolved version string, or the original template if variables cannot be resolved.</returns>
-    private string ResolveVersionWithHierarchyAwareness(string versionTemplate, string requestingFilePath)
+    /// <returns>The template with all hierarchy-defined properties resolved.</returns>
+    private string ResolvePropertiesWithHierarchyAwareness(string template, string requestingFilePath)
     {
-        var resolvedVersion = versionTemplate;
-        var match = VersionRegex.Match(versionTemplate);
+        var unresolvedVariables = new HashSet<string>(StringComparer.Ordinal);
 
-        if (match.Success)
+        return ResolveProperties(
+            template,
+            variable =>
         {
-            var variable = match.Groups[1].Captures[0].ToString();
-
-            // Use Maven-compliant hierarchy search: current → parent → grandparent
             var foundValue = this.FindVariableInMavenHierarchy(variable, requestingFilePath);
             if (foundValue != null)
             {
-                resolvedVersion = versionTemplate.Replace("${" + variable + "}", foundValue.Value.Value);
+                return foundValue.Value.Value;
             }
-            else
+
+            if (unresolvedVariables.Add(variable))
             {
-                // Variable not found in Maven hierarchy - log at debug level since unresolved
-                // properties are common (profiles, external parents, etc.) and aggregate count in telemetry
                 Interlocked.Increment(ref this.unresolvedVariableCount);
                 this.Logger.LogDebug(
                     "{DetectorId}: Variable {Variable} not found in Maven hierarchy for {File}",
@@ -1227,9 +1252,9 @@ public class MvnCliComponentDetector : FileComponentDetector
                     variable,
                     Path.GetFileName(requestingFilePath));
             }
-        }
 
-        return resolvedVersion;
+            return null;
+        });
     }
 
     /// <summary>
