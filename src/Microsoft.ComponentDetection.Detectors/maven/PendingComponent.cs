@@ -7,8 +7,8 @@ using Microsoft.ComponentDetection.Contracts;
 /// Represents a component with unresolved variables that needs second-pass processing.
 /// </summary>
 internal record PendingComponent(
-    string GroupId,
-    string ArtifactId,
+    string GroupIdTemplate,
+    string ArtifactIdTemplate,
     string VersionTemplate,
     ISingleFileComponentRecorder Recorder,
     string FilePath);

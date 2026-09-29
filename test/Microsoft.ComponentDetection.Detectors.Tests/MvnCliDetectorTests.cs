@@ -87,6 +87,77 @@ public class MvnCliDetectorTests : BaseDetectorTest<MvnCliComponentDetector>
     }
 
     [TestMethod]
+    public async Task StaticParser_ResolvesPropertiesInAllCoordinateFields_Async()
+    {
+        this.mavenCommandServiceMock.Setup(x => x.MavenCLIExistsAsync())
+            .ReturnsAsync(false);
+
+        var pomXmlContent = @"<?xml version=""1.0"" encoding=""UTF-8""?>
+<project xmlns=""http://maven.apache.org/POM/4.0.0"">
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>com.test</groupId>
+    <artifactId>my-app</artifactId>
+    <version>1.0.0</version>
+    <properties>
+        <spark.group>org.apache.spark</spark.group>
+        <scala.version.major>2.12</scala.version.major>
+        <spark.version>3.4.1</spark.version>
+    </properties>
+    <dependencies>
+        <dependency>
+            <groupId>${spark.group}</groupId>
+            <artifactId>spark-core_${scala.version.major}</artifactId>
+            <version>${spark.version}</version>
+        </dependency>
+    </dependencies>
+</project>";
+
+        var (detectorResult, componentRecorder) = await this.DetectorTestUtility
+            .WithFile("pom.xml", pomXmlContent)
+            .ExecuteDetectorAsync();
+
+        detectorResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+
+        var detectedComponents = componentRecorder.GetDetectedComponents();
+        detectedComponents.Should().ContainSingle();
+
+        var mavenComponent = detectedComponents.First().Component as MavenComponent;
+        mavenComponent.Should().NotBeNull();
+        mavenComponent.GroupId.Should().Be("org.apache.spark");
+        mavenComponent.ArtifactId.Should().Be("spark-core_2.12");
+        mavenComponent.Version.Should().Be("3.4.1");
+    }
+
+    [TestMethod]
+    public async Task StaticParser_SkipsComponentWithUnresolvedCoordinateProperty_Async()
+    {
+        this.mavenCommandServiceMock.Setup(x => x.MavenCLIExistsAsync())
+            .ReturnsAsync(false);
+
+        var pomXmlContent = @"<?xml version=""1.0"" encoding=""UTF-8""?>
+<project xmlns=""http://maven.apache.org/POM/4.0.0"">
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>com.test</groupId>
+    <artifactId>my-app</artifactId>
+    <version>1.0.0</version>
+    <dependencies>
+        <dependency>
+            <groupId>org.apache.spark</groupId>
+            <artifactId>spark-core_${scala.version.major}</artifactId>
+            <version>3.4.1</version>
+        </dependency>
+    </dependencies>
+</project>";
+
+        var (detectorResult, componentRecorder) = await this.DetectorTestUtility
+            .WithFile("pom.xml", pomXmlContent)
+            .ExecuteDetectorAsync();
+
+        detectorResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+        componentRecorder.GetDetectedComponents().Should().BeEmpty();
+    }
+
+    [TestMethod]
     public async Task WhenMavenCliNotAvailable_DetectsMultipleDependencies_Async()
     {
         // Arrange
@@ -435,7 +506,7 @@ public class MvnCliDetectorTests : BaseDetectorTest<MvnCliComponentDetector>
     }
 
     [TestMethod]
-    public async Task StaticParser_ResolvesVariableFromPreviousFile_Async()
+    public async Task StaticParser_ResolvesCoordinatePropertiesFromParent_Async()
     {
         // Arrange - Test case 1: Variable defined in parent POM, referenced in child POM
         // Uses Maven's standard parent inheritance mechanism
@@ -455,6 +526,7 @@ public class MvnCliDetectorTests : BaseDetectorTest<MvnCliComponentDetector>
     <packaging>pom</packaging>
     <properties>
         <commons.version>3.12.0</commons.version>
+        <scala.version.major>2.12</scala.version.major>
     </properties>
 </project>";
 
@@ -470,7 +542,7 @@ public class MvnCliDetectorTests : BaseDetectorTest<MvnCliComponentDetector>
     <dependencies>
         <dependency>
             <groupId>org.apache.commons</groupId>
-            <artifactId>commons-lang3</artifactId>
+            <artifactId>commons-lang3_${scala.version.major}</artifactId>
             <version>${commons.version}</version>
         </dependency>
     </dependencies>
@@ -491,7 +563,7 @@ public class MvnCliDetectorTests : BaseDetectorTest<MvnCliComponentDetector>
         var mavenComponent = detectedComponents.First().Component as MavenComponent;
         mavenComponent.Should().NotBeNull();
         mavenComponent.GroupId.Should().Be("org.apache.commons");
-        mavenComponent.ArtifactId.Should().Be("commons-lang3");
+        mavenComponent.ArtifactId.Should().Be("commons-lang3_2.12");
         mavenComponent.Version.Should().Be("3.12.0");
     }
 
