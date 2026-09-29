@@ -80,6 +80,7 @@ public class MvnCliComponentDetector : FileComponentDetector
     private const string GroupIdSelector = "groupId";
     private const string ArtifactIdSelector = "artifactId";
     private const string VersionSelector = "version";
+    private const int MaxPropertyExpansionDepth = 100;
 
     private static readonly Regex PropertyReferenceRegex = new(
         @"\$\{([^{}]+)\}",
@@ -235,8 +236,10 @@ public class MvnCliComponentDetector : FileComponentDetector
         var resolvedProperties = new Dictionary<string, string>(StringComparer.Ordinal);
         var activeProperties = new HashSet<string>(StringComparer.Ordinal);
 
-        string ResolveTemplate(string value) =>
-            PropertyReferenceRegex.Replace(
+        string ResolveTemplate(string value, int depth) =>
+            depth >= MaxPropertyExpansionDepth
+                ? value
+                : PropertyReferenceRegex.Replace(
                 value,
                 match =>
             {
@@ -258,13 +261,13 @@ public class MvnCliComponentDetector : FileComponentDetector
                     return match.Value;
                 }
 
-                resolvedProperty = ResolveTemplate(propertyValue);
+                resolvedProperty = ResolveTemplate(propertyValue, depth + 1);
                 activeProperties.Remove(variable);
                 resolvedProperties[variable] = resolvedProperty;
                 return resolvedProperty;
             });
 
-        return ResolveTemplate(template);
+        return ResolveTemplate(template, 0);
     }
 
     private static string ResolvePropertiesFromLocalOnly(

@@ -193,6 +193,44 @@ public class MvnCliDetectorTests : BaseDetectorTest<MvnCliComponentDetector>
     }
 
     [TestMethod]
+    public async Task StaticParser_SkipsComponentExceedingPropertyExpansionDepth_Async()
+    {
+        this.mavenCommandServiceMock.Setup(x => x.MavenCLIExistsAsync())
+            .ReturnsAsync(false);
+
+        var nestedProperties = string.Join(
+            "\n",
+            Enumerable.Range(0, 101)
+                .Select(index => $"        <property{index}>${{property{index + 1}}}</property{index}>"));
+
+        var pomXmlContent = $@"<?xml version=""1.0"" encoding=""UTF-8""?>
+<project xmlns=""http://maven.apache.org/POM/4.0.0"">
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>com.test</groupId>
+    <artifactId>my-app</artifactId>
+    <version>1.0.0</version>
+    <properties>
+{nestedProperties}
+        <property101>spark-core</property101>
+    </properties>
+    <dependencies>
+        <dependency>
+            <groupId>org.apache.spark</groupId>
+            <artifactId>${{property0}}</artifactId>
+            <version>3.4.1</version>
+        </dependency>
+    </dependencies>
+</project>";
+
+        var (detectorResult, componentRecorder) = await this.DetectorTestUtility
+            .WithFile("pom.xml", pomXmlContent)
+            .ExecuteDetectorAsync();
+
+        detectorResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+        componentRecorder.GetDetectedComponents().Should().BeEmpty();
+    }
+
+    [TestMethod]
     public async Task WhenMavenCliNotAvailable_DetectsMultipleDependencies_Async()
     {
         // Arrange
