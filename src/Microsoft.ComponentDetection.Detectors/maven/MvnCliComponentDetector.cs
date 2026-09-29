@@ -281,7 +281,7 @@ public class MvnCliComponentDetector : FileComponentDetector
                 : null);
     }
 
-    private static bool ContainsPropertyReference(string value) => PropertyReferenceRegex.IsMatch(value);
+    private static bool ContainsPropertyReference(string value) => value.Contains("${", StringComparison.Ordinal);
 
     private void LogDebugWithId(string message) =>
         this.Logger.LogDebug("{DetectorId}: {Message}", this.Id, message);

@@ -160,6 +160,40 @@ public class MvnCliDetectorTests : BaseDetectorTest<MvnCliComponentDetector>
     }
 
     [TestMethod]
+    public async Task StaticParser_SkipsComponentsWithMalformedPropertyReferences_Async()
+    {
+        this.mavenCommandServiceMock.Setup(x => x.MavenCLIExistsAsync())
+            .ReturnsAsync(false);
+
+        var pomXmlContent = @"<?xml version=""1.0"" encoding=""UTF-8""?>
+<project xmlns=""http://maven.apache.org/POM/4.0.0"">
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>com.test</groupId>
+    <artifactId>my-app</artifactId>
+    <version>1.0.0</version>
+    <dependencies>
+        <dependency>
+            <groupId>org.apache.spark</groupId>
+            <artifactId>spark-core</artifactId>
+            <version>${}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.spark</groupId>
+            <artifactId>spark-sql</artifactId>
+            <version>${missing</version>
+        </dependency>
+    </dependencies>
+</project>";
+
+        var (detectorResult, componentRecorder) = await this.DetectorTestUtility
+            .WithFile("pom.xml", pomXmlContent)
+            .ExecuteDetectorAsync();
+
+        detectorResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+        componentRecorder.GetDetectedComponents().Should().BeEmpty();
+    }
+
+    [TestMethod]
     public async Task StaticParser_SkipsComponentWithCyclicCoordinateProperties_Async()
     {
         this.mavenCommandServiceMock.Setup(x => x.MavenCLIExistsAsync())
