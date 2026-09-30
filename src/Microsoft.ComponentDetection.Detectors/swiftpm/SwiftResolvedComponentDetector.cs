@@ -39,7 +39,7 @@ public class SwiftResolvedComponentDetector : FileComponentDetector, IExperiment
 
     public override IEnumerable<ComponentType> SupportedComponentTypes => [ComponentType.Swift];
 
-    public override int Version => 2;
+    public override int Version => 3;
 
     protected override Task OnFileFoundAsync(
         ProcessRequest processRequest,

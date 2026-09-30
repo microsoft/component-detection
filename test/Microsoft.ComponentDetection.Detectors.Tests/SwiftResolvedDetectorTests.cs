@@ -377,7 +377,7 @@ public class SwiftResolvedDetectorTests
     }
 
     [TestMethod]
-    public async Task Test_GivenResolvedPackageWithoutVersion_WhenScan_ThenScanIsSuccessfulAndComponentRegisteredWithRevisionHashAsVersion()
+    public async Task Test_GivenResolvedPackageWithoutVersion_WhenScan_ThenScanIsSuccessfulAndNoComponentRegistered()
     {
         var resolvedPackageWithoutVersion = """
 {
