@@ -233,7 +233,7 @@ COPY --from=busybox:1.36 /bin/busybox /usr/local/bin/busybox
                 It.IsAny<EventId>(),
                 It.IsAny<It.IsAnyType>(),
                 It.IsAny<Exception>(),
-                It.IsAny<Func<It.IsAnyType, Exception, string>>()),
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
             Times.Once);
         loggerMock.Verify(
             logger => logger.Log(
@@ -241,7 +241,7 @@ COPY --from=busybox:1.36 /bin/busybox /usr/local/bin/busybox
                 It.IsAny<EventId>(),
                 It.IsAny<It.IsAnyType>(),
                 It.IsAny<Exception>(),
-                It.IsAny<Func<It.IsAnyType, Exception, string>>()),
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
             Times.Never);
     }
 
