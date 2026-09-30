@@ -229,12 +229,20 @@ COPY --from=busybox:1.36 /bin/busybox /usr/local/bin/busybox
         componentRecorder.GetDetectedComponents().Should().BeEmpty();
         loggerMock.Verify(
             logger => logger.Log(
-                LogLevel.Warning,
+                LogLevel.Debug,
                 It.IsAny<EventId>(),
                 It.IsAny<It.IsAnyType>(),
                 It.IsAny<Exception>(),
                 It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
             Times.Once);
+        loggerMock.Verify(
+            logger => logger.Log(
+                LogLevel.Warning,
+                It.IsAny<EventId>(),
+                It.IsAny<It.IsAnyType>(),
+                It.IsAny<Exception>(),
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            Times.Never);
         loggerMock.Verify(
             logger => logger.Log(
                 LogLevel.Error,

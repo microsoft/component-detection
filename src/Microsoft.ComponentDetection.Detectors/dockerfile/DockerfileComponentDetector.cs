@@ -3,6 +3,7 @@ namespace Microsoft.ComponentDetection.Detectors.Dockerfile;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Common;
@@ -49,6 +50,13 @@ public class DockerfileComponentDetector : FileComponentDetector, IExperimentalD
         var singleFileComponentRecorder = processRequest.SingleFileComponentRecorder;
         var file = processRequest.ComponentStream;
         var filePath = file.Location;
+        var skippedFolder = this.SkippedFolders.FirstOrDefault(folder => filePath.Contains(folder));
+        if (!string.IsNullOrEmpty(skippedFolder))
+        {
+            this.Logger.LogDebug("Ignoring Dockerfile at {DockerfileLocation}, as it is inside a {SkippedFolder} folder.", filePath, skippedFolder);
+            return;
+        }
+
         try
         {
             this.Logger.LogInformation("Discovered dockerfile: {Location}", file.Location);
@@ -64,7 +72,7 @@ public class DockerfileComponentDetector : FileComponentDetector, IExperimentalD
         }
         catch (ParseException e)
         {
-            this.Logger.LogWarning(e, "Ignoring file that doesn't appear to be a Dockerfile: {Location}", filePath);
+            this.Logger.LogDebug(e, "Ignoring file that doesn't appear to be a Dockerfile: {Location}", filePath);
         }
         catch (Exception e)
         {
