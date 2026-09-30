@@ -175,12 +175,14 @@ public class TypedComponentSerializationTests
     [TestMethod]
     public void TypedComponent_Serialization_Swift()
     {
-        TypedComponent component = new SwiftComponent(
-            "alamofire",
-            "5.9.1",
-            "https://github.com/Alamofire/Alamofire",
-            "f455c2975872ccd2d9c81594c658af65716e9b9a",
-            "remoteSourceControl");
+        TypedComponent component = new SwiftComponent
+        {
+            Name = "alamofire",
+            Version = "5.9.1",
+            RepositoryUrl = new Uri("https://github.com/Alamofire/Alamofire"),
+            CommitHash = "f455c2975872ccd2d9c81594c658af65716e9b9a",
+            Kind = "remoteSourceControl",
+        };
 
         var json = JsonSerializer.Serialize(component);
         var deserializedComponent = JsonSerializer.Deserialize<TypedComponent>(json);

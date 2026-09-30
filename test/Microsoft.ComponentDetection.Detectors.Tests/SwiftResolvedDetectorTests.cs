@@ -1,6 +1,7 @@
 #nullable disable
 namespace Microsoft.ComponentDetection.Detectors.Tests.Swift;
 
+using System;
 using System.Linq;
 using System.Threading.Tasks;
 using AwesomeAssertions;
@@ -48,12 +49,14 @@ public class SwiftResolvedDetectorTests
         var typedComponents = detectedComponents.Select(c => c.Component).ToList();
 
         typedComponents.Should().ContainEquivalentOf(
-            new SwiftComponent(
-                name: "alamofire",
-                version: "5.9.1",
-                repositoryUrl: "https://github.com/Alamofire/Alamofire",
-                hash: "f455c2975872ccd2d9c81594c658af65716e9b9a",
-                kind: "remoteSourceControl"));
+            new SwiftComponent
+            {
+                Name = "alamofire",
+                Version = "5.9.1",
+                RepositoryUrl = new Uri("https://github.com/Alamofire/Alamofire"),
+                CommitHash = "f455c2975872ccd2d9c81594c658af65716e9b9a",
+                Kind = "remoteSourceControl",
+            });
     }
 
     // Test for several packages
@@ -76,20 +79,24 @@ public class SwiftResolvedDetectorTests
         var typedComponents = detectedComponents.Select(c => c.Component).ToList();
 
         typedComponents.Should().ContainEquivalentOf(
-            new SwiftComponent(
-                name: "alamofire",
-                version: "5.6.0",
-                repositoryUrl: "https://github.com/Alamofire/Alamofire",
-                hash: "63dfa86548c4e5d5c6fd6ed42f638e388cbce529",
-                kind: "remoteSourceControl"));
+            new SwiftComponent
+            {
+                Name = "alamofire",
+                Version = "5.6.0",
+                RepositoryUrl = new Uri("https://github.com/Alamofire/Alamofire"),
+                CommitHash = "63dfa86548c4e5d5c6fd6ed42f638e388cbce529",
+                Kind = "remoteSourceControl",
+            });
 
         typedComponents.Should().ContainEquivalentOf(
-            new SwiftComponent(
-                name: "asyncextensions",
-                version: "0.5.3",
-                repositoryUrl: "https://github.com/sideeffect-io/AsyncExtensions",
-                hash: "3442d3d046800f1974bda096faaf0ac510b21154",
-                kind: "remoteSourceControl"));
+            new SwiftComponent
+            {
+                Name = "asyncextensions",
+                Version = "0.5.3",
+                RepositoryUrl = new Uri("https://github.com/sideeffect-io/AsyncExtensions"),
+                CommitHash = "3442d3d046800f1974bda096faaf0ac510b21154",
+                Kind = "remoteSourceControl",
+            });
     }
 
     // Duplicate packages
@@ -137,12 +144,14 @@ public class SwiftResolvedDetectorTests
         var typedComponents = detectedComponents.Select(c => c.Component).ToList();
 
         typedComponents.Should().ContainEquivalentOf(
-            new SwiftComponent(
-                name: "alamofire",
-                version: "5.9.1",
-                repositoryUrl: "https://github.com/Alamofire/Alamofire",
-                hash: "f455c2975872ccd2d9c81594c658af65716e9b9a",
-                kind: "remoteSourceControl"));
+            new SwiftComponent
+            {
+                Name = "alamofire",
+                Version = "5.9.1",
+                RepositoryUrl = new Uri("https://github.com/Alamofire/Alamofire"),
+                CommitHash = "f455c2975872ccd2d9c81594c658af65716e9b9a",
+                Kind = "remoteSourceControl",
+            });
     }
 
     [TestMethod]
@@ -340,7 +349,7 @@ public class SwiftResolvedDetectorTests
     }
 
     [TestMethod]
-    public async Task Test_GivenResolvedPackageWithoutRevision_WhenScan_ThenScanIsSuccessfulAndNoComponentsRegistered()
+    public async Task Test_GivenResolvedPackageWithoutRevision_WhenScan_ThenScanIsSuccessfulAndComponentsRegistered()
     {
         var resolvedPackageWithoutRevision = """
 {
@@ -364,7 +373,7 @@ public class SwiftResolvedDetectorTests
             .ExecuteDetectorAsync();
 
         scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
-        componentRecorder.GetDetectedComponents().Should().BeEmpty();
+        componentRecorder.GetDetectedComponents().Should().HaveCount(1);
     }
 
     [TestMethod]
@@ -392,18 +401,7 @@ public class SwiftResolvedDetectorTests
             .ExecuteDetectorAsync();
 
         scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
-        componentRecorder.GetDetectedComponents().Should().ContainSingle();
-
-        var detectedComponents = componentRecorder.GetDetectedComponents();
-        var typedComponents = detectedComponents.Select(c => c.Component).ToList();
-
-        typedComponents.Should().ContainEquivalentOf(
-            new SwiftComponent(
-                name: "alamofire",
-                version: "f455c2975872ccd2d9c81594c658af65716e9b9a",
-                repositoryUrl: "https://github.com/Alamofire/Alamofire",
-                hash: "f455c2975872ccd2d9c81594c658af65716e9b9a",
-                kind: "remoteSourceControl"));
+        componentRecorder.GetDetectedComponents().Should().BeEmpty();
     }
 
     [System.Diagnostics.CodeAnalysis.SuppressMessage("StyleCop.CSharp.OrderingRules", "SA1201:Elements should appear in the correct order", Justification = "Test data that is better placed at the end of the file.")]

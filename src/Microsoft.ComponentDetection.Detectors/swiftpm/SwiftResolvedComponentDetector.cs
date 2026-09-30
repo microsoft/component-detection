@@ -77,15 +77,19 @@ public class SwiftResolvedComponentDetector : FileComponentDetector, IExperiment
                     ArgumentException.ThrowIfNullOrWhiteSpace(package.Identity);
 
                     // The version of the package is not always available.
-                    var version = package.State.Version ?? package.State.Branch ?? package.State.Revision;
-
-                    var detectedComponent = new SwiftComponent(
-                        name: package.Identity,
-                        version: version,
-                        repositoryUrl: package.Location,
-                        hash: package.State.Revision,
-                        kind: package.Kind);
-                    singleFileComponentRecorder.RegisterUsage(new DetectedComponent(component: detectedComponent));
+                    // For now when there's no version we don't report.
+                    if (!string.IsNullOrWhiteSpace(package.State.Version))
+                    {
+                        var detectedComponent = new SwiftComponent
+                        {
+                            Name = package.Identity,
+                            Version = package.State.Version,
+                            RepositoryUrl = new Uri(package.Location),
+                            CommitHash = package.State.Revision,
+                            Kind = package.Kind,
+                        };
+                        singleFileComponentRecorder.RegisterUsage(new DetectedComponent(component: detectedComponent));
+                    }
                 }
                 else
                 {

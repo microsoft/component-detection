@@ -11,29 +11,6 @@ using PackageUrl;
 /// </summary>
 public class SwiftComponent : TypedComponent
 {
-    /// <summary>
-    /// Initializes a new instance of the <see cref="SwiftComponent"/> class.
-    /// </summary>
-    /// <param name="name">The name of the component.</param>
-    /// <param name="version">The version of the component.</param>
-    /// <param name="repositoryUrl">The source repository URL of the component.</param>
-    /// <param name="hash">The Git commit hash of the component.</param>
-    /// <param name="kind">The Swift package kind.</param>
-    public SwiftComponent(string name, string version, string repositoryUrl, string hash, string kind)
-    {
-        this.Name = this.ValidateRequiredInput(name, nameof(name), nameof(ComponentType.Swift));
-        this.Version = this.ValidateRequiredInput(version, nameof(version), nameof(ComponentType.Swift));
-        this.ValidateRequiredInput(repositoryUrl, nameof(repositoryUrl), nameof(ComponentType.Swift));
-        this.RepositoryUrl = new Uri(repositoryUrl);
-        this.Kind = this.ValidateRequiredInput(kind, nameof(kind), nameof(ComponentType.Swift));
-        this.CommitHash = this.ValidateRequiredInput(hash, nameof(hash), nameof(ComponentType.Swift));
-    }
-
-    public SwiftComponent()
-    {
-        /* Reserved for deserialization */
-    }
-
     [JsonPropertyName("name")]
     public string Name { get; set; }
 
@@ -68,7 +45,7 @@ public class SwiftComponent : TypedComponent
         },
         subpath: null);
 
-    protected override string ComputeBaseId() => $"{this.RepositoryUrl.AbsoluteUri} {this.CommitHash} - {this.Type}";
+    protected override string ComputeBaseId() => $"{this.RepositoryUrl.AbsoluteUri} {this.Version} - {this.Type}";
 
     private string GetNamespaceFromPackageUrl()
     {
