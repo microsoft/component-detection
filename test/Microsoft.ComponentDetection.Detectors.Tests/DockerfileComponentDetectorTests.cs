@@ -1,6 +1,8 @@
 #nullable enable
 namespace Microsoft.ComponentDetection.Detectors.Tests;
 
+using System;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using AwesomeAssertions;
@@ -8,6 +10,7 @@ using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.ComponentDetection.Detectors.Dockerfile;
 using Microsoft.ComponentDetection.TestsUtilities;
+using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 
@@ -208,6 +211,51 @@ COPY --from=busybox:1.36 /bin/busybox /usr/local/bin/busybox
 
         scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
         componentRecorder.GetDetectedComponents().Should().ContainSingle();
+    }
+
+    [TestMethod]
+    [DataRow("dockerfile.mjs")]
+    [DataRow("dockerfile.d.mts")]
+    public async Task TestDockerfile_ShikiLanguageDefinitionIsIgnoredAsync(string fileName)
+    {
+        var loggerMock = new Mock<ILogger<DockerfileComponentDetector>>();
+
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+            .WithFile(fileName, "export default Object.freeze({ name: 'dockerfile' });")
+            .AddServiceMock(loggerMock)
+            .ExecuteDetectorAsync();
+
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+        componentRecorder.GetDetectedComponents().Should().BeEmpty();
+        loggerMock.Verify(
+            logger => logger.Log(
+                LogLevel.Warning,
+                It.IsAny<EventId>(),
+                It.IsAny<It.IsAnyType>(),
+                It.IsAny<Exception>(),
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            Times.Once);
+        loggerMock.Verify(
+            logger => logger.Log(
+                LogLevel.Error,
+                It.IsAny<EventId>(),
+                It.IsAny<It.IsAnyType>(),
+                It.IsAny<Exception>(),
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            Times.Never);
+    }
+
+    [TestMethod]
+    public async Task TestDockerfile_UnderNodeModulesIsIgnoredAsync()
+    {
+        var fileLocation = Path.Combine(Path.GetTempPath(), "node_modules", "shiki", "dist", "langs", "dockerfile.mjs");
+
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+            .WithFile("dockerfile.mjs", "FROM redis:7-alpine", fileLocation: fileLocation)
+            .ExecuteDetectorAsync();
+
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+        componentRecorder.GetDetectedComponents().Should().BeEmpty();
     }
 
     [TestMethod]

@@ -3,6 +3,8 @@ namespace Microsoft.ComponentDetection.Detectors.Dockerfile;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
+using System.Reactive.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Common;
@@ -10,6 +12,7 @@ using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.Internal;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.Extensions.Logging;
+using Sprache;
 using Valleysoft.DockerfileModel;
 
 public class DockerfileComponentDetector : FileComponentDetector, IExperimentalDetector
@@ -41,6 +44,15 @@ public class DockerfileComponentDetector : FileComponentDetector, IExperimentalD
 
     public override int Version => 1;
 
+    protected override IList<string> SkippedFolders => ["node_modules"];
+
+    protected override Task<IObservable<ProcessRequest>> OnPrepareDetectionAsync(
+        IObservable<ProcessRequest> processRequests,
+        IDictionary<string, string> detectorArgs,
+        CancellationToken cancellationToken = default) =>
+        Task.FromResult(processRequests.Where(processRequest =>
+            !this.IsInSkippedFolder(processRequest.ComponentStream.Location)));
+
     protected override async Task OnFileFoundAsync(ProcessRequest processRequest, IDictionary<string, string> detectorArgs, CancellationToken cancellationToken = default)
     {
         var singleFileComponentRecorder = processRequest.SingleFileComponentRecorder;
@@ -59,10 +71,20 @@ public class DockerfileComponentDetector : FileComponentDetector, IExperimentalD
             var stageNameMap = new Dictionary<string, string>();
             var dockerFileComponent = this.ParseDockerFileAsync(contents, file.Location, singleFileComponentRecorder, stageNameMap);
         }
+        catch (ParseException e)
+        {
+            this.Logger.LogWarning(e, "Ignoring file that doesn't appear to be a Dockerfile: {Location}", filePath);
+        }
         catch (Exception e)
         {
-            this.Logger.LogError(e, "The file doesn't appear to be a Dockerfile: {Location}", filePath);
+            this.Logger.LogError(e, "Failed to process Dockerfile: {Location}", filePath);
         }
+    }
+
+    private bool IsInSkippedFolder(string filePath)
+    {
+        var pathSegments = filePath.Split(['/', '\\'], StringSplitOptions.RemoveEmptyEntries);
+        return this.SkippedFolders.Any(skippedFolder => pathSegments.Contains(skippedFolder, StringComparer.OrdinalIgnoreCase));
     }
 
     private Task ParseDockerFileAsync(string fileContents, string fileLocation, ISingleFileComponentRecorder singleFileComponentRecorder, Dictionary<string, string> stageNameMap)
