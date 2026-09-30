@@ -210,7 +210,7 @@ COPY --from=busybox:1.36 /bin/busybox /usr/local/bin/busybox
         componentRecorder.GetDetectedComponents().Should().ContainSingle();
     }
 
-    [DataTestMethod]
+    [TestMethod]
     [DataRow("dockerfile.mjs")]
     [DataRow("dockerfile.d.mts")]
     public async Task TestDockerfile_ShikiLanguageDefinitionIsIgnoredAsync(string fileName)
