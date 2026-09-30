@@ -10,6 +10,7 @@ using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.Internal;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.Extensions.Logging;
+using Sprache;
 using Valleysoft.DockerfileModel;
 
 public class DockerfileComponentDetector : FileComponentDetector, IExperimentalDetector
@@ -59,9 +60,13 @@ public class DockerfileComponentDetector : FileComponentDetector, IExperimentalD
             var stageNameMap = new Dictionary<string, string>();
             var dockerFileComponent = this.ParseDockerFileAsync(contents, file.Location, singleFileComponentRecorder, stageNameMap);
         }
+        catch (ParseException e)
+        {
+            this.Logger.LogWarning(e, "Ignoring file that doesn't appear to be a Dockerfile: {Location}", filePath);
+        }
         catch (Exception e)
         {
-            this.Logger.LogError(e, "The file doesn't appear to be a Dockerfile: {Location}", filePath);
+            this.Logger.LogError(e, "Failed to process Dockerfile: {Location}", filePath);
         }
     }
 

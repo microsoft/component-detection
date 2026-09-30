@@ -210,6 +210,19 @@ COPY --from=busybox:1.36 /bin/busybox /usr/local/bin/busybox
         componentRecorder.GetDetectedComponents().Should().ContainSingle();
     }
 
+    [DataTestMethod]
+    [DataRow("dockerfile.mjs")]
+    [DataRow("dockerfile.d.mts")]
+    public async Task TestDockerfile_ShikiLanguageDefinitionIsIgnoredAsync(string fileName)
+    {
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+            .WithFile(fileName, "export default Object.freeze({ name: 'dockerfile' });")
+            .ExecuteDetectorAsync();
+
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+        componentRecorder.GetDetectedComponents().Should().BeEmpty();
+    }
+
     [TestMethod]
     public async Task TestDockerfile_NoFromInstructionsAsync()
     {
