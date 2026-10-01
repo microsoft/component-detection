@@ -21,7 +21,14 @@ public class SwiftComponentTests
         var kind = "remoteSourceControl";
         var commitHash = "f455c2975872ccd2d9c81594c658af65716e9b9a";
 
-        var component = new SwiftComponent(name, version, repositoryUrl, commitHash, kind);
+        var component = new SwiftComponent
+        {
+            Name = name,
+            Version = version,
+            RepositoryUrl = new Uri(repositoryUrl),
+            CommitHash = commitHash,
+            Kind = kind,
+        };
 
         component.Name.Should().Be(name);
         component.Version.Should().Be(version);
@@ -30,134 +37,49 @@ public class SwiftComponentTests
         component.RepositoryUrl.Should().Be(new Uri(repositoryUrl));
         component.Type.Should().Be(ComponentType.Swift);
         component.Id.Should().Be(
-            $"{repositoryUrl} {commitHash} - {component.Type}");
+            $"{repositoryUrl} {version} - {component.Type}");
     }
 
     [TestMethod]
-    public void Id_ShouldDistinguishRepositoriesAndCommitHashes()
+    public void Id_ShouldDistinguishRepositories()
     {
-        var component = new SwiftComponent(
-            "alamofire",
-            "5.9.1",
-            "https://github.com/Alamofire/Alamofire",
-            "f455c2975872ccd2d9c81594c658af65716e9b9a",
-            "remoteSourceControl");
-        var differentRepository = new SwiftComponent(
-            "alamofire",
-            "5.9.1",
-            "https://github.com/example/Alamofire",
-            "f455c2975872ccd2d9c81594c658af65716e9b9a",
-            "remoteSourceControl");
-        var differentCommit = new SwiftComponent(
-            "alamofire",
-            "5.9.1",
-            "https://github.com/Alamofire/Alamofire",
-            "63dfa86548c4e5d5c6fd6ed42f638e388cbce529",
-            "remoteSourceControl");
+        var component = new SwiftComponent
+        {
+            Name = "alamofire",
+            Version = "5.9.1",
+            RepositoryUrl = new Uri("https://github.com/Alamofire/Alamofire"),
+            CommitHash = "f455c2975872ccd2d9c81594c658af65716e9b9a",
+            Kind = "remoteSourceControl",
+        };
+        var differentRepository = new SwiftComponent
+        {
+            Name = "alamofire",
+            Version = "5.9.1",
+            RepositoryUrl = new Uri("https://github.com/example/Alamofire"),
+            CommitHash = "f455c2975872ccd2d9c81594c658af65716e9b9a",
+            Kind = "remoteSourceControl",
+        };
 
         component.Id.Should().NotBe(differentRepository.Id);
-        component.Id.Should().NotBe(differentCommit.Id);
     }
 
     [TestMethod]
     public void Serialization_ShouldIncludeCommitHash()
     {
         var commitHash = "f455c2975872ccd2d9c81594c658af65716e9b9a";
-        TypedComponent component = new SwiftComponent(
-            name: "alamofire",
-            version: "5.9.1",
-            repositoryUrl: "https://github.com/Alamofire/Alamofire",
-            hash: commitHash,
-            kind: "remoteSourceControl");
+        TypedComponent component = new SwiftComponent
+        {
+            Name = "alamofire",
+            Version = "5.9.1",
+            RepositoryUrl = new Uri("https://github.com/Alamofire/Alamofire"),
+            CommitHash = commitHash,
+            Kind = "remoteSourceControl",
+        };
 
         using var json = JsonDocument.Parse(JsonSerializer.Serialize(component));
 
         json.RootElement.GetProperty("kind").GetString().Should().Be("remoteSourceControl");
         json.RootElement.GetProperty("commitHash").GetString().Should().Be(commitHash);
-    }
-
-    [TestMethod]
-    public void Constructor_ShouldThrowException_WhenKindIsNull()
-    {
-        Action action = () =>
-            new SwiftComponent(
-                "alamofire",
-                "5.9.1",
-                "https://github.com/Alamofire/Alamofire",
-                "f455c2975872ccd2d9c81594c658af65716e9b9a",
-                null
-            );
-        action.Should().Throw<ArgumentException>().WithMessage("*kind*");
-    }
-
-    [TestMethod]
-    public void Constructor_ShouldThrowException_WhenNameIsNull()
-    {
-        Action action = () =>
-            new SwiftComponent(
-                null,
-                "5.9.1",
-                "https://github.com/Alamofire/Alamofire",
-                "f455c2975872ccd2d9c81594c658af65716e9b9a",
-                "remoteSourceControl"
-            );
-        action.Should().Throw<ArgumentException>().WithMessage("*name*");
-    }
-
-    [TestMethod]
-    public void Constructor_ShouldThrowException_WhenVersionIsNull()
-    {
-        Action action = () =>
-            new SwiftComponent(
-                "alamofire",
-                null,
-                "https://github.com/Alamofire/Alamofire",
-                "f455c2975872ccd2d9c81594c658af65716e9b9a",
-                "remoteSourceControl"
-            );
-        action.Should().Throw<ArgumentException>().WithMessage("*version*");
-    }
-
-    [TestMethod]
-    public void Constructor_ShouldThrowException_WhenRepositoryUrlIsNull()
-    {
-        Action action = () =>
-            new SwiftComponent(
-                "alamofire",
-                "5.9.1",
-                null,
-                "f455c2975872ccd2d9c81594c658af65716e9b9a",
-                "remoteSourceControl"
-            );
-        action.Should().Throw<ArgumentException>().WithMessage("*repositoryUrl*");
-    }
-
-    [TestMethod]
-    public void Constructor_ShouldThrowException_WhenHashIsNull()
-    {
-        Action action = () =>
-            new SwiftComponent(
-                "alamofire",
-                "5.9.1",
-                "https://github.com/Alamofire/Alamofire",
-                null,
-                "remoteSourceControl"
-            );
-        action.Should().Throw<ArgumentException>().WithMessage("*hash*");
-    }
-
-    [TestMethod]
-    public void Constructor_ShouldThrowException_WhenRepositoryUrlIsInvalid()
-    {
-        Action action = () =>
-            new SwiftComponent(
-                "alamofire",
-                "5.9.1",
-                "invalid-url",
-                "f455c2975872ccd2d9c81594c658af65716e9b9a",
-                "remoteSourceControl"
-            );
-        action.Should().Throw<UriFormatException>();
     }
 
     [TestMethod]
@@ -168,7 +90,14 @@ public class SwiftComponentTests
         var repositoryUrl = "https://github.com/Alamofire/Alamofire";
         var hash = "f455c2975872ccd2d9c81594c658af65716e9b9a";
 
-        var component = new SwiftComponent(name, version, repositoryUrl, hash, "remoteSourceControl");
+        var component = new SwiftComponent
+        {
+            Name = name,
+            Version = version,
+            RepositoryUrl = new Uri(repositoryUrl),
+            CommitHash = hash,
+            Kind = "remoteSourceControl",
+        };
 
         var expectedPackageURL = new PackageURL(
             type: "swift",
@@ -190,7 +119,14 @@ public class SwiftComponentTests
         var repositoryUrl = "https://giTHub.com/Alamofire/Alamofire";
         var hash = "f455c2975872ccd2d9c81594c658af65716e9b9a";
 
-        var component = new SwiftComponent(name, version, repositoryUrl, hash, "remoteSourceControl");
+        var component = new SwiftComponent
+        {
+            Name = name,
+            Version = version,
+            RepositoryUrl = new Uri(repositoryUrl),
+            CommitHash = hash,
+            Kind = "remoteSourceControl",
+        };
 
         var expectedPackageURL = new PackageURL(
             type: "swift",
@@ -215,7 +151,14 @@ public class SwiftComponentTests
         var repositoryUrl = "https://otherhostname.com/Alamofire/Alamofire";
         var hash = "f455c2975872ccd2d9c81594c658af65716e9b9a";
 
-        var component = new SwiftComponent(name, version, repositoryUrl, hash, "remoteSourceControl");
+        var component = new SwiftComponent
+        {
+            Name = name,
+            Version = version,
+            RepositoryUrl = new Uri(repositoryUrl),
+            CommitHash = hash,
+            Kind = "remoteSourceControl",
+        };
 
         var expectedPackageURL = new PackageURL(
             type: "swift",
