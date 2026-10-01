@@ -85,6 +85,7 @@ internal class UvLock
                     Registry = sourceTable.TryGetValue("registry", out var regObj) && regObj is string reg ? reg : null,
                     Virtual = sourceTable.TryGetValue("virtual", out var virtObj) && virtObj is string virt ? virt : null,
                     Git = sourceTable.TryGetValue("git", out var gitObj) && gitObj is string git ? git : null,
+                    Editable = sourceTable.TryGetValue("editable", out var editObj) && editObj is string edit ? edit : null,
                 };
                 uvPackage.Source = source;
             }

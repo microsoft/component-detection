@@ -29,13 +29,18 @@ public class UvLockComponentDetector : FileComponentDetector
 
     public override IEnumerable<ComponentType> SupportedComponentTypes => [ComponentType.Pip, ComponentType.Git];
 
-    public override int Version => 2;
+    public override int Version => 3;
 
     public override IEnumerable<string> Categories => ["Python"];
 
     internal static bool IsRootPackage(UvPackage pck)
     {
-        return pck.Source?.Virtual != null;
+        return IsRootPath(pck.Source?.Virtual) || IsRootPath(pck.Source?.Editable);
+    }
+
+    private static bool IsRootPath(string? path)
+    {
+        return path != null && (path == "." || path == "./");
     }
 
     internal static HashSet<string> GetTransitivePackages(IEnumerable<string> roots, List<UvPackage> packages)
@@ -131,11 +136,11 @@ public class UvLockComponentDetector : FileComponentDetector
             file.Stream.Position = 0; // Ensure stream is at the beginning
             var uvLock = UvLock.Parse(file.Stream);
 
-            var rootPackage = uvLock.Packages.FirstOrDefault(IsRootPackage);
+            var rootPackages = uvLock.Packages.Where(IsRootPackage).ToList();
             var explicitPackages = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             var devRootNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
-            if (rootPackage != null)
+            foreach (var rootPackage in rootPackages)
             {
                 foreach (var dep in rootPackage.MetadataRequiresDist)
                 {
@@ -150,7 +155,7 @@ public class UvLockComponentDetector : FileComponentDetector
 
             // Compute dev-only packages via transitive reachability analysis.
             // A package is dev-only if it is reachable from dev roots but NOT from production roots.
-            var prodRoots = rootPackage?.Dependencies.Select(d => d.Name) ?? [];
+            var prodRoots = rootPackages.SelectMany(r => r.Dependencies).Select(d => d.Name);
             var prodTransitive = GetTransitivePackages(prodRoots, uvLock.Packages);
             var devTransitive = GetTransitivePackages(devRootNames, uvLock.Packages);
             var devOnlyPackages = new HashSet<string>(devTransitive.Except(prodTransitive, StringComparer.OrdinalIgnoreCase), StringComparer.OrdinalIgnoreCase);
