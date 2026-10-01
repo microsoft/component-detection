@@ -29,6 +29,12 @@ internal class DetectorRestrictionService : IDetectorRestrictionService
         var defaultOffDetectors = detectors.Where(x => x is IDefaultOffComponentDetector).ToList();
         detectors = detectors.Where(x => !(x is IDefaultOffComponentDetector)).ToList();
 
+        var detectorsToEnable = defaultOffDetectors.Where(x =>
+            (restrictions.ExplicitlyEnabledDetectorIds != null && restrictions.ExplicitlyEnabledDetectorIds.Contains(x.Id, StringComparer.OrdinalIgnoreCase)) ||
+            (restrictions.AllowedDetectorIds != null && restrictions.AllowedDetectorIds.Contains(x.Id, StringComparer.OrdinalIgnoreCase)));
+
+        detectors = detectors.Union(detectorsToEnable).ToList();
+
         // If someone specifies an "allow list", use it, otherwise assume everything is allowed
         if (restrictions.AllowedDetectorIds != null && restrictions.AllowedDetectorIds.Any())
         {
@@ -77,11 +83,6 @@ internal class DetectorRestrictionService : IDetectorRestrictionService
             {
                 throw new InvalidDetectorCategoriesException($"Categories {string.Join(",", detectorCategories)} did not match any available detectors.");
             }
-        }
-
-        if (restrictions.ExplicitlyEnabledDetectorIds != null && restrictions.ExplicitlyEnabledDetectorIds.Any())
-        {
-            detectors = detectors.Union(defaultOffDetectors.Where(x => restrictions.ExplicitlyEnabledDetectorIds.Contains(x.Id))).ToList();
         }
 
         return detectors;
