@@ -70,6 +70,10 @@ internal class RustCliParser : IRustCliParser
                 return result;
             }
 
+            var manifestPath = componentStream.Location.Contains(' ') && !componentStream.Location.StartsWith('"')
+                ? $"\"{componentStream.Location}\""
+                : componentStream.Location;
+
             var cliResult = await this.cliService.ExecuteCommandAsync(
                 command: "cargo",
                 additionalCandidateCommands: null,
@@ -77,7 +81,7 @@ internal class RustCliParser : IRustCliParser
                 cancellationToken: cancellationToken,
                 "metadata",
                 "--manifest-path",
-                componentStream.Location,
+                manifestPath,
                 "--format-version=1",
                 "--locked");
 
