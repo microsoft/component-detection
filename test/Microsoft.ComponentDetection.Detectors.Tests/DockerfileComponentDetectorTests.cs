@@ -305,4 +305,128 @@ FROM nginx:${BASE_TAG}
         scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
         componentRecorder.GetDetectedComponents().Should().BeEmpty();
     }
+
+    [TestMethod]
+    public async Task TestDockerfile_RunHeredocAsync()
+    {
+        // BuildKit heredoc syntax: https://docs.docker.com/reference/dockerfile/#here-documents
+        var dockerfile = @"
+FROM ubuntu:noble
+
+RUN <<EOF
+set -eux
+apt-get update
+EOF
+";
+
+        var loggerMock = new Mock<ILogger<DockerfileComponentDetector>>();
+
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+            .WithFile("Dockerfile", dockerfile)
+            .AddServiceMock(loggerMock)
+            .ExecuteDetectorAsync();
+
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+        var components = componentRecorder.GetDetectedComponents();
+        components.Should().ContainSingle();
+
+        var dockerRef = components.First().Component as DockerReferenceComponent;
+        dockerRef.Should().NotBeNull();
+        dockerRef!.Repository.Should().Be("library/ubuntu");
+        dockerRef.Tag.Should().Be("noble");
+
+        loggerMock.Verify(
+            logger => logger.Log(
+                It.Is<LogLevel>(level => level >= LogLevel.Warning),
+                It.IsAny<EventId>(),
+                It.IsAny<It.IsAnyType>(),
+                It.IsAny<Exception>(),
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            Times.Never);
+    }
+
+    [TestMethod]
+    public async Task TestDockerfile_RunHeredocWithInterpreterAndSyntaxDirectiveAsync()
+    {
+        var dockerfile = @"# syntax=docker/dockerfile:1.4
+FROM ubuntu:noble-20260113
+
+RUN <<END_OF_SCRIPT bash
+set -e
+apt-get update
+END_OF_SCRIPT
+";
+
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+            .WithFile("Dockerfile", dockerfile)
+            .ExecuteDetectorAsync();
+
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+        var components = componentRecorder.GetDetectedComponents();
+        components.Should().ContainSingle();
+
+        var dockerRef = components.First().Component as DockerReferenceComponent;
+        dockerRef.Should().NotBeNull();
+        dockerRef!.Repository.Should().Be("library/ubuntu");
+        dockerRef.Tag.Should().Be("noble-20260113");
+    }
+
+    [TestMethod]
+    public async Task TestDockerfile_HeredocMultiStageWithCopyFromStageAsync()
+    {
+        var dockerfile = @"
+FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+RUN <<EOF
+set -eux
+dotnet publish -c Release -o /out
+EOF
+
+FROM mcr.microsoft.com/dotnet/runtime-deps:8.0
+COPY <<EOF /etc/app.conf
+setting=value
+EOF
+COPY --from=build /out /app
+";
+
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+            .WithFile("Dockerfile", dockerfile)
+            .ExecuteDetectorAsync();
+
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+        var components = componentRecorder.GetDetectedComponents();
+        components.Should().HaveCount(2);
+
+        var repos = components
+            .Select(c => c.Component as DockerReferenceComponent)
+            .Where(c => c != null)
+            .Select(c => c!.Repository)
+            .ToList();
+        repos.Should().Contain("dotnet/sdk");
+        repos.Should().Contain("dotnet/runtime-deps");
+    }
+
+    [TestMethod]
+    public async Task TestDockerfile_HeredocBodyIsNotParsedAsInstructionsAsync()
+    {
+        // A heredoc body is opaque content, so a FROM line inside it is not a base image.
+        var dockerfile = @"
+FROM alpine:3.20
+RUN <<EOF cat > /tmp/Dockerfile.inner
+FROM inner/image:1.0
+EOF
+";
+
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+            .WithFile("Dockerfile", dockerfile)
+            .ExecuteDetectorAsync();
+
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+        var components = componentRecorder.GetDetectedComponents();
+        components.Should().ContainSingle();
+
+        var dockerRef = components.First().Component as DockerReferenceComponent;
+        dockerRef.Should().NotBeNull();
+        dockerRef!.Repository.Should().Be("library/alpine");
+        dockerRef.Tag.Should().Be("3.20");
+    }
 }
