@@ -1048,4 +1048,354 @@ importers:
         var detectedComponents = componentRecorder.GetDetectedComponents();
         detectedComponents.Should().BeEmpty();
     }
+
+    [TestMethod]
+    public async Task TestPnpmDetector_V9_MultiDocumentLockfileAsync()
+    {
+        var yamlFile = @"
+---
+lockfileVersion: '9.0'
+
+importers:
+  .:
+    configDependencies:
+      config-pkg:
+        specifier: 1.0.0
+        version: 1.0.0
+    packageManagerDependencies:
+      pnpm:
+        specifier: 12.3.4
+        version: 12.3.4
+
+packages:
+  config-pkg@1.0.0:
+    resolution: {integrity: sha512-placeholder}
+  pnpm@12.3.4:
+    resolution: {integrity: sha512-placeholder}
+  pnpm-dep@1.0.0:
+    resolution: {integrity: sha512-placeholder}
+
+snapshots:
+  config-pkg@1.0.0: {}
+  pnpm@12.3.4:
+    dependencies:
+      pnpm-dep: 1.0.0
+  pnpm-dep@1.0.0: {}
+
+---
+lockfileVersion: '9.0'
+
+settings:
+  autoInstallPeers: false
+
+importers:
+  .:
+    dependencies:
+      fast-uri:
+        specifier: 3.1.7
+        version: 3.1.7
+
+packages:
+  fast-uri@3.1.7:
+    resolution: {integrity: sha512-placeholder}
+  uri-dep@2.0.0:
+    resolution: {integrity: sha512-placeholder}
+
+snapshots:
+  fast-uri@3.1.7:
+    dependencies:
+      uri-dep: 2.0.0
+  uri-dep@2.0.0: {}
+";
+
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
+            .WithFile("pnpm-lock.yaml", yamlFile)
+            .ExecuteDetectorAsync();
+
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+
+        var detectedComponents = componentRecorder.GetDetectedComponents().ToList();
+        detectedComponents.Should().HaveCount(5);
+        var npmComponents = detectedComponents.Select(x => new { Component = (NpmComponent)x.Component, DetectedComponent = x }).ToList();
+        npmComponents.Should().Contain(x => x.Component.Name == "config-pkg" && x.Component.Version == "1.0.0");
+        npmComponents.Should().Contain(x => x.Component.Name == "pnpm" && x.Component.Version == "12.3.4");
+        npmComponents.Should().Contain(x => x.Component.Name == "pnpm-dep" && x.Component.Version == "1.0.0");
+        npmComponents.Should().Contain(x => x.Component.Name == "fast-uri" && x.Component.Version == "3.1.7");
+        npmComponents.Should().Contain(x => x.Component.Name == "uri-dep" && x.Component.Version == "2.0.0");
+
+        var configPkg = detectedComponents.Single(c => ((NpmComponent)c.Component).Name == "config-pkg");
+        var pnpm = detectedComponents.Single(c => ((NpmComponent)c.Component).Name == "pnpm");
+        var pnpmDep = detectedComponents.Single(c => ((NpmComponent)c.Component).Name == "pnpm-dep");
+        var fastUri = detectedComponents.Single(c => ((NpmComponent)c.Component).Name == "fast-uri");
+        var uriDep = detectedComponents.Single(c => ((NpmComponent)c.Component).Name == "uri-dep");
+
+        var graph = componentRecorder.GetDependencyGraphsByLocation().Values.First();
+        graph.IsComponentExplicitlyReferenced(configPkg.Component.Id).Should().BeTrue();
+        graph.IsComponentExplicitlyReferenced(pnpm.Component.Id).Should().BeTrue();
+        graph.IsComponentExplicitlyReferenced(fastUri.Component.Id).Should().BeTrue();
+        graph.GetDependenciesForComponent(pnpm.Component.Id).Should().Contain(pnpmDep.Component.Id);
+        graph.GetDependenciesForComponent(fastUri.Component.Id).Should().Contain(uriDep.Component.Id);
+
+        componentRecorder.AssertAllExplicitlyReferencedComponents<NpmComponent>(
+            pnpmDep.Component.Id,
+            parent => parent.Name == "pnpm" && parent.Version == "12.3.4");
+        componentRecorder.AssertAllExplicitlyReferencedComponents<NpmComponent>(
+            uriDep.Component.Id,
+            parent => parent.Name == "fast-uri" && parent.Version == "3.1.7");
+    }
+
+    [TestMethod]
+    public async Task TestPnpmDetector_MultiDocumentLockfile_InconsistentVersions_FailsAsync()
+    {
+        var yamlFile = @"
+---
+lockfileVersion: '9.0'
+
+importers:
+  .:
+    dependencies:
+      pnpm:
+        specifier: 12.3.4
+        version: 12.3.4
+
+packages:
+  pnpm@12.3.4:
+    resolution: {integrity: sha512-placeholder}
+
+snapshots:
+  pnpm@12.3.4: {}
+
+---
+lockfileVersion: '6.0'
+
+importers:
+  .:
+    dependencies:
+      fast-uri:
+        specifier: 3.1.7
+        version: 3.1.7
+
+packages:
+  /fast-uri@3.1.7:
+    resolution: {integrity: sha512-placeholder}
+";
+
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
+            .WithFile("pnpm-lock.yaml", yamlFile)
+            .ExecuteDetectorAsync();
+
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+
+        var detectedComponents = componentRecorder.GetDetectedComponents();
+        detectedComponents.Should().BeEmpty();
+    }
+
+    [TestMethod]
+    public async Task TestPnpmDetector_V6_MultiDocumentLockfileAsync()
+    {
+        var yamlFile = @"
+---
+lockfileVersion: '6.0'
+
+importers:
+  .:
+    configDependencies:
+      config-pkg:
+        specifier: 1.0.0
+        version: 1.0.0
+    packageManagerDependencies:
+      pnpm:
+        specifier: 12.3.4
+        version: 12.3.4
+
+packages:
+  /config-pkg@1.0.0:
+    resolution: {integrity: sha512-placeholder}
+  /pnpm@12.3.4:
+    resolution: {integrity: sha512-placeholder}
+    dependencies:
+      pnpm-dep: 1.0.0
+  /pnpm-dep@1.0.0:
+    resolution: {integrity: sha512-placeholder}
+
+---
+lockfileVersion: '6.0'
+
+importers:
+  .:
+    dependencies:
+      fast-uri:
+        specifier: 3.1.7
+        version: 3.1.7
+
+packages:
+  /fast-uri@3.1.7:
+    resolution: {integrity: sha512-placeholder}
+    dependencies:
+      uri-dep: 2.0.0
+  /uri-dep@2.0.0:
+    resolution: {integrity: sha512-placeholder}
+";
+
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
+            .WithFile("pnpm-lock.yaml", yamlFile)
+            .ExecuteDetectorAsync();
+
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+
+        var detectedComponents = componentRecorder.GetDetectedComponents().ToList();
+        detectedComponents.Should().HaveCount(5);
+        var npmComponents = detectedComponents.Select(x => new { Component = (NpmComponent)x.Component, DetectedComponent = x }).ToList();
+        npmComponents.Should().Contain(x => x.Component.Name == "config-pkg" && x.Component.Version == "1.0.0");
+        npmComponents.Should().Contain(x => x.Component.Name == "pnpm" && x.Component.Version == "12.3.4");
+        npmComponents.Should().Contain(x => x.Component.Name == "pnpm-dep" && x.Component.Version == "1.0.0");
+        npmComponents.Should().Contain(x => x.Component.Name == "fast-uri" && x.Component.Version == "3.1.7");
+        npmComponents.Should().Contain(x => x.Component.Name == "uri-dep" && x.Component.Version == "2.0.0");
+
+        var configPkg = detectedComponents.Single(c => ((NpmComponent)c.Component).Name == "config-pkg");
+        var pnpm = detectedComponents.Single(c => ((NpmComponent)c.Component).Name == "pnpm");
+        var pnpmDep = detectedComponents.Single(c => ((NpmComponent)c.Component).Name == "pnpm-dep");
+        var fastUri = detectedComponents.Single(c => ((NpmComponent)c.Component).Name == "fast-uri");
+        var uriDep = detectedComponents.Single(c => ((NpmComponent)c.Component).Name == "uri-dep");
+
+        var graph = componentRecorder.GetDependencyGraphsByLocation().Values.First();
+        graph.IsComponentExplicitlyReferenced(configPkg.Component.Id).Should().BeTrue();
+        graph.IsComponentExplicitlyReferenced(pnpm.Component.Id).Should().BeTrue();
+        graph.IsComponentExplicitlyReferenced(fastUri.Component.Id).Should().BeTrue();
+        graph.GetDependenciesForComponent(pnpm.Component.Id).Should().Contain(pnpmDep.Component.Id);
+        graph.GetDependenciesForComponent(fastUri.Component.Id).Should().Contain(uriDep.Component.Id);
+    }
+
+    [TestMethod]
+    public async Task TestPnpmDetector_V6_MultiDocumentLockfile_DuplicatePackage_ProductionWinsAsync()
+    {
+        var yamlFile = @"
+---
+lockfileVersion: '6.0'
+
+importers:
+  .:
+    devDependencies:
+      shared-pkg:
+        specifier: 1.0.0
+        version: 1.0.0
+
+packages:
+  /shared-pkg@1.0.0:
+    resolution: {integrity: sha512-placeholder}
+    dev: true
+    dependencies:
+      dep-from-doc1: 1.0.0
+  /dep-from-doc1@1.0.0:
+    resolution: {integrity: sha512-placeholder}
+    dev: true
+
+---
+lockfileVersion: '6.0'
+
+importers:
+  .:
+    dependencies:
+      shared-pkg:
+        specifier: 1.0.0
+        version: 1.0.0
+
+packages:
+  /shared-pkg@1.0.0:
+    resolution: {integrity: sha512-placeholder}
+    dependencies:
+      dep-from-doc2: 2.0.0
+  /dep-from-doc2@2.0.0:
+    resolution: {integrity: sha512-placeholder}
+";
+
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
+            .WithFile("pnpm-lock.yaml", yamlFile)
+            .ExecuteDetectorAsync();
+
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+
+        var detectedComponents = componentRecorder.GetDetectedComponents().ToList();
+        detectedComponents.Should().HaveCount(3);
+        var npmComponents = detectedComponents.Select(x => new { Component = (NpmComponent)x.Component, DetectedComponent = x }).ToList();
+        npmComponents.Should().Contain(x => x.Component.Name == "shared-pkg" && x.Component.Version == "1.0.0");
+        npmComponents.Should().Contain(x => x.Component.Name == "dep-from-doc1" && x.Component.Version == "1.0.0");
+        npmComponents.Should().Contain(x => x.Component.Name == "dep-from-doc2" && x.Component.Version == "2.0.0");
+
+        var sharedPkg = detectedComponents.Single(c => ((NpmComponent)c.Component).Name == "shared-pkg");
+        var dep1 = detectedComponents.Single(c => ((NpmComponent)c.Component).Name == "dep-from-doc1");
+        var dep2 = detectedComponents.Single(c => ((NpmComponent)c.Component).Name == "dep-from-doc2");
+
+        // Production occurrence from document 2 wins over dev occurrence from document 1
+        componentRecorder.GetEffectiveDevDependencyValue(sharedPkg.Component.Id).Should().BeFalse();
+
+        var graph = componentRecorder.GetDependencyGraphsByLocation().Values.First();
+        graph.IsComponentExplicitlyReferenced(sharedPkg.Component.Id).Should().BeTrue();
+
+        // Dependencies merged from both documents
+        var dependencies = graph.GetDependenciesForComponent(sharedPkg.Component.Id).ToList();
+        dependencies.Should().Contain(dep1.Component.Id);
+        dependencies.Should().Contain(dep2.Component.Id);
+    }
+
+    [TestMethod]
+    public async Task TestPnpmDetector_V5_MultiDocumentLockfileAsync()
+    {
+        var yamlFile = @"
+---
+dependencies:
+  root-a: 1.0.0
+
+packages:
+  /root-a/1.0.0:
+    dependencies:
+      dep-a: 1.1.0
+    dev: false
+  /dep-a/1.1.0:
+    dev: false
+
+---
+dependencies:
+  root-b: 2.0.0
+
+packages:
+  /root-b/2.0.0:
+    dependencies:
+      dep-b: 2.2.0
+    dev: true
+  /dep-b/2.2.0:
+    dev: true
+";
+
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
+            .WithFile("shrinkwrap.yaml", yamlFile)
+            .ExecuteDetectorAsync();
+
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+
+        var detectedComponents = componentRecorder.GetDetectedComponents().ToList();
+        detectedComponents.Should().HaveCount(4);
+        var npmComponents = detectedComponents.Select(x => new { Component = (NpmComponent)x.Component, DetectedComponent = x }).ToList();
+        npmComponents.Should().Contain(x => x.Component.Name == "root-a" && x.Component.Version == "1.0.0");
+        npmComponents.Should().Contain(x => x.Component.Name == "dep-a" && x.Component.Version == "1.1.0");
+        npmComponents.Should().Contain(x => x.Component.Name == "root-b" && x.Component.Version == "2.0.0");
+        npmComponents.Should().Contain(x => x.Component.Name == "dep-b" && x.Component.Version == "2.2.0");
+
+        var rootA = detectedComponents.Single(c => ((NpmComponent)c.Component).Name == "root-a");
+        var depA = detectedComponents.Single(c => ((NpmComponent)c.Component).Name == "dep-a");
+        var rootB = detectedComponents.Single(c => ((NpmComponent)c.Component).Name == "root-b");
+        var depB = detectedComponents.Single(c => ((NpmComponent)c.Component).Name == "dep-b");
+
+        componentRecorder.AssertAllExplicitlyReferencedComponents<NpmComponent>(
+            depA.Component.Id,
+            parent => parent.Name == "root-a" && parent.Version == "1.0.0");
+        componentRecorder.AssertAllExplicitlyReferencedComponents<NpmComponent>(
+            depB.Component.Id,
+            parent => parent.Name == "root-b" && parent.Version == "2.0.0");
+
+        componentRecorder.GetEffectiveDevDependencyValue(rootA.Component.Id).GetValueOrDefault(true).Should().BeFalse();
+        componentRecorder.GetEffectiveDevDependencyValue(depA.Component.Id).GetValueOrDefault(true).Should().BeFalse();
+        componentRecorder.GetEffectiveDevDependencyValue(rootB.Component.Id).GetValueOrDefault(false).Should().BeTrue();
+        componentRecorder.GetEffectiveDevDependencyValue(depB.Component.Id).GetValueOrDefault(false).Should().BeTrue();
+    }
 }

@@ -14,4 +14,10 @@ internal class PnpmHasDependenciesV6 : PnpmYaml
 
     [YamlMember(Alias = "optionalDependencies")]
     public Dictionary<string, PnpmYamlV6Dependency> OptionalDependencies { get; set; }
+
+    [YamlMember(Alias = "packageManagerDependencies")]
+    public Dictionary<string, PnpmYamlV6Dependency> PackageManagerDependencies { get; set; }
+
+    [YamlMember(Alias = "configDependencies")]
+    public Dictionary<string, PnpmYamlV6Dependency> ConfigDependencies { get; set; }
 }
