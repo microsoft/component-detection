@@ -1,0 +1,21 @@
+# These dependencies are intentionally outdated test fixtures and are not built or shipped.
+
+[[IgnoredVulns]]
+id = "PYSEC-2026-1845"
+reason = "The vulnerable dependency is an intentionally outdated test fixture."
+
+[[IgnoredVulns]]
+id = "PYSEC-2026-2120"
+reason = "The vulnerable dependency is an intentionally outdated test fixture."
+
+[[IgnoredVulns]]
+id = "PYSEC-2026-2121"
+reason = "The vulnerable dependency is an intentionally outdated test fixture."
+
+[[IgnoredVulns]]
+id = "PYSEC-2026-2132"
+reason = "The vulnerable dependency is an intentionally outdated test fixture."
+
+[[IgnoredVulns]]
+id = "PYSEC-2026-2987"
+reason = "The vulnerable dependency is an intentionally outdated test fixture."
