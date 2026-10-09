@@ -503,6 +503,51 @@ public class MSBuildBinaryLogComponentDetectorTests : BaseDetectorTest<MSBuildBi
     }
 
     [TestMethod]
+    public async Task WithBinlog_MultiTarget_OuterBuildWithoutAssetsFile_IsShippingFalse_AllDependenciesMarkedAsDev()
+    {
+        var outer = CreateProjectInfo(targetFramework: null);
+        outer.ProjectAssetsFile = null;
+        outer.IsShipping = false;
+        outer.TrySetProperty("TargetFrameworks", "net8.0;net6.0");
+
+        var innerNet8 = new MSBuildProjectInfo { ProjectPath = ProjectPath, ProjectAssetsFile = AssetsFilePath, TargetFramework = "net8.0", IsShipping = false };
+        var innerNet6 = new MSBuildProjectInfo { ProjectPath = ProjectPath, ProjectAssetsFile = AssetsFilePath, TargetFramework = "net6.0", IsShipping = false };
+
+        outer.InnerBuilds.Add(innerNet8);
+        outer.InnerBuilds.Add(innerNet6);
+
+        var (result, recorder) = await ExecuteWithBinlogAsync([outer], MultiTargetAssetsJson());
+
+        result.ResultCode.Should().Be(ProcessingResultCode.Success);
+        var component = recorder.GetDetectedComponents()
+            .Single(c => c.Component is NuGetComponent { Name: "Newtonsoft.Json" });
+        recorder.GetEffectiveDevDependencyValue(component.Component.Id).Should().BeTrue();
+    }
+
+    [TestMethod]
+    public async Task WithBinlog_MultiTarget_OuterBuildWithoutAssetsFile_UsesInnerBuildPerTfm()
+    {
+        var outer = CreateProjectInfo(targetFramework: null);
+        outer.ProjectAssetsFile = null;
+        outer.TrySetProperty("TargetFrameworks", "net8.0;net6.0");
+
+        var innerNet8 = new MSBuildProjectInfo { ProjectPath = ProjectPath, ProjectAssetsFile = AssetsFilePath, TargetFramework = "net8.0" };
+        AddPackageReference(innerNet8, "Newtonsoft.Json", isDevelopmentDependency: true);
+        var innerNet6 = new MSBuildProjectInfo { ProjectPath = ProjectPath, ProjectAssetsFile = AssetsFilePath, TargetFramework = "net6.0" };
+        AddPackageReference(innerNet6, "Newtonsoft.Json", isDevelopmentDependency: true);
+
+        outer.InnerBuilds.Add(innerNet8);
+        outer.InnerBuilds.Add(innerNet6);
+
+        var (result, recorder) = await ExecuteWithBinlogAsync([outer], MultiTargetAssetsJson());
+
+        result.ResultCode.Should().Be(ProcessingResultCode.Success);
+        var component = recorder.GetDetectedComponents()
+            .Single(c => c.Component is NuGetComponent { Name: "Newtonsoft.Json" });
+        recorder.GetEffectiveDevDependencyValue(component.Component.Id).Should().BeTrue();
+    }
+
+    [TestMethod]
     public async Task WithBinlog_NoBinlogMatch_FallsBackToStandardProcessing()
     {
         // Binlog contains info for a DIFFERENT project; assets file project path doesn't match.
