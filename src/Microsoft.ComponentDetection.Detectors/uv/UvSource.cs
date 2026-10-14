@@ -7,4 +7,6 @@ internal class UvSource
     public string? Virtual { get; set; }
 
     public string? Git { get; set; }
+
+    public string? Editable { get; set; }
 }
