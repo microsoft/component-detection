@@ -14,6 +14,17 @@ The version, the url and commit hash of the dependencies are stored in this file
 
 [This is the only reference in the Apple documentation to the `Package.resolved` file.][1]
 
+## Experiment results
+
+Swift detection is experimental. The registered `SwiftDetectorExperiment` uses an empty control group
+and `SwiftResolvedComponentDetector` as its experiment group, so all Swift discoveries are reported as additions.
+It does not depend on CocoaPods detection or compare Swift packages against CocoaPods packages.
+
+Enable experiment processing with `CD_DETECTOR_EXPERIMENTS` or `DetectorExperiments.Enable`.
+Scans with no Swift components do not produce experiment results. Disabling the Swift detector also disables this experiment.
+The CLI writes results to `Experiment_SwiftDetectorExperiment_{timestamp}_{processId}.json`;
+hosts that emit `ExperimentResults` custom events must register their own `IExperimentProcessor`.
+
 ## Known limitations
 
 Right now the detector does not support parsing `Package.swift` file to get the dependencies.

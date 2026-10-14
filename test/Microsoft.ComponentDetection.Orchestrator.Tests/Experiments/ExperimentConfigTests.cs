@@ -36,6 +36,12 @@ public class ExperimentConfigTests
     }
 
     [TestMethod]
+    public void ExperimentConfig_RegistersSwiftDetectorExperiment()
+    {
+        this.configs.OfType<SwiftDetectorExperiment>().Should().ContainSingle();
+    }
+
+    [TestMethod]
     public async Task ExperimentConfig_InitShouldNotThrowAsync()
     {
         foreach (var config in this.configs)
