@@ -33,6 +33,9 @@ public class SwiftResolvedComponentDetector : FileComponentDetector, IExperiment
 
     public override string Id { get; } = "Swift";
 
+    /// <inheritdoc />
+    public IExperimentConfiguration ExperimentConfiguration { get; } = new SwiftDetectorExperiment();
+
     public override IEnumerable<string> Categories => [Enum.GetName(DetectorClass.Swift)];
 
     public override IList<string> SearchPatterns { get; } = ["Package.resolved"];

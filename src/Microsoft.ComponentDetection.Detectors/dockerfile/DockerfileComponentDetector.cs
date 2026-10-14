@@ -11,6 +11,7 @@ using Microsoft.ComponentDetection.Common;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.Internal;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
+using Microsoft.ComponentDetection.Detectors.Experiments;
 using Microsoft.Extensions.Logging;
 using Sprache;
 using Valleysoft.DockerfileModel;
@@ -35,6 +36,9 @@ public class DockerfileComponentDetector : FileComponentDetector, IExperimentalD
     }
 
     public override string Id { get; } = "DockerReference";
+
+    /// <inheritdoc />
+    public IExperimentConfiguration ExperimentConfiguration { get; } = new EmptyBaselineExperiment<DockerfileComponentDetector>("DockerfileDetectorExperiment");
 
     public override IEnumerable<string> Categories => [nameof(DetectorClass.DockerReference)];
 

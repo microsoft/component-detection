@@ -24,6 +24,11 @@ as long as the report adheres to the following naming scheme: `component-detecti
 
 ### Legacy Detection (PipDetector, SimplePipDetector)
 
+Both legacy detectors are default-off. SimplePip was promoted to experimental in
+[#806](https://github.com/microsoft/component-detection/pull/806), then returned to default-off in
+[#836](https://github.com/microsoft/component-detection/pull/836). It has no active experiment configuration.
+Enable it explicitly with `--DetectorArgs SimplePip=EnableIfDefaultOff`.
+
 Pip detection is performed by running the following code snippet on every *setup.py*:
 
 ```python

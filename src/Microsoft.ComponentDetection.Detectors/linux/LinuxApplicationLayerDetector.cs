@@ -24,6 +24,9 @@ public class LinuxApplicationLayerDetector(
     public new string Id => "LinuxApplicationLayer";
 
     /// <inheritdoc/>
+    public IExperimentConfiguration ExperimentConfiguration { get; } = new LinuxApplicationLayerExperiment();
+
+    /// <inheritdoc/>
     public new IEnumerable<string> Categories =>
         [
             Enum.GetName(typeof(DetectorClass), DetectorClass.Linux)!,

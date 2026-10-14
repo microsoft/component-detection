@@ -61,4 +61,9 @@ public interface IDefaultOffComponentDetector : IComponentDetector
 /// </summary>
 public interface IExperimentalDetector : IComponentDetector
 {
+    /// <summary>
+    /// Gets the configuration that includes this detector in its experiment group.
+    /// The configuration is discovered automatically and does not need separate service registration.
+    /// </summary>
+    IExperimentConfiguration ExperimentConfiguration { get; }
 }

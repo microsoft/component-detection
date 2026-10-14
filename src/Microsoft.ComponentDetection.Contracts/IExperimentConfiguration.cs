@@ -1,7 +1,6 @@
-namespace Microsoft.ComponentDetection.Orchestrator.Experiments.Configs;
+namespace Microsoft.ComponentDetection.Contracts;
 
 using System.Threading.Tasks;
-using Microsoft.ComponentDetection.Contracts;
 
 /// <summary>
 /// Defines the configuration for an experiment. An experiment is a set of detectors that are grouped into control and
@@ -20,7 +19,7 @@ public interface IExperimentConfiguration
     /// Initializes the experiment configuration.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
-    Task InitAsync() => Task.CompletedTask;
+    Task InitAsync();
 
     /// <summary>
     /// Specifies if the detector is in the control group.
@@ -30,7 +29,7 @@ public interface IExperimentConfiguration
     bool IsInControlGroup(IComponentDetector componentDetector);
 
     /// <summary>
-    /// Specifies if the detector is in the control group.
+    /// Specifies if the detector is in the experiment group.
     /// </summary>
     /// <param name="componentDetector">The detector.</param>
     /// <returns><c>true</c> if the detector is in the experiment group; otherwise, <c>false</c>.</returns>

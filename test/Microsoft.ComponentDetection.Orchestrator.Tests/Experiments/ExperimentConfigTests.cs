@@ -6,9 +6,11 @@ using System.Linq;
 using System.Threading.Tasks;
 using AwesomeAssertions;
 using Microsoft.ComponentDetection.Contracts;
-using Microsoft.ComponentDetection.Orchestrator.Experiments.Configs;
+using Microsoft.ComponentDetection.Detectors.Swift;
 using Microsoft.ComponentDetection.Orchestrator.Extensions;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 
@@ -22,9 +24,16 @@ public class ExperimentConfigTests
     [TestInitialize]
     public void Initialize()
     {
-        var serviceProvider = new ServiceCollection().AddComponentDetection().BuildServiceProvider();
+        using var serviceProvider = new ServiceCollection()
+            .AddComponentDetection()
+            .AddSingleton(typeof(ILogger<>), typeof(NullLogger<>))
+            .BuildServiceProvider();
 
-        this.configs = serviceProvider.GetServices<IExperimentConfiguration>().ToList();
+        this.configs = serviceProvider.GetServices<IComponentDetector>()
+            .OfType<IExperimentalDetector>()
+            .Select(detector => detector.ExperimentConfiguration)
+            .Distinct()
+            .ToList();
     }
 
     [TestMethod]
@@ -36,7 +45,7 @@ public class ExperimentConfigTests
     }
 
     [TestMethod]
-    public void ExperimentConfig_RegistersSwiftDetectorExperiment()
+    public void ExperimentConfig_DiscoversSwiftDetectorExperiment()
     {
         this.configs.OfType<SwiftDetectorExperiment>().Should().ContainSingle();
     }

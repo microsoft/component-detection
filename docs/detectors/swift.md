@@ -16,7 +16,8 @@ The version, the url and commit hash of the dependencies are stored in this file
 
 ## Experiment results
 
-Swift detection is experimental. The registered `SwiftDetectorExperiment` uses an empty control group
+Swift detection is experimental. `SwiftResolvedComponentDetector.ExperimentConfiguration` supplies
+`SwiftDetectorExperiment`, which is discovered automatically and uses an empty control group
 and `SwiftResolvedComponentDetector` as its experiment group, so all Swift discoveries are reported as additions.
 It does not depend on CocoaPods detection or compare Swift packages against CocoaPods packages.
 

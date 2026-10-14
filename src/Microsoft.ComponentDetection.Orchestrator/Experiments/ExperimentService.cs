@@ -9,7 +9,6 @@ using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Common.DependencyGraph;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Orchestrator.Commands;
-using Microsoft.ComponentDetection.Orchestrator.Experiments.Configs;
 using Microsoft.ComponentDetection.Orchestrator.Experiments.Models;
 using Microsoft.ComponentDetection.Orchestrator.Services;
 using Microsoft.ComponentDetection.Orchestrator.Services.GraphTranslation;
@@ -26,18 +25,28 @@ public class ExperimentService : IExperimentService
     /// <summary>
     /// Initializes a new instance of the <see cref="ExperimentService"/> class.
     /// </summary>
-    /// <param name="configs">The experiment configurations.</param>
+    /// <param name="detectors">The detectors whose experimental configurations are discovered automatically.</param>
     /// <param name="experimentProcessors">The experiment processors.</param>
     /// <param name="graphTranslationService">The graph translation service.</param>
     /// <param name="logger">The logger.</param>
     public ExperimentService(
-        IEnumerable<IExperimentConfiguration> configs,
+        IEnumerable<IComponentDetector> detectors,
         IEnumerable<IExperimentProcessor> experimentProcessors,
         IGraphTranslationService graphTranslationService,
         ILogger<ExperimentService> logger)
     {
+        var detectorConfigs = detectors.OfType<IExperimentalDetector>().Select(detector =>
+        {
+            var config = detector.ExperimentConfiguration;
+            if (config is null || !config.IsInExperimentGroup(detector))
+            {
+                throw new InvalidOperationException($"Experimental detector '{detector.Id}' must provide a configuration that includes it in the experiment group.");
+            }
+
+            return config;
+        });
         this.experiments = new ConcurrentDictionary<IExperimentConfiguration, ExperimentResults>(
-            configs.ToDictionary(config => config, _ => new ExperimentResults()));
+            detectorConfigs.Distinct().ToDictionary(config => config, _ => new ExperimentResults()));
         this.experimentProcessors = experimentProcessors;
         this.graphTranslationService = graphTranslationService;
         this.logger = logger;

@@ -14,6 +14,7 @@ using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.BcdeModels;
 using Microsoft.ComponentDetection.Contracts.Internal;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
+using Microsoft.ComponentDetection.Detectors.Experiments;
 using Microsoft.Extensions.Logging;
 
 /// <summary>
@@ -61,6 +62,9 @@ public class IvyDetector : FileComponentDetector, IExperimentalDetector
     }
 
     public override string Id => "Ivy";
+
+    /// <inheritdoc />
+    public IExperimentConfiguration ExperimentConfiguration { get; } = new EmptyBaselineExperiment<IvyDetector>("IvyDetectorExperiment");
 
     public override IList<string> SearchPatterns => ["ivy.xml"];
 

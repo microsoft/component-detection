@@ -26,6 +26,9 @@ public class CondaLockComponentDetector : FileComponentDetector, IExperimentalDe
 
     public override string Id => "CondaLock";
 
+    /// <inheritdoc />
+    public IExperimentConfiguration ExperimentConfiguration { get; } = new CondaLockDetectorExperiment();
+
     public override IList<string> SearchPatterns { get; } = ["conda-lock.yml", "*.conda-lock.yml"];
 
     public override IEnumerable<ComponentType> SupportedComponentTypes => [ComponentType.Conda, ComponentType.Pip];

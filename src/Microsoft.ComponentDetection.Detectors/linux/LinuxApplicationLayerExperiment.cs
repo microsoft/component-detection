@@ -1,7 +1,7 @@
-namespace Microsoft.ComponentDetection.Orchestrator.Experiments.Configs;
+namespace Microsoft.ComponentDetection.Detectors.Linux;
 
+using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Contracts;
-using Microsoft.ComponentDetection.Detectors.Linux;
 using Microsoft.ComponentDetection.Detectors.Npm;
 using Microsoft.ComponentDetection.Detectors.NuGet;
 using Microsoft.ComponentDetection.Detectors.Pip;
@@ -19,6 +19,9 @@ public class LinuxApplicationLayerExperiment : IExperimentConfiguration
 {
     /// <inheritdoc />
     public string Name => "LinuxApplicationLayer";
+
+    /// <inheritdoc />
+    public Task InitAsync() => Task.CompletedTask;
 
     /// <inheritdoc />
     public bool IsInControlGroup(IComponentDetector componentDetector) =>
