@@ -581,6 +581,57 @@ packages:
     }
 
     [TestMethod]
+    public async Task TestPnpmDetector_V6_IgnoresLinkAndFilePackageDependenciesAsync()
+    {
+        var yamlFile = @"
+lockfileVersion: '6.0'
+settings:
+  autoInstallPeers: true
+  excludeLinksFromLockfile: false
+importers:
+  .:
+    dependencies:
+      pkg-a:
+        specifier: 1.0.0
+        version: 1.0.0
+packages:
+  /pkg-a@1.0.0:
+    resolution: {integrity: sha512-mock=}
+    dependencies:
+      pkg-link: link:../pkg-link
+      pkg-file: file:../pkg-file
+      minimist: 1.2.8
+    dev: false
+  /minimist@1.2.8:
+    resolution: {integrity: sha512-2yyAR8qBkN3YuheJanUpWC5U3bb5osDywNB8RzDVlDwDHbocAJveqqj1u8+SVD7jkWT4yvsHCpWqqWqAxb0zCA==}
+    dev: false
+  link:../pkg-link:
+    dev: false
+  file:../pkg-file:
+    dev: false
+";
+
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
+            .WithFile("pnpm-lock.yaml", yamlFile)
+            .ExecuteDetectorAsync();
+
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+
+        var detectedComponents = componentRecorder.GetDetectedComponents().ToList();
+        detectedComponents.Should().HaveCount(2);
+
+        var names = detectedComponents.Select(c => ((NpmComponent)c.Component).Name);
+        names.Should().BeEquivalentTo(["pkg-a", "minimist"]);
+
+        var pkgA = detectedComponents.Single(c => ((NpmComponent)c.Component).Name == "pkg-a");
+        var minimist = detectedComponents.Single(c => ((NpmComponent)c.Component).Name == "minimist");
+
+        var graph = componentRecorder.GetDependencyGraphsByLocation().Values.First();
+        graph.IsComponentExplicitlyReferenced(pkgA.Component.Id).Should().BeTrue();
+        graph.GetDependenciesForComponent(pkgA.Component.Id).Should().Contain(minimist.Component.Id);
+    }
+
+    [TestMethod]
     public async Task TestPnpmDetector_V6_BadLockVersion_EmptyAsync()
     {
         var yamlFile = @"
