@@ -1,7 +1,7 @@
 namespace Microsoft.ComponentDetection.Orchestrator.Experiments;
 
 using System.Threading.Tasks;
-using Microsoft.ComponentDetection.Orchestrator.Experiments.Configs;
+using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Orchestrator.Experiments.Models;
 
 /// <summary>

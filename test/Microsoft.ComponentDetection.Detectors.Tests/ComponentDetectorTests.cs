@@ -65,12 +65,55 @@ public class ComponentDetectorTests
     }
 
     [TestMethod]
+    public void AllExperimentalDetectorsProvideConfigurationsThatIncludeThem()
+    {
+        var experimentalDetectors = this.detectors.OfType<IExperimentalDetector>().ToList();
+        experimentalDetectors.Should().NotBeEmpty();
+
+        foreach (var detector in experimentalDetectors)
+        {
+            var config = detector.ExperimentConfiguration;
+            config.Should().NotBeNull($"because {detector.Id} must have an experiment");
+            config.Name.Should().NotBeNullOrWhiteSpace();
+            config.Should().BeSameAs(detector.ExperimentConfiguration);
+            config.IsInExperimentGroup(detector).Should().BeTrue($"because {detector.Id} must participate in its experiment");
+        }
+    }
+
+    [TestMethod]
+    [DataRow("DockerCompose", "DockerComposeDetectorExperiment")]
+    [DataRow("DockerReference", "DockerfileDetectorExperiment")]
+    [DataRow("Helm", "HelmDetectorExperiment")]
+    [DataRow("Ivy", "IvyDetectorExperiment")]
+    [DataRow("Poetry", "PoetryDetectorExperiment")]
+    public void DiscoveryExperimentsHaveEmptyControlGroupAndOnlyTheirOwnDetector(string detectorId, string experimentName)
+    {
+        var detector = this.detectors.OfType<IExperimentalDetector>().Single(d => d.Id == detectorId);
+        var config = detector.ExperimentConfiguration;
+
+        config.Name.Should().Be(experimentName);
+        this.detectors.Where(config.IsInControlGroup).Should().BeEmpty();
+        this.detectors.Where(config.IsInExperimentGroup).Should().ContainSingle().Which.Should().BeSameAs(detector);
+        config.ShouldRecord(detector, 0).Should().BeTrue();
+        config.ShouldRecord(detector, 1).Should().BeTrue();
+    }
+
+    [TestMethod]
     public void UvLockComponentDetector_DoesNotImplementIExperimentalDetector()
     {
         var uvLockDetector = this.detectors.SingleOrDefault(d => d.Id == "UvLock");
 
         uvLockDetector.Should().NotBeNull("because UvLockComponentDetector should be registered");
         uvLockDetector.Should().NotBeAssignableTo<IExperimentalDetector>("because UvLockComponentDetector should not implement IExperimentalDetector");
+    }
+
+    [TestMethod]
+    public void SimplePipComponentDetector_RemainsDefaultOff()
+    {
+        var detector = this.detectors.Single(d => d.Id == "SimplePip");
+
+        detector.Should().BeAssignableTo<IDefaultOffComponentDetector>();
+        detector.Should().NotBeAssignableTo<IExperimentalDetector>("because SimplePip was deliberately returned to default-off in #836");
     }
 
     [TestMethod]

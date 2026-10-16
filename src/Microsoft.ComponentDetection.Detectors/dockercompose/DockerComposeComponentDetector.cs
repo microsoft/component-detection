@@ -9,6 +9,7 @@ using Microsoft.ComponentDetection.Common;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.Internal;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
+using Microsoft.ComponentDetection.Detectors.Experiments;
 using Microsoft.Extensions.Logging;
 using YamlDotNet.RepresentationModel;
 
@@ -25,6 +26,9 @@ public class DockerComposeComponentDetector : FileComponentDetector, IExperiment
     }
 
     public override string Id => "DockerCompose";
+
+    /// <inheritdoc />
+    public IExperimentConfiguration ExperimentConfiguration { get; } = new EmptyBaselineExperiment<DockerComposeComponentDetector>("DockerComposeDetectorExperiment");
 
     public override IList<string> SearchPatterns { get; } =
     [

@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.Internal;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
+using Microsoft.ComponentDetection.Detectors.Experiments;
 using Microsoft.ComponentDetection.Detectors.Poetry.Contracts;
 using Microsoft.Extensions.Logging;
 using Tomlyn;
@@ -27,6 +28,9 @@ public class PoetryComponentDetector : FileComponentDetector, IExperimentalDetec
     }
 
     public override string Id => "Poetry";
+
+    /// <inheritdoc />
+    public IExperimentConfiguration ExperimentConfiguration { get; } = new EmptyBaselineExperiment<PoetryComponentDetector>("PoetryDetectorExperiment");
 
     public override IList<string> SearchPatterns { get; } = ["poetry.lock"];
 

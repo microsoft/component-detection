@@ -1,7 +1,7 @@
-namespace Microsoft.ComponentDetection.Orchestrator.Experiments.Configs;
+namespace Microsoft.ComponentDetection.Detectors.CondaLock;
 
+using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Contracts;
-using Microsoft.ComponentDetection.Detectors.CondaLock;
 using Microsoft.ComponentDetection.Detectors.Pip;
 
 /// <summary>
@@ -11,6 +11,9 @@ public class CondaLockDetectorExperiment : IExperimentConfiguration
 {
     /// <inheritdoc />
     public string Name => "CondaLockDetectorExperiment";
+
+    /// <inheritdoc />
+    public Task InitAsync() => Task.CompletedTask;
 
     /// <inheritdoc />
     public bool IsInControlGroup(IComponentDetector componentDetector) => componentDetector is PipReportComponentDetector;

@@ -5,7 +5,6 @@ using Microsoft.ComponentDetection.Detectors.Linux;
 using Microsoft.ComponentDetection.Detectors.Npm;
 using Microsoft.ComponentDetection.Detectors.NuGet;
 using Microsoft.ComponentDetection.Detectors.Pip;
-using Microsoft.ComponentDetection.Orchestrator.Experiments.Configs;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 [TestClass]

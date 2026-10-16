@@ -30,7 +30,6 @@ using Microsoft.ComponentDetection.Detectors.Vcpkg;
 using Microsoft.ComponentDetection.Detectors.Yarn;
 using Microsoft.ComponentDetection.Detectors.Yarn.Parsers;
 using Microsoft.ComponentDetection.Orchestrator.Experiments;
-using Microsoft.ComponentDetection.Orchestrator.Experiments.Configs;
 using Microsoft.ComponentDetection.Orchestrator.Services;
 using Microsoft.ComponentDetection.Orchestrator.Services.GraphTranslation;
 using Microsoft.Extensions.DependencyInjection;
@@ -71,10 +70,6 @@ public static class ServiceCollectionExtensions
         // Experiments
         services.AddSingleton<IExperimentService, ExperimentService>();
         services.AddSingleton<IExperimentProcessor, DefaultExperimentProcessor>();
-        services.AddSingleton<IExperimentConfiguration, SimplePipExperiment>();
-        services.AddSingleton<IExperimentConfiguration, CondaLockDetectorExperiment>();
-        services.AddSingleton<IExperimentConfiguration, LinuxApplicationLayerExperiment>();
-        services.AddSingleton<IExperimentConfiguration, SwiftDetectorExperiment>();
 
         // Detectors
         // CocoaPods

@@ -4,7 +4,7 @@ using System;
 using System.Text.Json;
 using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Common;
-using Microsoft.ComponentDetection.Orchestrator.Experiments.Configs;
+using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Orchestrator.Experiments.Models;
 using Microsoft.Extensions.Logging;
 

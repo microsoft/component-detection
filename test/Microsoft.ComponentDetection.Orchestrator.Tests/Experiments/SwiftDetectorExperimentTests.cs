@@ -4,7 +4,6 @@ using AwesomeAssertions;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Detectors.CocoaPods;
 using Microsoft.ComponentDetection.Detectors.Swift;
-using Microsoft.ComponentDetection.Orchestrator.Experiments.Configs;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 

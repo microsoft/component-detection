@@ -57,6 +57,28 @@ New detectors progress through three stages before becoming default. Contributor
 | **2. Experimental** | `IExperimentalDetector` | Runs automatically but output is NOT included in scan results. Used to measure performance impact. Enabling experimental detectors via `--DetectorArgs YourDetectorId=EnableIfDefaultOff` will cause output to be included in scan results. |
 | **3. Default** | `IComponentDetector` | Fully integrated. Runs by default and output is included in results. Can be filtered via `--DetectorCategory` or `--DetectorFilters`. |
 
+### Experimental Configurations
+
+`IExperimentalDetector` requires an `IExperimentConfiguration ExperimentConfiguration` property. Keep the
+configuration beside the detector and return the same configuration instance for the detector's lifetime.
+The experiment service discovers it from registered detectors automatically; do not register it separately.
+Configurations must include their owning detector in `IsInExperimentGroup`, or service construction fails.
+`IExperimentConfiguration` lives in the Contracts project, so detectors do not need to reference Orchestrator.
+Implement `InitAsync` for configuration initialization, returning `Task.CompletedTask` when none is needed.
+
+For comparisons against existing detectors, implement a configuration like `CondaLockDetectorExperiment`
+or `LinuxApplicationLayerExperiment`. For discoveries without an existing baseline, use
+`EmptyBaselineExperiment<TDetector>` from `Microsoft.ComponentDetection.Detectors.Experiments`:
+
+```csharp
+public IExperimentConfiguration ExperimentConfiguration { get; } =
+    new EmptyBaselineExperiment<YourEcosystemDetector>("YourEcosystemExperiment");
+```
+
+An empty-baseline experiment reports all discoveries as additions. Existing experiments retain their
+control groups and recording rules. Every experiment is supplied by a registered experimental detector;
+default-off detectors do not supply experiment configurations.
+
 ## Step 1: Define Your Component Type
 
 **Skip this step if reusing an existing component type** (e.g., `NpmComponent`, `PipComponent`).

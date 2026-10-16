@@ -12,6 +12,7 @@ using Microsoft.ComponentDetection.Common;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.Internal;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
+using Microsoft.ComponentDetection.Detectors.Experiments;
 using Microsoft.Extensions.Logging;
 using YamlDotNet.RepresentationModel;
 
@@ -36,6 +37,9 @@ public class HelmComponentDetector : FileComponentDetector, IExperimentalDetecto
     }
 
     public override string Id => "Helm";
+
+    /// <inheritdoc />
+    public IExperimentConfiguration ExperimentConfiguration { get; } = new EmptyBaselineExperiment<HelmComponentDetector>("HelmDetectorExperiment");
 
     public override IList<string> SearchPatterns { get; } =
     [
