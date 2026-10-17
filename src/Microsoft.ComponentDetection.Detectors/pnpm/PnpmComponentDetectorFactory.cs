@@ -42,7 +42,7 @@ internal class PnpmComponentDetectorFactory : FileComponentDetector
 
     public override IEnumerable<ComponentType> SupportedComponentTypes { get; } = [ComponentType.Npm];
 
-    public override int Version { get; } = 8;
+    public override int Version { get; } = 9;
 
     public override bool NeedsAutomaticRootDependencyCalculation => true;
 

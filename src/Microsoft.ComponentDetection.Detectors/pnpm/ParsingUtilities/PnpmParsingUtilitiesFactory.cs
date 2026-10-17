@@ -1,8 +1,8 @@
 #nullable disable
 namespace Microsoft.ComponentDetection.Detectors.Pnpm;
 
-using System.IO;
-using YamlDotNet.Serialization;
+using System;
+using System.Linq;
 
 internal static class PnpmParsingUtilitiesFactory
 {
@@ -20,9 +20,17 @@ internal static class PnpmParsingUtilitiesFactory
 
     public static string DeserializePnpmYamlFileVersion(string fileContent)
     {
-        var deserializer = new DeserializerBuilder()
-            .IgnoreUnmatchedProperties()
-            .Build();
-        return deserializer.Deserialize<PnpmYaml>(new StringReader(fileContent))?.LockfileVersion;
+        var documents = Create<PnpmYaml>().DeserializePnpmYamlFileDocuments(fileContent);
+        var distinctVersions = documents
+            .Select(doc => doc.LockfileVersion)
+            .Where(version => !string.IsNullOrWhiteSpace(version))
+            .Distinct()
+            .ToList();
+        if (distinctVersions.Count > 1)
+        {
+            throw new InvalidOperationException($"Inconsistent lockfile versions found: {string.Join(", ", distinctVersions)}");
+        }
+
+        return distinctVersions.FirstOrDefault();
     }
 }
