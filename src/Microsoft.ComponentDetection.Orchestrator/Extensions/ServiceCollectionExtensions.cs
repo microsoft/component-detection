@@ -74,7 +74,6 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IExperimentConfiguration, SimplePipExperiment>();
         services.AddSingleton<IExperimentConfiguration, CondaLockDetectorExperiment>();
         services.AddSingleton<IExperimentConfiguration, LinuxApplicationLayerExperiment>();
-        services.AddSingleton<IExperimentConfiguration, SwiftDetectorExperiment>();
 
         // Detectors
         // CocoaPods

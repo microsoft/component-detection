@@ -83,12 +83,12 @@ public class ComponentDetectorTests
     }
 
     [TestMethod]
-    public void SwiftResolvedComponentDetector_ImplementsIExperimentalDetector()
+    public void SwiftResolvedComponentDetector_IsDefaultOn()
     {
         var swiftDetector = this.detectors.SingleOrDefault(d => d.Id == "Swift");
 
         swiftDetector.Should().NotBeNull("because SwiftResolvedComponentDetector should be registered");
-        swiftDetector.Should().BeAssignableTo<IExperimentalDetector>("because SwiftResolvedComponentDetector should implement IExperimentalDetector");
+        swiftDetector.Should().NotBeAssignableTo<IExperimentalDetector>("because SwiftResolvedComponentDetector should be default-on");
         swiftDetector.Should().NotBeAssignableTo<IDefaultOffComponentDetector>("because SwiftResolvedComponentDetector should be enabled by default");
     }
 

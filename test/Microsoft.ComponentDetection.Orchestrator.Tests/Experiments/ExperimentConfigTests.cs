@@ -6,6 +6,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using AwesomeAssertions;
 using Microsoft.ComponentDetection.Contracts;
+using Microsoft.ComponentDetection.Detectors.Swift;
 using Microsoft.ComponentDetection.Orchestrator.Experiments.Configs;
 using Microsoft.ComponentDetection.Orchestrator.Extensions;
 using Microsoft.Extensions.DependencyInjection;
@@ -36,9 +37,11 @@ public class ExperimentConfigTests
     }
 
     [TestMethod]
-    public void ExperimentConfig_RegistersSwiftDetectorExperiment()
+    public void ExperimentConfig_SwiftDetectorIsNotInExperimentGroup()
     {
-        this.configs.OfType<SwiftDetectorExperiment>().Should().ContainSingle();
+        var swiftDetector = new SwiftResolvedComponentDetector(null, null, null);
+
+        this.configs.Should().OnlyContain(config => !config.IsInExperimentGroup(swiftDetector));
     }
 
     [TestMethod]
