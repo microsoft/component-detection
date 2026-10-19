@@ -181,6 +181,57 @@ public class RustMetadataContextBuilderTests
     }
 
     [TestMethod]
+    public async Task BuildPackageOwnershipMapAsync_QuotesManifestPathWhenPathContainsSpaces()
+    {
+        var tomlPath = "C:/repo with space/AppControl Manager/Cargo.toml";
+        var quotedTomlPath = $"\"{tomlPath}\"";
+
+        var json = """
+        {
+          "packages": [
+            { "name": "my-pkg", "version": "1.0.0", "id": "my-pkg 1.0.0 (path+file:///C:/repo)", "dependencies": [], "source": null }
+          ],
+          "workspace_members": [ "my-pkg 1.0.0 (path+file:///C:/repo)" ],
+          "resolve": {
+            "nodes": [
+              { "id": "my-pkg 1.0.0 (path+file:///C:/repo)", "deps": [] }
+            ]
+          }
+        }
+        """;
+
+        this.envVarService.Setup(e => e.IsEnvironmentVariableValueTrue("DisableRustCliScan")).Returns(false);
+        this.cliService.Setup(c => c.CanCommandBeLocatedAsync("cargo", null)).ReturnsAsync(true);
+        this.cliService.Setup(c => c.ExecuteCommandAsync(
+                "cargo",
+                null,
+                null,
+                It.IsAny<CancellationToken>(),
+                "metadata",
+                "--manifest-path",
+                quotedTomlPath,
+                "--format-version=1",
+                "--locked"))
+            .ReturnsAsync(new CommandLineExecutionResult { ExitCode = 0, StdOut = json });
+
+        var result = await this.builder.BuildPackageOwnershipMapAsync([tomlPath]);
+
+        result.FailedManifests.Should().BeEmpty();
+        this.cliService.Verify(
+            c => c.ExecuteCommandAsync(
+                "cargo",
+                null,
+                null,
+                It.IsAny<CancellationToken>(),
+                "metadata",
+                "--manifest-path",
+                quotedTomlPath,
+                "--format-version=1",
+                "--locked"),
+            Times.Once());
+    }
+
+    [TestMethod]
     public async Task BuildPackageOwnershipMapAsync_SimpleDependency_BuildsOwnershipMap()
     {
         var tomlPath = "C:/repo/Cargo.toml";
