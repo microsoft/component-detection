@@ -473,6 +473,25 @@ public class MSBuildBinaryLogComponentDetectorTests : BaseDetectorTest<MSBuildBi
     }
 
     [TestMethod]
+    public async Task WithBinlog_ExplicitSelfContainedFalse_OverridesLockFileRuntimePackHeuristic()
+    {
+        var info = CreateProjectInfo();
+        info.NETCoreSdkVersion = "8.0.100";
+        info.OutputType = "Library";
+        info.SelfContained = false;
+        var assetsJson = RuntimePackDownloadAssetsJson();
+
+        var (result, recorder) = await ExecuteWithBinlogAsync([info], assetsJson);
+
+        result.ResultCode.Should().Be(ProcessingResultCode.Success);
+        var dotNet = recorder.GetDetectedComponents()
+            .Where(c => c.Component is DotNetComponent)
+            .Select(c => (DotNetComponent)c.Component)
+            .Single();
+        dotNet.ProjectType.Should().Be("library");
+    }
+
+    [TestMethod]
     public async Task WithBinlog_MultiTarget_PerTfmDevDependency()
     {
         // Multi-target project: net8.0 inner build marks package as dev, net6.0 does not.
@@ -933,6 +952,18 @@ public class MSBuildBinaryLogComponentDetectorTests : BaseDetectorTest<MSBuildBi
             }
         }
         """;
+
+    private static string RuntimePackDownloadAssetsJson()
+    {
+        const string frameworkDependencies = "\"dependencies\": {";
+        const string runtimePackDownload = """
+            "frameworkReferences": { "Microsoft.NETCore.App": { "privateAssets": "all" } },
+            "downloadDependencies": [ { "name": "Microsoft.NETCore.App.Runtime.linux-x64", "version": "[8.0.0, 8.0.0]" } ],
+            "dependencies": {
+            """;
+        return SimpleAssetsJson("Newtonsoft.Json", "13.0.1")
+            .Replace(frameworkDependencies, runtimePackDownload, StringComparison.Ordinal);
+    }
 
     /// <summary>
     /// Assets JSON with a top-level package that has a transitive dependency.

@@ -278,8 +278,8 @@ public class MSBuildBinaryLogComponentDetector : FileComponentDetector
     /// Determines if a project is self-contained using MSBuild properties from the binlog.
     /// Reads the SelfContained and PublishAot properties directly.
     /// </summary>
-    private static bool IsSelfContainedFromProjectInfo(MSBuildProjectInfo projectInfo) =>
-        projectInfo.SelfContained == true || projectInfo.PublishAot == true;
+    private static bool? IsSelfContainedFromProjectInfo(MSBuildProjectInfo projectInfo) =>
+        projectInfo.SelfContained ?? (projectInfo.PublishAot == true ? true : null);
 
     private void ProcessBinlogFile(string binlogPath, CancellationToken cancellationToken)
     {
@@ -389,7 +389,8 @@ public class MSBuildBinaryLogComponentDetector : FileComponentDetector
 
         var singleFileComponentRecorder = this.ComponentRecorder.CreateSingleFileComponentRecorder(recorderLocation);
 
-        // Primary self-contained check from binlog properties (SelfContained, PublishAot)
+        // Prefer an explicit SelfContained value from the binlog; use PublishAot as a positive signal.
+        // A null result means the lock file heuristic may be used as a fallback.
         var isSelfContainedFromBinlog = IsSelfContainedFromProjectInfo(projectInfo);
 
         if (lockFile != null)
@@ -401,7 +402,7 @@ public class MSBuildBinaryLogComponentDetector : FileComponentDetector
             {
                 var innerInfo = GetInnerBuildOrDefault(projectInfo, target.TargetFramework);
                 var targetType = GetTargetType(innerInfo.OutputType);
-                var isSelfContained = isSelfContainedFromBinlog ||
+                var isSelfContained = isSelfContainedFromBinlog ??
                     LockFileUtilities.IsSelfContainedFromLockFile(lockFile.PackageSpec, target.TargetFramework, target);
                 var projectType = LockFileUtilities.GetTargetTypeWithSelfContained(targetType, isSelfContained);
                 var frameworkName = target.TargetFramework?.GetShortFolderName();
@@ -420,7 +421,7 @@ public class MSBuildBinaryLogComponentDetector : FileComponentDetector
         // Binlog-only path: no lock file available or no targets in lock file
         // Determine target type from outer build OutputType property.
         var targetTypeFromBinlog = GetTargetType(projectInfo.OutputType);
-        var projectTypeFromBinlog = LockFileUtilities.GetTargetTypeWithSelfContained(targetTypeFromBinlog, isSelfContainedFromBinlog);
+        var projectTypeFromBinlog = LockFileUtilities.GetTargetTypeWithSelfContained(targetTypeFromBinlog, isSelfContainedFromBinlog ?? false);
 
         // Get target frameworks from binlog properties
         var targetFrameworks = new List<string>();
