@@ -2,6 +2,8 @@
 namespace Microsoft.ComponentDetection.Detectors.Tests;
 
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using AwesomeAssertions;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.ComponentDetection.Detectors.Pnpm;
@@ -39,7 +41,7 @@ shrinkwrapVersion: 3";
         var pnpmParsingUtilities = PnpmParsingUtilitiesFactory.Create<PnpmYamlV5>();
         var version = PnpmParsingUtilitiesFactory.DeserializePnpmYamlFileVersion(yamlFile);
         version.Should().BeNull(); // Versions older than 5 report null as they don't use the same version field.
-        var parsedYaml = pnpmParsingUtilities.DeserializePnpmYamlFile(yamlFile);
+        var parsedYaml = pnpmParsingUtilities.DeserializePnpmYamlFileDocuments(yamlFile).Single();
 
         parsedYaml.Packages.Should().HaveCount(2);
         parsedYaml.Packages.Should().ContainKey("/query-string/4.3.4");
@@ -130,7 +132,7 @@ packages:
         var pnpmParsingUtilities = PnpmParsingUtilitiesFactory.Create<PnpmYamlV6>();
         var version = PnpmParsingUtilitiesFactory.DeserializePnpmYamlFileVersion(yamlFile);
         version.Should().Be("6.0");
-        var parsedYaml = pnpmParsingUtilities.DeserializePnpmYamlFile(yamlFile);
+        var parsedYaml = pnpmParsingUtilities.DeserializePnpmYamlFileDocuments(yamlFile).Single();
 
         parsedYaml.Packages.Should().ContainSingle();
         parsedYaml.Packages.Should().ContainKey("/minimist@1.2.8");
@@ -185,5 +187,90 @@ packages:
 
         // Absolute path:
         pnpmParsingUtilities.ReconstructPnpmDependencyPath("events_pkg", "/events@3.3.0").Should().BeEquivalentTo("/events@3.3.0");
+    }
+
+    [TestMethod]
+    public void DeserializePnpmYamlFileVersion_MultiDocument_ConsistentVersions_ReturnsVersion()
+    {
+        var yamlFile = @"
+---
+lockfileVersion: '9.0'
+---
+lockfileVersion: '9.0'
+";
+        var version = PnpmParsingUtilitiesFactory.DeserializePnpmYamlFileVersion(yamlFile);
+        version.Should().Be("9.0");
+    }
+
+    [TestMethod]
+    public void DeserializePnpmYamlFileVersion_MultiDocument_InconsistentVersions_ThrowsInvalidOperationException()
+    {
+        var yamlFile = @"
+---
+lockfileVersion: '9.0'
+---
+lockfileVersion: '6.0'
+";
+        var action = () => PnpmParsingUtilitiesFactory.DeserializePnpmYamlFileVersion(yamlFile);
+        action.Should().Throw<InvalidOperationException>()
+            .WithMessage("*Inconsistent lockfile versions*");
+    }
+
+    [TestMethod]
+    public void DeserializePnpmYamlFileDocuments_ReturnsAllDocuments()
+    {
+        var yamlFile = @"
+---
+lockfileVersion: '9.0'
+importers:
+  .:
+    packageManagerDependencies:
+      pnpm:
+        specifier: 12.3.4
+        version: 12.3.4
+---
+lockfileVersion: '9.0'
+importers:
+  .:
+    dependencies:
+      fast-uri:
+        specifier: 3.1.7
+        version: 3.1.7
+";
+        var pnpmParsingUtilities = PnpmParsingUtilitiesFactory.Create<PnpmYamlV9>();
+        var documents = pnpmParsingUtilities.DeserializePnpmYamlFileDocuments(yamlFile);
+
+        documents.Should().HaveCount(2);
+        documents[0].Importers["."].PackageManagerDependencies.Should().ContainKey("pnpm");
+        documents[1].Importers["."].Dependencies.Should().ContainKey("fast-uri");
+    }
+
+    [TestMethod]
+    [DataRow("")]
+    [DataRow("   \n")]
+    [DataRow("---\n")]
+    [DataRow("---\n---\nlockfileVersion: '9.0'\n")]
+    [DataRow("lockfileVersion: '9.0'\n---\n")]
+    [DataRow("lockfileVersion: '9.0'\n---\nlockfileVersion: '9.0'\n---\nlockfileVersion: '9.0'\n")]
+    [DataRow("lockfileVersion: '9.0'\n---\n---\nlockfileVersion: '9.0'\n")]
+    public void DeserializePnpmYamlFileDocuments_InvalidDocumentCountOrEmptyDocument_Throws(string yamlFile)
+    {
+        var pnpmParsingUtilities = PnpmParsingUtilitiesFactory.Create<PnpmYamlV9>();
+        Action parseDocuments = () => pnpmParsingUtilities.DeserializePnpmYamlFileDocuments(yamlFile);
+        Action parseVersion = () => PnpmParsingUtilitiesFactory.DeserializePnpmYamlFileVersion(yamlFile);
+
+        parseDocuments.Should().Throw<InvalidOperationException>();
+        parseVersion.Should().Throw<InvalidOperationException>();
+    }
+
+    [TestMethod]
+    public void DeserializePnpmYamlFileDocuments_ReturnedCollectionCannotBeModified()
+    {
+        var pnpmParsingUtilities = PnpmParsingUtilitiesFactory.Create<PnpmYamlV9>();
+        var documents = pnpmParsingUtilities.DeserializePnpmYamlFileDocuments("lockfileVersion: '9.0'\n---\nlockfileVersion: '9.0'\n");
+        Action removeDocument = () => ((IList<PnpmYamlV9>)documents).RemoveAt(0);
+
+        removeDocument.Should().Throw<NotSupportedException>();
+        documents.Should().HaveCount(2);
     }
 }

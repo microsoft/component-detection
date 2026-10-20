@@ -12,36 +12,39 @@ public class Pnpm5Detector : IPnpmDetector
 
     public void RecordDependencyGraphFromFile(string yamlFileContent, ISingleFileComponentRecorder singleFileComponentRecorder)
     {
-        var yaml = this.pnpmParsingUtilities.DeserializePnpmYamlFile(yamlFileContent);
+        var yamls = this.pnpmParsingUtilities.DeserializePnpmYamlFileDocuments(yamlFileContent);
 
-        foreach (var packageKeyValue in yaml?.Packages ?? Enumerable.Empty<KeyValuePair<string, Package>>())
+        foreach (var yaml in yamls)
         {
-            // Ignore file: as these are local packages.
-            if (packageKeyValue.Key.StartsWith(PnpmConstants.PnpmFileDependencyPath))
+            foreach (var packageKeyValue in yaml?.Packages ?? Enumerable.Empty<KeyValuePair<string, Package>>())
             {
-                continue;
-            }
-
-            var parentDetectedComponent = this.pnpmParsingUtilities.CreateDetectedComponentFromPnpmPath(pnpmPackagePath: packageKeyValue.Key);
-            var isDevDependency = packageKeyValue.Value != null && this.pnpmParsingUtilities.IsPnpmPackageDevDependency(packageKeyValue.Value);
-            singleFileComponentRecorder.RegisterUsage(parentDetectedComponent, isDevelopmentDependency: isDevDependency);
-            parentDetectedComponent = singleFileComponentRecorder.GetComponent(parentDetectedComponent.Component.Id);
-
-            if (packageKeyValue.Value.Dependencies != null)
-            {
-                foreach (var dependency in packageKeyValue.Value.Dependencies)
+                // Ignore file: as these are local packages.
+                if (packageKeyValue.Key.StartsWith(PnpmConstants.PnpmFileDependencyPath))
                 {
-                    // Ignore local packages.
-                    if (this.pnpmParsingUtilities.IsLocalDependency(dependency))
+                    continue;
+                }
+
+                var parentDetectedComponent = this.pnpmParsingUtilities.CreateDetectedComponentFromPnpmPath(pnpmPackagePath: packageKeyValue.Key);
+                var isDevDependency = packageKeyValue.Value != null && this.pnpmParsingUtilities.IsPnpmPackageDevDependency(packageKeyValue.Value);
+                singleFileComponentRecorder.RegisterUsage(parentDetectedComponent, isDevelopmentDependency: isDevDependency);
+                parentDetectedComponent = singleFileComponentRecorder.GetComponent(parentDetectedComponent.Component.Id);
+
+                if (packageKeyValue.Value?.Dependencies != null)
+                {
+                    foreach (var dependency in packageKeyValue.Value.Dependencies)
                     {
-                        continue;
+                        // Ignore local packages.
+                        if (this.pnpmParsingUtilities.IsLocalDependency(dependency))
+                        {
+                            continue;
+                        }
+
+                        var childDetectedComponent = this.pnpmParsingUtilities.CreateDetectedComponentFromPnpmPath(
+                            pnpmPackagePath: this.CreatePnpmPackagePathFromDependency(dependency.Key, dependency.Value));
+
+                        // Older code used the root's dev dependency value. We're leaving this null until we do a second pass to look at each components' top level referrers.
+                        singleFileComponentRecorder.RegisterUsage(childDetectedComponent, parentComponentId: parentDetectedComponent.Component.Id, isDevelopmentDependency: null);
                     }
-
-                    var childDetectedComponent = this.pnpmParsingUtilities.CreateDetectedComponentFromPnpmPath(
-                        pnpmPackagePath: this.CreatePnpmPackagePathFromDependency(dependency.Key, dependency.Value));
-
-                    // Older code used the root's dev dependency value. We're leaving this null until we do a second pass to look at each components' top level referrers.
-                    singleFileComponentRecorder.RegisterUsage(childDetectedComponent, parentComponentId: parentDetectedComponent.Component.Id, isDevelopmentDependency: null);
                 }
             }
         }
