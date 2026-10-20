@@ -4,16 +4,12 @@ namespace Microsoft.ComponentDetection.Orchestrator.Tests.Experiments;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Threading.Tasks;
 using AwesomeAssertions;
 using Microsoft.ComponentDetection.Common.DependencyGraph;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.BcdeModels;
-using Microsoft.ComponentDetection.Contracts.TypedComponent;
-using Microsoft.ComponentDetection.Detectors.CocoaPods;
 using Microsoft.ComponentDetection.Detectors.NuGet;
-using Microsoft.ComponentDetection.Detectors.Swift;
 using Microsoft.ComponentDetection.Orchestrator.Commands;
 using Microsoft.ComponentDetection.Orchestrator.Experiments;
 using Microsoft.ComponentDetection.Orchestrator.Experiments.Configs;
@@ -167,69 +163,6 @@ public class ExperimentServiceTests
         this.experimentProcessorMock.Verify(
             x => x.ProcessExperimentAsync(this.experimentConfigMock.Object, It.IsAny<ExperimentDiff>()),
             Times.Once());
-    }
-
-    [TestMethod]
-    public async Task FinishAsync_ProcessesSwiftExperimentWithoutControlDetectorAsync()
-    {
-        var config = new SwiftDetectorExperiment();
-        var swiftDetector = new SwiftResolvedComponentDetector(null, null, null);
-        var podDetector = new PodComponentDetector(null, null, null);
-        var service = new ExperimentService(
-            [config],
-            [this.experimentProcessorMock.Object],
-            this.graphTranslationServiceMock.Object,
-            this.loggerMock.Object);
-        service.RemoveUnwantedExperimentsbyDetectors([podDetector]);
-
-        this.SetupGraphMock([]);
-        service.RecordDetectorRun(this.detectorMock.Object, this.componentRecorder, this.scanSettingsMock.Object);
-
-        var component = new SwiftComponent
-        {
-            Name = "alamofire",
-            Version = "5.9.1",
-            RepositoryUrl = new Uri("https://github.com/Alamofire/Alamofire"),
-            CommitHash = "f455c2975872ccd2d9c81594c658af65716e9b9a",
-            Kind = "remoteSourceControl",
-        };
-        this.SetupGraphMock([new ScannedComponent { Component = component }]);
-        service.RecordDetectorRun(swiftDetector, this.componentRecorder, this.scanSettingsMock.Object);
-
-        await service.FinishAsync();
-
-        this.experimentProcessorMock.Verify(
-            x => x.ProcessExperimentAsync(
-                config,
-                It.Is<ExperimentDiff>(diff =>
-                    diff.AddedIds.Count == 1 && diff.AddedIds.Contains(component.Id)
-                    && diff.RemovedIds.Count == 0
-                    && diff.ControlDetectors.Count == 0
-                    && diff.ExperimentalDetectors.Count == 1
-                    && diff.ExperimentalDetectors.Single().DetectorId == swiftDetector.Id)),
-            Times.Once());
-    }
-
-    [TestMethod]
-    public async Task FinishAsync_SkipsSwiftExperimentWithoutSwiftComponentsAsync()
-    {
-        var config = new SwiftDetectorExperiment();
-        var service = new ExperimentService(
-            [config],
-            [this.experimentProcessorMock.Object],
-            this.graphTranslationServiceMock.Object,
-            this.loggerMock.Object);
-        this.SetupGraphMock(ExperimentTestUtils.CreateRandomComponents());
-        service.RecordDetectorRun(new PodComponentDetector(null, null, null), this.componentRecorder, this.scanSettingsMock.Object);
-
-        this.SetupGraphMock([]);
-        service.RecordDetectorRun(new SwiftResolvedComponentDetector(null, null, null), this.componentRecorder, this.scanSettingsMock.Object);
-
-        await service.FinishAsync();
-
-        this.experimentProcessorMock.Verify(
-            x => x.ProcessExperimentAsync(config, It.IsAny<ExperimentDiff>()),
-            Times.Never());
     }
 
     [TestMethod]

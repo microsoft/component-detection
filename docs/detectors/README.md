@@ -124,7 +124,7 @@
 
 | Detector                       | Status       |
 | ------------------------------ | ------------ |
-| SwiftResolvedComponentDetector | Experimental |
+| SwiftResolvedComponentDetector | Stable       |
 
 - [Uv](uv.md)
 
