@@ -160,6 +160,7 @@ public static class ServiceCollectionExtensions
 
         // SPDX
         services.AddSingleton<IComponentDetector, Spdx22ComponentDetector>();
+        services.AddSingleton<IComponentDetector, Spdx30ComponentDetector>();
 
         // VCPKG
         services.AddSingleton<IComponentDetector, VcpkgComponentDetector>();
