@@ -7,6 +7,7 @@ using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using AwesomeAssertions;
 using Microsoft.ComponentDetection.Common.DependencyGraph;
@@ -14,7 +15,9 @@ using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.ComponentDetection.Detectors.Spdx;
 using Microsoft.ComponentDetection.TestsUtilities;
+using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Moq;
 
 [TestClass]
 [TestCategory("Governance/All")]
@@ -162,6 +165,33 @@ public class Spdx22ComponentDetectorTests
         var detectedComponents = componentRecorder.GetDetectedComponents();
         var components = detectedComponents.ToList();
         components.Should().BeEmpty();
+    }
+
+    [TestMethod]
+    public async Task TestSbomDetector_LogsUnexpectedStreamErrorsAsync()
+    {
+        var error = new InvalidOperationException("Read failed.");
+        var stream = new Mock<Stream>();
+        stream.SetupGet(s => s.CanRead).Returns(true);
+        stream.Setup(s => s.ReadAsync(It.IsAny<Memory<byte>>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(error);
+        var logger = new Mock<ILogger<Spdx22ComponentDetector>>();
+
+        var (result, recorder) = await this.detectorTestUtility
+            .AddServiceMock(logger)
+            .WithFile("manifest.spdx.json", stream.Object)
+            .ExecuteDetectorAsync();
+
+        result.ResultCode.Should().Be(ProcessingResultCode.Success);
+        recorder.GetDetectedComponents().Should().BeEmpty();
+        logger.Verify(
+            log => log.Log(
+                LogLevel.Error,
+                It.IsAny<EventId>(),
+                It.IsAny<It.IsAnyType>(),
+                error,
+                It.IsAny<Func<It.IsAnyType, Exception, string>>()),
+            Times.Once);
     }
 
     [TestMethod]
