@@ -19,7 +19,7 @@ using Moq;
 [TestClass]
 [TestCategory("Governance/All")]
 [TestCategory("Governance/ComponentDetection")]
-public class Spdx3ComponentDetectorTests : BaseDetectorTest<Spdx3ComponentDetector>
+public class Spdx30ComponentDetectorTests : BaseDetectorTest<Spdx30ComponentDetector>
 {
     private const string DocumentId = "https://example.org/sbom/document";
     private const string RootId = "https://example.org/sbom/package";
@@ -161,7 +161,7 @@ public class Spdx3ComponentDetectorTests : BaseDetectorTest<Spdx3ComponentDetect
     [DataRow("{\"@graph\":{}}")]
     [DataRow("{\"@graph\":[]}")]
     [DataRow("{\"@graph\":[{\"type\":\"software_Package\"}]}")]
-    public async Task SkipsNonSpdx3DocumentsWithWarningAsync(string content)
+    public async Task SkipsNonSpdx30DocumentsWithWarningAsync(string content)
     {
         await this.AssertSkippedWithWarningAsync(content);
     }
@@ -196,7 +196,7 @@ public class Spdx3ComponentDetectorTests : BaseDetectorTest<Spdx3ComponentDetect
 
     private async Task AssertSkippedWithWarningAsync(string content)
     {
-        var logger = new Mock<ILogger<Spdx3ComponentDetector>>();
+        var logger = new Mock<ILogger<Spdx30ComponentDetector>>();
         var (result, recorder) = await this.DetectorTestUtility
             .AddServiceMock(logger)
             .WithFile("manifest.spdx.json", content)

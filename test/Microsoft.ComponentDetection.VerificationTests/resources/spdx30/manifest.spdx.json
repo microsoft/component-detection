@@ -24,7 +24,7 @@
     {
       "type": "SpdxDocument",
       "spdxId": "https://example.org/spdx3/document",
-      "name": "SPDX 3 verification SBOM",
+      "name": "SPDX 3.0 verification SBOM",
       "creationInfo": "_:creation",
       "profileConformance": ["core", "software"],
       "rootElement": ["https://example.org/spdx3/package"],

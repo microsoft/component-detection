@@ -13,19 +13,19 @@ using Microsoft.ComponentDetection.Contracts.Internal;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.Extensions.Logging;
 
-public class Spdx3ComponentDetector : FileComponentDetector, IDefaultOffComponentDetector
+public class Spdx30ComponentDetector : FileComponentDetector, IDefaultOffComponentDetector
 {
-    public Spdx3ComponentDetector(
+    public Spdx30ComponentDetector(
         IComponentStreamEnumerableFactory componentStreamEnumerableFactory,
         IObservableDirectoryWalkerFactory walkerFactory,
-        ILogger<Spdx3ComponentDetector> logger)
+        ILogger<Spdx30ComponentDetector> logger)
     {
         this.ComponentStreamEnumerableFactory = componentStreamEnumerableFactory;
         this.Scanner = walkerFactory;
         this.Logger = logger;
     }
 
-    public override string Id => "SPDX3SBOM";
+    public override string Id => "SPDX30SBOM";
 
     public override IEnumerable<string> Categories => [nameof(DetectorClass.Spdx)];
 
@@ -38,7 +38,7 @@ public class Spdx3ComponentDetector : FileComponentDetector, IDefaultOffComponen
     protected override async Task OnFileFoundAsync(ProcessRequest processRequest, IDictionary<string, string> detectorArgs, CancellationToken cancellationToken = default)
     {
         var file = processRequest.ComponentStream;
-        this.Logger.LogDebug("Discovered SPDX 3 manifest file at: {ManifestLocation}", file.Location);
+        this.Logger.LogDebug("Discovered SPDX 3.0 manifest file at: {ManifestLocation}", file.Location);
 
         try
         {
@@ -57,11 +57,11 @@ public class Spdx3ComponentDetector : FileComponentDetector, IDefaultOffComponen
         }
         catch (JsonException e)
         {
-            this.Logger.LogWarning(e, "Unable to parse SPDX 3 file at {ManifestLocation}, skipping", file.Location);
+            this.Logger.LogWarning(e, "Unable to parse SPDX 3.0 file at {ManifestLocation}, skipping", file.Location);
         }
         catch (IOException e)
         {
-            this.Logger.LogError(e, "Error while reading SPDX 3 file at {ManifestLocation}", file.Location);
+            this.Logger.LogError(e, "Error while reading SPDX 3.0 file at {ManifestLocation}", file.Location);
         }
     }
 
@@ -124,14 +124,14 @@ public class Spdx3ComponentDetector : FileComponentDetector, IDefaultOffComponen
             || !root.TryGetProperty("@graph", out var graph)
             || graph.ValueKind != JsonValueKind.Array)
         {
-            this.Logger.LogWarning("Discovered file at {ManifestLocation} is not an SPDX 3 JSON-LD graph, skipping", path);
+            this.Logger.LogWarning("Discovered file at {ManifestLocation} is not an SPDX 3.0 JSON-LD graph, skipping", path);
             return null;
         }
 
         var documents = graph.EnumerateArray().Where(element => HasType(element, "SpdxDocument")).ToList();
         if (documents.Count != 1)
         {
-            this.Logger.LogWarning("SPDX 3 file at {ManifestLocation} must contain exactly one SpdxDocument, skipping", path);
+            this.Logger.LogWarning("SPDX 3.0 file at {ManifestLocation} must contain exactly one SpdxDocument, skipping", path);
             return null;
         }
 
