@@ -33,7 +33,7 @@ public class Spdx3ComponentDetector : FileComponentDetector, IDefaultOffComponen
 
     public override int Version => 1;
 
-    public override IList<string> SearchPatterns => ["*.spdx.json", "*.spdx3.json", "*.spdx.jsonld", "*.spdx3.jsonld"];
+    public override IList<string> SearchPatterns => ["*.spdx.json"];
 
     protected override async Task OnFileFoundAsync(ProcessRequest processRequest, IDictionary<string, string> detectorArgs, CancellationToken cancellationToken = default)
     {

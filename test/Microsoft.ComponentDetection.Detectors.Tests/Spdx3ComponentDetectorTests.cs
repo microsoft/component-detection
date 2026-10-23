@@ -65,12 +65,11 @@ public class Spdx3ComponentDetectorTests : BaseDetectorTest<Spdx3ComponentDetect
         """;
 
     [TestMethod]
-    [DataRow("3.0.0", "manifest.spdx.json")]
-    [DataRow("3.0.1", "manifest.spdx3.json")]
-    [DataRow("3.0.1", "manifest.spdx.jsonld")]
-    [DataRow("3.0.1", "manifest.spdx3.jsonld")]
-    public async Task DetectsDocumentWithoutImportingPackagesAsync(string version, string fileName)
+    [DataRow("3.0.0")]
+    [DataRow("3.0.1")]
+    public async Task DetectsDocumentWithoutImportingPackagesAsync(string version)
     {
+        const string fileName = "manifest.spdx.json";
         var content = Manifest.Replace("3.0.1", version, StringComparison.Ordinal);
         var (result, recorder) = await this.DetectorTestUtility
             .WithFile(fileName, content)
@@ -106,7 +105,7 @@ public class Spdx3ComponentDetectorTests : BaseDetectorTest<Spdx3ComponentDetect
         graph.RemoveAt(1);
 
         var (_, recorder) = await this.DetectorTestUtility
-            .WithFile("manifest.spdx3.json", json.ToJsonString())
+            .WithFile("manifest.spdx.json", json.ToJsonString())
             .ExecuteDetectorAsync();
 
         var component = (SpdxComponent)recorder.GetDetectedComponents().Single().Component;
@@ -127,7 +126,7 @@ public class Spdx3ComponentDetectorTests : BaseDetectorTest<Spdx3ComponentDetect
         document["rootElement"] = JsonNode.Parse(roots);
 
         var (_, recorder) = await this.DetectorTestUtility
-            .WithFile("manifest.spdx3.json", json.ToJsonString())
+            .WithFile("manifest.spdx.json", json.ToJsonString())
             .ExecuteDetectorAsync();
 
         var component = (SpdxComponent)recorder.GetDetectedComponents().Single().Component;
@@ -145,7 +144,7 @@ public class Spdx3ComponentDetectorTests : BaseDetectorTest<Spdx3ComponentDetect
         creation["createdBy"] = new JsonArray("https://example.org/unresolved-agent");
 
         var (_, recorder) = await this.DetectorTestUtility
-            .WithFile("manifest.spdx3.json", json.ToJsonString())
+            .WithFile("manifest.spdx.json", json.ToJsonString())
             .ExecuteDetectorAsync();
 
         var component = (SpdxComponent)recorder.GetDetectedComponents().Single().Component;
@@ -200,7 +199,7 @@ public class Spdx3ComponentDetectorTests : BaseDetectorTest<Spdx3ComponentDetect
         var logger = new Mock<ILogger<Spdx3ComponentDetector>>();
         var (result, recorder) = await this.DetectorTestUtility
             .AddServiceMock(logger)
-            .WithFile("manifest.spdx3.json", content)
+            .WithFile("manifest.spdx.json", content)
             .ExecuteDetectorAsync();
 
         result.ResultCode.Should().Be(ProcessingResultCode.Success);
