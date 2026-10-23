@@ -74,12 +74,13 @@ public class ComponentDetectorTests
     }
 
     [TestMethod]
-    public void CondaLockComponentDetector_ImplementsIExperimentalDetector()
+    public void CondaLockComponentDetector_IsDefaultOn()
     {
         var condaLockDetector = this.detectors.SingleOrDefault(d => d.Id == "CondaLock");
 
         condaLockDetector.Should().NotBeNull("because CondaLockComponentDetector should be registered");
-        condaLockDetector.Should().BeAssignableTo<IExperimentalDetector>("because CondaLockComponentDetector should implement IExperimentalDetector");
+        condaLockDetector.Should().NotBeAssignableTo<IExperimentalDetector>("because CondaLockComponentDetector should be default-on");
+        condaLockDetector.Should().NotBeAssignableTo<IDefaultOffComponentDetector>("because CondaLockComponentDetector should be enabled by default");
     }
 
     [TestMethod]

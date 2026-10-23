@@ -12,7 +12,7 @@ using Microsoft.ComponentDetection.Detectors.CondaLock.Contracts;
 using Microsoft.Extensions.Logging;
 using YamlDotNet.Serialization;
 
-public class CondaLockComponentDetector : FileComponentDetector, IExperimentalDetector
+public class CondaLockComponentDetector : FileComponentDetector
 {
     public CondaLockComponentDetector(
         IComponentStreamEnumerableFactory componentStreamEnumerableFactory,
@@ -30,7 +30,7 @@ public class CondaLockComponentDetector : FileComponentDetector, IExperimentalDe
 
     public override IEnumerable<ComponentType> SupportedComponentTypes => [ComponentType.Conda, ComponentType.Pip];
 
-    public override int Version { get; } = 4;
+    public override int Version { get; } = 5;
 
     public override IEnumerable<string> Categories => ["Python"];
 

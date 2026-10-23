@@ -16,7 +16,7 @@
 
 | Detector                   | Status     |
 | -------------------------- | ---------- |
-| CondaLockComponentDetector | Experimental |
+| CondaLockComponentDetector | Stable     |
 
 - [Docker Compose](dockercompose.md)
 
