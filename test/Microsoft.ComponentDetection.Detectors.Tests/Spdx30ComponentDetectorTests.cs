@@ -194,6 +194,8 @@ public class Spdx30ComponentDetectorTests : BaseDetectorTest<Spdx30ComponentDete
     [DataRow(1, "specVersion", "\"3.1.0\"")]
     [DataRow(1, "specVersion", "\"3.0.1-draft\"")]
     [DataRow(1, "specVersion", "\"3.0\"")]
+    [DataRow(1, "specVersion", "\"3.0.\"")]
+    [DataRow(1, "specVersion", "\"3.0.\\u0661\"")]
     [DataRow(1, "specVersion", "\"3.0.01\"")]
     [DataRow(1, "specVersion", "\"3.0.-1\"")]
     [DataRow(1, "specVersion", "\"3.0.1.0\"")]

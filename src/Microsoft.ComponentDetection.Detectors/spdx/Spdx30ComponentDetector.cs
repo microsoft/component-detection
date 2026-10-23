@@ -6,7 +6,6 @@ using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Text.Json;
-using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Contracts;
@@ -16,8 +15,6 @@ using Microsoft.Extensions.Logging;
 
 public class Spdx30ComponentDetector : FileComponentDetector, IDefaultOffComponentDetector
 {
-    private static readonly Regex SupportedVersionRegex = new Regex(@"\A3\.0\.(0|[1-9][0-9]*)\z", RegexOptions.CultureInvariant | RegexOptions.NonBacktracking);
-
     public Spdx30ComponentDetector(
         IComponentStreamEnumerableFactory componentStreamEnumerableFactory,
         IObservableDirectoryWalkerFactory walkerFactory,
@@ -70,6 +67,19 @@ public class Spdx30ComponentDetector : FileComponentDetector, IDefaultOffCompone
         {
             this.Logger.LogWarning(e, "SPDX 3.0 file at {ManifestLocation} exceeds available memory or supported size, skipping", file.Location);
         }
+    }
+
+    private static bool IsSupportedVersion(string version)
+    {
+        const string prefix = "3.0.";
+        if (!version.StartsWith(prefix, StringComparison.Ordinal) || version.Length == prefix.Length)
+        {
+            return false;
+        }
+
+        var patchVersion = version[prefix.Length..];
+        return (patchVersion.Length == 1 || patchVersion[0] != '0')
+            && patchVersion.All(character => character is >= '0' and <= '9');
     }
 
     private static string? ReadString(JsonElement element, string property)
@@ -162,7 +172,7 @@ public class Spdx30ComponentDetector : FileComponentDetector, IDefaultOffCompone
         var version = ReadString(creationInfo, "specVersion")
             ?? throw new JsonException("SpdxDocument creationInfo is missing specVersion.");
 
-        if (!SupportedVersionRegex.IsMatch(version))
+        if (!IsSupportedVersion(version))
         {
             this.Logger.LogDebug("SPDX file at {ManifestLocation} has unsupported specVersion {SpecVersion}, skipping", path, version);
             return null;
