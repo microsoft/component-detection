@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Security.Cryptography;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
@@ -12,19 +13,27 @@ using Microsoft.ComponentDetection.Contracts.Internal;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.Extensions.Logging;
 
-public class Spdx30ComponentDetector : SpdxComponentDetector, IDefaultOffComponentDetector
+public class Spdx30ComponentDetector : FileComponentDetector, IDefaultOffComponentDetector
 {
     public Spdx30ComponentDetector(
         IComponentStreamEnumerableFactory componentStreamEnumerableFactory,
         IObservableDirectoryWalkerFactory walkerFactory,
         ILogger<Spdx30ComponentDetector> logger)
-        : base(componentStreamEnumerableFactory, walkerFactory, logger)
     {
+        this.ComponentStreamEnumerableFactory = componentStreamEnumerableFactory;
+        this.Scanner = walkerFactory;
+        this.Logger = logger;
     }
 
     public override string Id => "SPDX30SBOM";
 
+    public override IEnumerable<string> Categories => [nameof(DetectorClass.Spdx)];
+
+    public override IEnumerable<ComponentType> SupportedComponentTypes => [ComponentType.Spdx];
+
     public override int Version => 1;
+
+    public override IList<string> SearchPatterns => ["*.spdx.json"];
 
     protected override async Task OnFileFoundAsync(ProcessRequest processRequest, IDictionary<string, string> detectorArgs, CancellationToken cancellationToken = default)
     {
@@ -33,7 +42,18 @@ public class Spdx30ComponentDetector : SpdxComponentDetector, IDefaultOffCompone
 
         try
         {
-            await this.ProcessFileAsync(processRequest, cancellationToken);
+            // Keep the SHA1 document fingerprint used by SpdxComponent and existing SBOM reference consumers.
+#pragma warning disable CA5350, CA1308 // Existing SPDX document references require lowercase SHA1 checksums.
+            var checksum = Convert.ToHexString(await SHA1.HashDataAsync(file.Stream, cancellationToken)).ToLowerInvariant();
+#pragma warning restore CA5350, CA1308
+            file.Stream.Seek(0, SeekOrigin.Begin);
+
+            using var json = await JsonDocument.ParseAsync(file.Stream, cancellationToken: cancellationToken);
+            var component = this.ReadDocument(json.RootElement, checksum, file.Location);
+            if (component != null)
+            {
+                processRequest.SingleFileComponentRecorder.RegisterUsage(new DetectedComponent(component));
+            }
         }
         catch (JsonException e)
         {
@@ -45,7 +65,60 @@ public class Spdx30ComponentDetector : SpdxComponentDetector, IDefaultOffCompone
         }
     }
 
-    protected override SpdxComponent? ReadDocument(JsonElement root, string checksum, string path)
+    private static string? ReadString(JsonElement element, string property)
+    {
+        if (element.ValueKind != JsonValueKind.Object || !element.TryGetProperty(property, out var value))
+        {
+            return null;
+        }
+
+        if (value.ValueKind != JsonValueKind.String)
+        {
+            throw new JsonException($"Expected a string for {property}.");
+        }
+
+        return value.GetString();
+    }
+
+    private static bool HasType(JsonElement element, string type)
+    {
+        if (element.ValueKind != JsonValueKind.Object || !element.TryGetProperty("type", out var value))
+        {
+            return false;
+        }
+
+        return value.ValueKind == JsonValueKind.String
+            ? value.GetString() == type
+            : value.ValueKind == JsonValueKind.Array && value.EnumerateArray().Any(item => item.ValueKind == JsonValueKind.String && item.GetString() == type);
+    }
+
+    private static string? ReadId(JsonElement element) =>
+        element.ValueKind == JsonValueKind.String ? element.GetString() : ReadString(element, "spdxId") ?? ReadString(element, "@id");
+
+    private static JsonElement Resolve(JsonElement element, IDictionary<string, JsonElement> elements)
+    {
+        var id = ReadId(element);
+        return id != null && elements.TryGetValue(id, out var resolved) ? resolved : element;
+    }
+
+    private static IEnumerable<JsonElement> ReadValues(JsonElement element, string property)
+    {
+        if (element.ValueKind != JsonValueKind.Object || !element.TryGetProperty(property, out var value))
+        {
+            return [];
+        }
+
+        return value.ValueKind == JsonValueKind.Array ? value.EnumerateArray().ToArray() : [value];
+    }
+
+    private static string? ReadCreator(JsonElement creationInfo, string property, string type, IDictionary<string, JsonElement> elements) =>
+        ReadValues(creationInfo, property)
+            .Select(element => Resolve(element, elements))
+            .Where(element => HasType(element, type))
+            .Select(element => ReadString(element, "name"))
+            .FirstOrDefault(name => !string.IsNullOrWhiteSpace(name));
+
+    private SpdxComponent? ReadDocument(JsonElement root, string checksum, string path)
     {
         if (root.ValueKind != JsonValueKind.Object
             || !root.TryGetProperty("@graph", out var graph)
@@ -121,57 +194,4 @@ public class Spdx30ComponentDetector : SpdxComponentDetector, IDefaultOffCompone
             CreatorOrganization = ReadCreator(creationInfo, "createdBy", "Organization", elements),
         };
     }
-
-    private static string? ReadString(JsonElement element, string property)
-    {
-        if (element.ValueKind != JsonValueKind.Object || !element.TryGetProperty(property, out var value))
-        {
-            return null;
-        }
-
-        if (value.ValueKind != JsonValueKind.String)
-        {
-            throw new JsonException($"Expected a string for {property}.");
-        }
-
-        return value.GetString();
-    }
-
-    private static bool HasType(JsonElement element, string type)
-    {
-        if (element.ValueKind != JsonValueKind.Object || !element.TryGetProperty("type", out var value))
-        {
-            return false;
-        }
-
-        return value.ValueKind == JsonValueKind.String
-            ? value.GetString() == type
-            : value.ValueKind == JsonValueKind.Array && value.EnumerateArray().Any(item => item.ValueKind == JsonValueKind.String && item.GetString() == type);
-    }
-
-    private static string? ReadId(JsonElement element) =>
-        element.ValueKind == JsonValueKind.String ? element.GetString() : ReadString(element, "spdxId") ?? ReadString(element, "@id");
-
-    private static JsonElement Resolve(JsonElement element, IDictionary<string, JsonElement> elements)
-    {
-        var id = ReadId(element);
-        return id != null && elements.TryGetValue(id, out var resolved) ? resolved : element;
-    }
-
-    private static IEnumerable<JsonElement> ReadValues(JsonElement element, string property)
-    {
-        if (element.ValueKind != JsonValueKind.Object || !element.TryGetProperty(property, out var value))
-        {
-            return [];
-        }
-
-        return value.ValueKind == JsonValueKind.Array ? value.EnumerateArray().ToArray() : [value];
-    }
-
-    private static string? ReadCreator(JsonElement creationInfo, string property, string type, IDictionary<string, JsonElement> elements) =>
-        ReadValues(creationInfo, property)
-            .Select(element => Resolve(element, elements))
-            .Where(element => HasType(element, type))
-            .Select(element => ReadString(element, "name"))
-            .FirstOrDefault(name => !string.IsNullOrWhiteSpace(name));
 }

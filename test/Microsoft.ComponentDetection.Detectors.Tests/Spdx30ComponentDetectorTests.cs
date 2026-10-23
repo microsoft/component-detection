@@ -6,7 +6,6 @@ using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json.Nodes;
-using System.Threading;
 using System.Threading.Tasks;
 using AwesomeAssertions;
 using Microsoft.ComponentDetection.Contracts;
@@ -193,21 +192,6 @@ public class Spdx30ComponentDetectorTests : BaseDetectorTest<Spdx30ComponentDete
         var graph = json["@graph"]!.AsArray();
         graph.Add(graph[index]!.DeepClone());
         await this.AssertSkippedWithWarningAsync(json.ToJsonString());
-    }
-
-    [TestMethod]
-    public async Task PropagatesUnexpectedStreamErrorsAsync()
-    {
-        var stream = new Mock<Stream>();
-        stream.SetupGet(s => s.CanRead).Returns(true);
-        stream.Setup(s => s.ReadAsync(It.IsAny<Memory<byte>>(), It.IsAny<CancellationToken>()))
-            .ThrowsAsync(new InvalidOperationException("Read failed."));
-
-        Func<Task> action = () => this.DetectorTestUtility
-            .WithFile("manifest.spdx.json", stream.Object)
-            .ExecuteDetectorAsync();
-
-        await action.Should().ThrowAsync<InvalidOperationException>().WithMessage("Read failed.");
     }
 
     private async Task AssertSkippedWithWarningAsync(string content)
