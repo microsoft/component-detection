@@ -6,6 +6,7 @@ using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Contracts;
@@ -15,6 +16,8 @@ using Microsoft.Extensions.Logging;
 
 public class Spdx30ComponentDetector : FileComponentDetector, IDefaultOffComponentDetector
 {
+    private static readonly Regex SupportedVersionRegex = new Regex(@"\A3\.0\.(0|[1-9][0-9]*)\z", RegexOptions.CultureInvariant | RegexOptions.NonBacktracking);
+
     public Spdx30ComponentDetector(
         IComponentStreamEnumerableFactory componentStreamEnumerableFactory,
         IObservableDirectoryWalkerFactory walkerFactory,
@@ -62,6 +65,10 @@ public class Spdx30ComponentDetector : FileComponentDetector, IDefaultOffCompone
         catch (IOException e)
         {
             this.Logger.LogError(e, "Error while reading SPDX 3.0 file at {ManifestLocation}", file.Location);
+        }
+        catch (Exception e) when (e is OutOfMemoryException or OverflowException)
+        {
+            this.Logger.LogWarning(e, "SPDX 3.0 file at {ManifestLocation} exceeds available memory or supported size, skipping", file.Location);
         }
     }
 
@@ -124,7 +131,7 @@ public class Spdx30ComponentDetector : FileComponentDetector, IDefaultOffCompone
             || !root.TryGetProperty("@graph", out var graph)
             || graph.ValueKind != JsonValueKind.Array)
         {
-            this.Logger.LogWarning("Discovered file at {ManifestLocation} is not an SPDX 3.0 JSON-LD graph, skipping", path);
+            this.Logger.LogDebug("Discovered file at {ManifestLocation} is not an SPDX 3.0 JSON-LD graph, skipping", path);
             return null;
         }
 
@@ -152,10 +159,12 @@ public class Spdx30ComponentDetector : FileComponentDetector, IDefaultOffCompone
         }
 
         creationInfo = Resolve(creationInfo, elements);
-        var version = ReadString(creationInfo, "specVersion");
-        if (version is not ("3.0.0" or "3.0.1"))
+        var version = ReadString(creationInfo, "specVersion")
+            ?? throw new JsonException("SpdxDocument creationInfo is missing specVersion.");
+
+        if (!SupportedVersionRegex.IsMatch(version))
         {
-            this.Logger.LogWarning("SPDX file at {ManifestLocation} has unsupported or missing specVersion {SpecVersion}, skipping", path, version);
+            this.Logger.LogDebug("SPDX file at {ManifestLocation} has unsupported specVersion {SpecVersion}, skipping", path, version);
             return null;
         }
 

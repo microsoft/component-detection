@@ -14,7 +14,9 @@ using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.ComponentDetection.Detectors.Spdx;
 using Microsoft.ComponentDetection.TestsUtilities;
+using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Moq;
 
 [TestClass]
 [TestCategory("Governance/All")]
@@ -130,6 +132,37 @@ public class Spdx22ComponentDetectorTests
 
         sbomComponent.CreatorTool.Should().Be("Microsoft.SBOMTool-1.0.0");
         sbomComponent.CreatorOrganization.Should().Be("Microsoft");
+    }
+
+    [TestMethod]
+    [DataRow("{\"@context\":\"https://spdx.org/rdf/3.0.1/spdx-context.jsonld\",\"@graph\":[]}")]
+    [DataRow("{\"spdxVersion\":\"SPDX-2.3\"}")]
+    public async Task TestSbomDetector_OtherVersionsLogAtDebugAsync(string content)
+    {
+        var logger = new Mock<ILogger<Spdx22ComponentDetector>>();
+        var (result, recorder) = await this.detectorTestUtility
+            .AddServiceMock(logger)
+            .WithFile("manifest.spdx.json", content)
+            .ExecuteDetectorAsync();
+
+        result.ResultCode.Should().Be(ProcessingResultCode.Success);
+        recorder.GetDetectedComponents().Should().BeEmpty();
+        logger.Verify(
+            log => log.Log(
+                LogLevel.Debug,
+                It.IsAny<EventId>(),
+                It.Is<It.IsAnyType>((value, _) => value.ToString().Contains("not SPDX-2.2")),
+                It.IsAny<Exception>(),
+                It.IsAny<Func<It.IsAnyType, Exception, string>>()),
+            Times.Once);
+        logger.Verify(
+            log => log.Log(
+                It.Is<LogLevel>(level => level >= LogLevel.Warning),
+                It.IsAny<EventId>(),
+                It.IsAny<It.IsAnyType>(),
+                It.IsAny<Exception>(),
+                It.IsAny<Func<It.IsAnyType, Exception, string>>()),
+            Times.Never);
     }
 
     [TestMethod]

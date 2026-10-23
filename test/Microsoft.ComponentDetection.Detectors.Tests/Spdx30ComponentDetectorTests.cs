@@ -6,6 +6,7 @@ using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json.Nodes;
+using System.Threading;
 using System.Threading.Tasks;
 using AwesomeAssertions;
 using Microsoft.ComponentDetection.Contracts;
@@ -67,6 +68,8 @@ public class Spdx30ComponentDetectorTests : BaseDetectorTest<Spdx30ComponentDete
     [TestMethod]
     [DataRow("3.0.0")]
     [DataRow("3.0.1")]
+    [DataRow("3.0.2")]
+    [DataRow("3.0.123")]
     public async Task DetectsDocumentWithoutImportingPackagesAsync(string version)
     {
         const string fileName = "manifest.spdx.json";
@@ -154,11 +157,17 @@ public class Spdx30ComponentDetectorTests : BaseDetectorTest<Spdx30ComponentDete
     }
 
     [TestMethod]
-    [DataRow("not json")]
     [DataRow("[]")]
     [DataRow("{}")]
     [DataRow("{\"spdxVersion\":\"SPDX-2.2\"}")]
     [DataRow("{\"@graph\":{}}")]
+    public async Task SkipsNonSpdx30DocumentsWithDebugLogAsync(string content)
+    {
+        await this.AssertSkippedAsync(content, LogLevel.Debug);
+    }
+
+    [TestMethod]
+    [DataRow("not json")]
     [DataRow("{\"@graph\":[]}")]
     [DataRow("{\"@graph\":[{\"type\":\"software_Package\"}]}")]
     public async Task SkipsNonSpdx30DocumentsWithWarningAsync(string content)
@@ -172,15 +181,60 @@ public class Spdx30ComponentDetectorTests : BaseDetectorTest<Spdx30ComponentDete
     [DataRow(0, "creationInfo", "\"_:unresolved\"")]
     [DataRow(0, "rootElement", "[42]")]
     [DataRow(0, "name", "42")]
-    [DataRow(1, "specVersion", "\"2.2\"")]
-    [DataRow(1, "specVersion", "\"3.1.0\"")]
-    [DataRow(1, "specVersion", "\"3.0.1-draft\"")]
     [DataRow(1, "specVersion", "null")]
-    public async Task SkipsInvalidOrUnsupportedDocumentsWithWarningAsync(int index, string property, string value)
+    public async Task SkipsInvalidDocumentsWithWarningAsync(int index, string property, string value)
     {
         var json = JsonNode.Parse(Manifest)!;
         json["@graph"]![index]![property] = JsonNode.Parse(value);
         await this.AssertSkippedWithWarningAsync(json.ToJsonString());
+    }
+
+    [TestMethod]
+    [DataRow(1, "specVersion", "\"2.2\"")]
+    [DataRow(1, "specVersion", "\"3.1.0\"")]
+    [DataRow(1, "specVersion", "\"3.0.1-draft\"")]
+    [DataRow(1, "specVersion", "\"3.0\"")]
+    [DataRow(1, "specVersion", "\"3.0.01\"")]
+    [DataRow(1, "specVersion", "\"3.0.-1\"")]
+    [DataRow(1, "specVersion", "\"3.0.1.0\"")]
+    [DataRow(1, "specVersion", "\"3.0.1\\n\"")]
+    public async Task SkipsUnsupportedVersionsWithDebugLogAsync(int index, string property, string value)
+    {
+        var json = JsonNode.Parse(Manifest)!;
+        json["@graph"]![index]![property] = JsonNode.Parse(value);
+        await this.AssertSkippedAsync(json.ToJsonString(), LogLevel.Debug);
+    }
+
+    [TestMethod]
+    [DataRow(true)]
+    [DataRow(false)]
+    public async Task SkipsResourceFailuresWithWarningAndContinuesAsync(bool outOfMemory)
+    {
+#pragma warning disable CA2201 // Simulate allocation failure without exhausting the test process's memory.
+        Exception exception = outOfMemory ? new OutOfMemoryException() : new OverflowException();
+#pragma warning restore CA2201
+        var logger = new Mock<ILogger<Spdx30ComponentDetector>>();
+        var stream = new Mock<Stream>();
+        stream.SetupGet(value => value.CanRead).Returns(true);
+        stream.Setup(value => value.ReadAsync(It.IsAny<Memory<byte>>(), It.IsAny<CancellationToken>()))
+            .Throws(exception);
+
+        var (result, recorder) = await this.DetectorTestUtility
+            .AddServiceMock(logger)
+            .WithFile("large.spdx.json", stream.Object)
+            .WithFile("manifest.spdx.json", Manifest)
+            .ExecuteDetectorAsync();
+
+        result.ResultCode.Should().Be(ProcessingResultCode.Success);
+        recorder.GetDetectedComponents().Should().ContainSingle();
+        logger.Verify(
+            log => log.Log(
+                LogLevel.Warning,
+                It.IsAny<EventId>(),
+                It.Is<It.IsAnyType>((value, _) => value.ToString()!.Contains("large.spdx.json", StringComparison.Ordinal)),
+                exception,
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            Times.Once);
     }
 
     [TestMethod]
@@ -194,7 +248,9 @@ public class Spdx30ComponentDetectorTests : BaseDetectorTest<Spdx30ComponentDete
         await this.AssertSkippedWithWarningAsync(json.ToJsonString());
     }
 
-    private async Task AssertSkippedWithWarningAsync(string content)
+    private Task AssertSkippedWithWarningAsync(string content) => this.AssertSkippedAsync(content, LogLevel.Warning);
+
+    private async Task AssertSkippedAsync(string content, LogLevel expectedLevel)
     {
         var logger = new Mock<ILogger<Spdx30ComponentDetector>>();
         var (result, recorder) = await this.DetectorTestUtility
@@ -206,11 +262,23 @@ public class Spdx30ComponentDetectorTests : BaseDetectorTest<Spdx30ComponentDete
         recorder.GetDetectedComponents().Should().BeEmpty();
         logger.Verify(
             log => log.Log(
-                LogLevel.Warning,
+                expectedLevel,
                 It.IsAny<EventId>(),
                 It.IsAny<It.IsAnyType>(),
                 It.IsAny<Exception?>(),
                 It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
             Times.AtLeastOnce);
+
+        if (expectedLevel == LogLevel.Debug)
+        {
+            logger.Verify(
+                log => log.Log(
+                    It.Is<LogLevel>(level => level >= LogLevel.Warning),
+                    It.IsAny<EventId>(),
+                    It.IsAny<It.IsAnyType>(),
+                    It.IsAny<Exception?>(),
+                    It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+                Times.Never);
+        }
     }
 }

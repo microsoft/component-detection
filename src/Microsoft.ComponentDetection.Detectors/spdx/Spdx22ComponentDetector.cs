@@ -67,7 +67,7 @@ public class Spdx22ComponentDetector : FileComponentDetector, IDefaultOffCompone
                 }
                 else
                 {
-                    this.Logger.LogWarning("Discovered SPDX at {ManifestLocation} is not SPDX-2.2 document, skipping", processRequest.ComponentStream.Location);
+                    this.Logger.LogDebug("Discovered SPDX at {ManifestLocation} is not SPDX-2.2 document, skipping", processRequest.ComponentStream.Location);
                 }
             }
             catch (JsonException)
