@@ -2,6 +2,7 @@ namespace Microsoft.ComponentDetection.Detectors.NuGet;
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Microsoft.Build.Framework;
 
 /// <summary>
@@ -238,11 +239,17 @@ internal class MSBuildProjectInfo
     /// and target framework — the merge fills in any values that were not set rather than overriding.
     /// Boolean properties use logical OR (any true value is sufficient to classify the project).
     /// Items from <paramref name="other"/> are added if not already present.
+    /// Inner builds are merged by target framework: matching ones are merged recursively, new ones are added.
     /// </summary>
     /// <param name="other">The other project info to merge from.</param>
     /// <returns>This instance for fluent chaining.</returns>
     public MSBuildProjectInfo MergeWith(MSBuildProjectInfo other)
     {
+        if (ReferenceEquals(this, other))
+        {
+            return this;
+        }
+
         // Merge boolean properties: true wins. For all classification booleans (IsTestProject,
         // IsDevelopment, IsShipping, etc.), if any pass reports true it is sufficient to classify
         // the project accordingly. These values are not expected to differ across passes, if they
@@ -265,6 +272,22 @@ internal class MSBuildProjectInfo
         // Merge items: add items from other that are not already present
         MergeItems(this.PackageReference, other.PackageReference);
         MergeItems(this.PackageDownload, other.PackageDownload);
+
+        // Merge inner builds by target framework, so that per-TFM properties and items
+        // from later passes (e.g. publish) of a multi-targeted project are not lost.
+        foreach (var otherInner in other.InnerBuilds)
+        {
+            var matchingInner = this.InnerBuilds.FirstOrDefault(
+                ib => string.Equals(ib.TargetFramework, otherInner.TargetFramework, StringComparison.OrdinalIgnoreCase));
+            if (matchingInner != null)
+            {
+                matchingInner.MergeWith(otherInner);
+            }
+            else
+            {
+                this.InnerBuilds.Add(otherInner);
+            }
+        }
 
         return this;
     }
