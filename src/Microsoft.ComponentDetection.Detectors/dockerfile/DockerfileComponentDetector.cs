@@ -42,7 +42,7 @@ public class DockerfileComponentDetector : FileComponentDetector, IExperimentalD
 
     public override IEnumerable<ComponentType> SupportedComponentTypes { get; } = [ComponentType.DockerReference];
 
-    public override int Version => 1;
+    public override int Version => 2;
 
     protected override IList<string> SkippedFolders => ["node_modules"];
 
