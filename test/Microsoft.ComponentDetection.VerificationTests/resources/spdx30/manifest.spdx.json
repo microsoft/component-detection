@@ -1,0 +1,45 @@
+{
+  "@context": "https://spdx.org/rdf/3.0.1/spdx-context.jsonld",
+  "@graph": [
+    {
+      "@id": "_:creation",
+      "type": "CreationInfo",
+      "specVersion": "3.0.1",
+      "created": "2026-01-01T00:00:00Z",
+      "createdBy": ["https://example.org/spdx3/organization"],
+      "createdUsing": ["https://example.org/spdx3/tool"]
+    },
+    {
+      "type": "Organization",
+      "spdxId": "https://example.org/spdx3/organization",
+      "name": "Example Organization",
+      "creationInfo": "_:creation"
+    },
+    {
+      "type": "Tool",
+      "spdxId": "https://example.org/spdx3/tool",
+      "name": "Example SBOM Generator",
+      "creationInfo": "_:creation"
+    },
+    {
+      "type": "SpdxDocument",
+      "spdxId": "https://example.org/spdx3/document",
+      "name": "SPDX 3.0 verification SBOM",
+      "creationInfo": "_:creation",
+      "profileConformance": ["core", "software"],
+      "rootElement": ["https://example.org/spdx3/package"],
+      "element": [
+        "https://example.org/spdx3/organization",
+        "https://example.org/spdx3/tool",
+        "https://example.org/spdx3/package"
+      ]
+    },
+    {
+      "type": "software_Package",
+      "spdxId": "https://example.org/spdx3/package",
+      "name": "Example Package",
+      "software_packageVersion": "1.0.0",
+      "creationInfo": "_:creation"
+    }
+  ]
+}

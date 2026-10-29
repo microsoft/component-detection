@@ -72,7 +72,6 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IExperimentService, ExperimentService>();
         services.AddSingleton<IExperimentProcessor, DefaultExperimentProcessor>();
         services.AddSingleton<IExperimentConfiguration, SimplePipExperiment>();
-        services.AddSingleton<IExperimentConfiguration, CondaLockDetectorExperiment>();
         services.AddSingleton<IExperimentConfiguration, LinuxApplicationLayerExperiment>();
 
         // Detectors
@@ -160,6 +159,7 @@ public static class ServiceCollectionExtensions
 
         // SPDX
         services.AddSingleton<IComponentDetector, Spdx22ComponentDetector>();
+        services.AddSingleton<IComponentDetector, Spdx30ComponentDetector>();
 
         // VCPKG
         services.AddSingleton<IComponentDetector, VcpkgComponentDetector>();

@@ -6,6 +6,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using AwesomeAssertions;
 using Microsoft.ComponentDetection.Contracts;
+using Microsoft.ComponentDetection.Detectors.CondaLock;
 using Microsoft.ComponentDetection.Detectors.Swift;
 using Microsoft.ComponentDetection.Orchestrator.Experiments.Configs;
 using Microsoft.ComponentDetection.Orchestrator.Extensions;
@@ -42,6 +43,14 @@ public class ExperimentConfigTests
         var swiftDetector = new SwiftResolvedComponentDetector(null, null, null);
 
         this.configs.Should().OnlyContain(config => !config.IsInExperimentGroup(swiftDetector));
+    }
+
+    [TestMethod]
+    public void ExperimentConfig_CondaLockDetectorIsNotInExperimentGroup()
+    {
+        var condaLockDetector = new CondaLockComponentDetector(null, null, null);
+
+        this.configs.Should().OnlyContain(config => !config.IsInExperimentGroup(condaLockDetector));
     }
 
     [TestMethod]
