@@ -149,7 +149,7 @@ public class MSBuildBinaryLogComponentDetector : FileComponentDetector
     public override IEnumerable<ComponentType> SupportedComponentTypes { get; } = [ComponentType.NuGet, ComponentType.DotNet];
 
     /// <inheritdoc />
-    public override int Version { get; } = 1;
+    public override int Version { get; } = 2;
 
     /// <inheritdoc />
     public override Task<IndividualDetectorScanResult> ExecuteDetectorAsync(ScanRequest request, CancellationToken cancellationToken = default)
