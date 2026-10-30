@@ -160,10 +160,13 @@ public abstract class FileComponentDetectorWithCleanup : FileComponentDetector
             var (files, directories) = this.DirectoryUtilityService.GetFilesAndDirectories(root, patterns, depth);
             return (true, files, directories);
         }
-        catch (UnauthorizedAccessException e)
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException)
         {
-            // log and return false if we are unauthorized to get files and directories
-            this.Logger.LogDebug(e, "Unauthorized to get files and directories for {Root}", root);
+            this.Logger.LogDebug(
+                "Failed to get files and directories for {Root}. Skipping cleanup. {ExceptionType}: {Message}",
+                root,
+                e.GetType().Name,
+                e.Message);
             return (false, new HashSet<string>(), new HashSet<string>());
         }
     }

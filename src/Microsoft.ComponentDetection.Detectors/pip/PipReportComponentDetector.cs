@@ -347,7 +347,18 @@ public class PipReportComponentDetector : FileComponentDetectorWithCleanup
                 {
                     if (reportFile is not null && reportFile.Exists)
                     {
-                        reportFile.Delete();
+                        try
+                        {
+                            reportFile.Delete();
+                        }
+                        catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+                        {
+                            this.Logger.LogDebug(
+                                "PipReport: Failed to delete report file {File}. {ExceptionType}: {Message}",
+                                reportFile.FullName,
+                                e.GetType().Name,
+                                e.Message);
+                        }
                     }
                 }
             }
