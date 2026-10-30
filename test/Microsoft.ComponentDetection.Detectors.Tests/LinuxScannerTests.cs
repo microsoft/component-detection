@@ -1546,6 +1546,180 @@ public class LinuxScannerTests
     }
 
     [TestMethod]
+    public async Task TestLinuxScanner_CancelledOwner_DoesNotCancelInFlightRunForOtherCallersAsync()
+    {
+        LinuxScanner.ResetCache();
+
+        // Like the real Docker service, the mock stops the container when its token is cancelled.
+        var syftCompletionSource = new TaskCompletionSource<(string, string)>();
+
+        this.mockDockerService.Setup(service =>
+                service.CreateAndRunContainerAsync(
+                    It.IsAny<string>(),
+                    It.IsAny<List<string>>(),
+                    It.IsAny<IList<string>>(),
+                    It.IsAny<CancellationToken>()
+                )
+            )
+            .Returns((string _, IList<string> _, IList<string> _, CancellationToken token) =>
+                syftCompletionSource.Task.WaitAsync(token));
+
+        var enabledTypes = new HashSet<ComponentType> { ComponentType.Linux };
+
+        var layers = new[]
+        {
+            new DockerLayer
+            {
+                LayerIndex = 0,
+                DiffId = "sha256:f95fc50d21d981f1efe1f04109c2c3287c271794f5d9e4fdf9888851a174a971",
+            },
+        };
+
+        var scanner1 = new LinuxScanner(
+            this.mockDockerService.Object,
+            this.mockLogger.Object,
+            this.componentFactories,
+            this.artifactFilters
+        );
+        var scanner2 = new LinuxScanner(
+            this.mockDockerService.Object,
+            this.mockLogger.Object,
+            this.componentFactories,
+            this.artifactFilters
+        );
+
+        // The first caller starts the syft run with a short deadline, like an experimental detector.
+        using var ownerCts = new CancellationTokenSource();
+        var ownerTask = scanner1.ScanLinuxAsync("owner_cancel_hash", layers, 0, enabledTypes, LinuxScannerScope.AllLayers, ownerCts.Token);
+
+        // The second caller joins the same in-flight run without a deadline.
+        var waiterTask = scanner2.ScanLinuxAsync("owner_cancel_hash", layers, 0, enabledTypes, LinuxScannerScope.AllLayers);
+
+        await ownerCts.CancelAsync();
+
+        try
+        {
+            await ownerTask;
+            Assert.Fail("Expected OperationCanceledException was not thrown");
+        }
+        catch (OperationCanceledException)
+        {
+            // Expected — the owner stopped waiting for the run.
+        }
+
+        // The run must keep going for the caller that is still waiting.
+        waiterTask.IsCompleted.Should().BeFalse();
+
+        syftCompletionSource.SetResult((SyftOutputNoAuthorOrLicense, string.Empty));
+        var result = await waiterTask;
+        result.Should().NotBeEmpty();
+        result.First().Components.Should().ContainSingle();
+
+        this.mockDockerService.Verify(
+            service =>
+                service.CreateAndRunContainerAsync(
+                    It.IsAny<string>(),
+                    It.IsAny<List<string>>(),
+                    It.IsAny<IList<string>>(),
+                    It.IsAny<CancellationToken>()
+                ),
+            Times.Once
+        );
+    }
+
+    [TestMethod]
+    public async Task TestLinuxScanner_AllCallersCancelled_CancelsInFlightSyftRunAsync()
+    {
+        LinuxScanner.ResetCache();
+
+        var firstRun = new TaskCompletionSource<(string, string)>();
+        var runTokens = new List<CancellationToken>();
+
+        this.mockDockerService.Setup(service =>
+                service.CreateAndRunContainerAsync(
+                    It.IsAny<string>(),
+                    It.IsAny<List<string>>(),
+                    It.IsAny<IList<string>>(),
+                    It.IsAny<CancellationToken>()
+                )
+            )
+            .Returns((string _, IList<string> _, IList<string> _, CancellationToken token) =>
+            {
+                lock (runTokens)
+                {
+                    runTokens.Add(token);
+                    return runTokens.Count == 1
+                        ? firstRun.Task.WaitAsync(token)
+                        : Task.FromResult((SyftOutputNoAuthorOrLicense, string.Empty));
+                }
+            });
+
+        var enabledTypes = new HashSet<ComponentType> { ComponentType.Linux };
+
+        var layers = new[]
+        {
+            new DockerLayer
+            {
+                LayerIndex = 0,
+                DiffId = "sha256:f95fc50d21d981f1efe1f04109c2c3287c271794f5d9e4fdf9888851a174a971",
+            },
+        };
+
+        var scanner1 = new LinuxScanner(
+            this.mockDockerService.Object,
+            this.mockLogger.Object,
+            this.componentFactories,
+            this.artifactFilters
+        );
+        var scanner2 = new LinuxScanner(
+            this.mockDockerService.Object,
+            this.mockLogger.Object,
+            this.componentFactories,
+            this.artifactFilters
+        );
+
+        using var cts1 = new CancellationTokenSource();
+        using var cts2 = new CancellationTokenSource();
+        var task1 = scanner1.ScanLinuxAsync("abandoned_hash", layers, 0, enabledTypes, LinuxScannerScope.AllLayers, cts1.Token);
+        var task2 = scanner2.ScanLinuxAsync("abandoned_hash", layers, 0, enabledTypes, LinuxScannerScope.AllLayers, cts2.Token);
+
+        // One caller gives up: the container keeps running for the other.
+        await cts1.CancelAsync();
+        try
+        {
+            await task1;
+            Assert.Fail("Expected OperationCanceledException was not thrown");
+        }
+        catch (OperationCanceledException)
+        {
+            // Expected — the first caller stopped waiting.
+        }
+
+        runTokens.Should().ContainSingle();
+        runTokens[0].IsCancellationRequested.Should().BeFalse();
+
+        // The last caller gives up: nobody needs the result, so the container is stopped.
+        await cts2.CancelAsync();
+        try
+        {
+            await task2;
+            Assert.Fail("Expected OperationCanceledException was not thrown");
+        }
+        catch (OperationCanceledException)
+        {
+            // Expected — the second caller stopped waiting.
+        }
+
+        runTokens[0].IsCancellationRequested.Should().BeTrue();
+
+        // A later caller starts a new run instead of joining the cancelled one.
+        var result = await this.linuxScanner.ScanLinuxAsync("abandoned_hash", layers, 0, enabledTypes, LinuxScannerScope.AllLayers);
+        result.Should().NotBeEmpty();
+        result.First().Components.Should().ContainSingle();
+        runTokens.Should().HaveCount(2);
+    }
+
+    [TestMethod]
     public void TestLinuxScanner_ProcessSyftOutput_ExcludesPackageManagerDatabasePathsFromLayerAttribution()
     {
         // Simulates a scenario where a package (curl) is installed in layer1,
