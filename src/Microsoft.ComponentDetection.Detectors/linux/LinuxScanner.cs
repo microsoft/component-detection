@@ -51,8 +51,11 @@ internal class LinuxScanner : ILinuxScanner
     /// Caches in-flight syft runs.
     /// When multiple detectors scan the same image concurrently, the second
     /// caller awaits the already-running task instead of launching a new container.
+    /// A shared run is cancelled only once every caller waiting on it has been cancelled,
+    /// so one caller's short timeout (such as an experimental detector's) can't abort
+    /// a scan that other callers still need.
     /// </summary>
-    private static readonly ConcurrentDictionary<(string Source, LinuxScannerScope Scope, string Binds, string Platform), Task<string>> SyftRunCache = new();
+    private static readonly ConcurrentDictionary<(string Source, LinuxScannerScope Scope, string Binds, string Platform), SharedSyftRun> SyftRunCache = new();
 
     private static readonly int SemaphoreTimeout = Convert.ToInt32(
         TimeSpan.FromHours(1).TotalMilliseconds
@@ -303,35 +306,71 @@ internal class LinuxScanner : ILinuxScanner
     {
         var bindsKey = string.Join(";", (additionalBinds ?? []).OrderBy(b => b, StringComparer.Ordinal));
         var cacheKey = (syftSource, scope, bindsKey, platform ?? string.Empty);
-        var tcs = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
-        var existingTask = SyftRunCache.GetOrAdd(cacheKey, tcs.Task);
 
-        if (existingTask != tcs.Task)
+        while (true)
         {
-            // Another caller is already running syft for this image+scope — await their result,
-            // but allow this caller's cancellation token to abort the wait.
-            this.logger.LogDebug("Syft run for {SyftSource} (scope={Scope}) is already in-flight, reusing existing result", syftSource, scope);
-            return await existingTask.WaitAsync(cancellationToken);
-        }
+            var candidate = new SharedSyftRun();
+            var run = SyftRunCache.GetOrAdd(cacheKey, candidate);
 
-        // We own this cache entry — run syft and propagate the result.
+            if (!run.TryAddCaller())
+            {
+                // Every caller of this run has been cancelled and it is being torn down; replace it.
+                SyftRunCache.TryRemove(KeyValuePair.Create(cacheKey, run));
+                continue;
+            }
+
+            if (ReferenceEquals(run, candidate))
+            {
+                // We own this cache entry, so start the run. It uses the run's own token rather than
+                // this caller's, so the other callers still get the result if this caller is cancelled.
+                _ = this.ExecuteSharedSyftRunAsync(cacheKey, run, syftSource, scope, additionalBinds ?? [], platform, record, syftTelemetryRecord);
+            }
+            else
+            {
+                // Another caller is already running syft for this image+scope — await their result,
+                // but allow this caller's cancellation token to abort the wait.
+                this.logger.LogDebug("Syft run for {SyftSource} (scope={Scope}) is already in-flight, reusing existing result", syftSource, scope);
+            }
+
+            try
+            {
+                return await run.Result.WaitAsync(cancellationToken);
+            }
+            finally
+            {
+                run.RemoveCaller();
+            }
+        }
+    }
+
+    /// <summary>
+    /// Runs syft for a shared cache entry and publishes the result to every caller waiting on it.
+    /// </summary>
+    private async Task ExecuteSharedSyftRunAsync(
+        (string Source, LinuxScannerScope Scope, string Binds, string Platform) cacheKey,
+        SharedSyftRun run,
+        string syftSource,
+        LinuxScannerScope scope,
+        IList<string> additionalBinds,
+        string? platform,
+        LinuxScannerTelemetryRecord record,
+        LinuxScannerSyftTelemetryRecord syftTelemetryRecord)
+    {
         try
         {
-            var result = await this.RunSyftCoreAsync(syftSource, scope, additionalBinds ?? [], platform, record, syftTelemetryRecord, cancellationToken);
-            tcs.SetResult(result);
-            return result;
+            var result = await this.RunSyftCoreAsync(syftSource, scope, additionalBinds, platform, record, syftTelemetryRecord, run.CancellationToken);
+            run.SetResult(result);
         }
         catch (Exception ex)
         {
-            tcs.SetException(ex);
-            throw;
+            run.SetException(ex);
         }
         finally
         {
             // Remove the entry once complete. The cache only deduplicates concurrent
             // in-flight calls — keeping completed entries would leak memory for the
             // lifetime of the process.
-            SyftRunCache.TryRemove(cacheKey, out _);
+            SyftRunCache.TryRemove(KeyValuePair.Create(cacheKey, run));
         }
     }
 
@@ -532,5 +571,85 @@ internal class LinuxScanner : ILinuxScanner
 
         // Cover any file under /var/lib/rpm/ (RPM database can use multiple files)
         return path.StartsWith("/var/lib/rpm/", StringComparison.OrdinalIgnoreCase);
+    }
+
+    /// <summary>
+    /// A syft run shared by the callers that scan the same source concurrently.
+    /// </summary>
+    private sealed class SharedSyftRun
+    {
+        private readonly object gate = new();
+
+        // Not disposed: it never owns a timer or wait handle, and disposing it could race with
+        // the Cancel issued by the last caller to stop waiting.
+        private readonly CancellationTokenSource cancellationTokenSource = new();
+
+        private readonly TaskCompletionSource<string> completionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        private int callers;
+
+        private bool abandoned;
+
+        /// <summary>
+        /// Gets the task that completes with the syft output.
+        /// </summary>
+        public Task<string> Result => this.completionSource.Task;
+
+        /// <summary>
+        /// Gets the token that cancels the run once no caller is waiting for it.
+        /// </summary>
+        public CancellationToken CancellationToken => this.cancellationTokenSource.Token;
+
+        /// <summary>
+        /// Registers a caller that will wait for the result.
+        /// </summary>
+        /// <returns><c>false</c> if every earlier caller has stopped waiting and the run is being cancelled.</returns>
+        public bool TryAddCaller()
+        {
+            lock (this.gate)
+            {
+                if (this.abandoned)
+                {
+                    return false;
+                }
+
+                this.callers++;
+                return true;
+            }
+        }
+
+        /// <summary>
+        /// Unregisters a caller, and cancels the run if no caller is left waiting for an unfinished result.
+        /// </summary>
+        public void RemoveCaller()
+        {
+            lock (this.gate)
+            {
+                this.callers--;
+                if (this.callers > 0 || this.Result.IsCompleted)
+                {
+                    return;
+                }
+
+                this.abandoned = true;
+            }
+
+            this.cancellationTokenSource.Cancel();
+        }
+
+        public void SetResult(string stdout) => this.completionSource.TrySetResult(stdout);
+
+        public void SetException(Exception exception)
+        {
+            if (exception is OperationCanceledException && this.cancellationTokenSource.IsCancellationRequested)
+            {
+                // Nobody is waiting; complete as cancelled so the exception isn't reported as unobserved.
+                this.completionSource.TrySetCanceled(this.cancellationTokenSource.Token);
+            }
+            else
+            {
+                this.completionSource.TrySetException(exception);
+            }
+        }
     }
 }
