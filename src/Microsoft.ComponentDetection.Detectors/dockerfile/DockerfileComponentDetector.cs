@@ -51,6 +51,7 @@ public class DockerfileComponentDetector : FileComponentDetector, IExperimentalD
         IDictionary<string, string> detectorArgs,
         CancellationToken cancellationToken = default) =>
         Task.FromResult(processRequests.Where(processRequest =>
+            !processRequest.ComponentStream.Location.EndsWith(".dockerignore", StringComparison.OrdinalIgnoreCase) &&
             !this.IsInSkippedFolder(processRequest.ComponentStream.Location)));
 
     protected override async Task OnFileFoundAsync(ProcessRequest processRequest, IDictionary<string, string> detectorArgs, CancellationToken cancellationToken = default)
