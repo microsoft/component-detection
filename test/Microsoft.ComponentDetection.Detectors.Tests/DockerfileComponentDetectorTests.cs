@@ -201,16 +201,46 @@ COPY --from=busybox:1.36 /bin/busybox /usr/local/bin/busybox
     }
 
     [TestMethod]
-    public async Task TestDockerfile_PrefixedFilenameAsync()
+    [DataRow("Dockerfile.prod")]
+    [DataRow("Dockerfile.runtime")]
+    [DataRow("Dockerfile.dockerignore.runtime")]
+    public async Task TestDockerfile_PrefixedFilenameAsync(string fileName)
     {
         var dockerfile = @"FROM redis:7-alpine";
 
         var (scanResult, componentRecorder) = await this.DetectorTestUtility
-            .WithFile("Dockerfile.prod", dockerfile)
+            .WithFile(fileName, dockerfile)
             .ExecuteDetectorAsync();
 
         scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
         componentRecorder.GetDetectedComponents().Should().ContainSingle();
+    }
+
+    [TestMethod]
+    [DataRow("Dockerfile.dockerignore", "node_modules\n*.log")]
+    [DataRow("Dockerfile.runtime.dockerignore", "node_modules\n*.log")]
+    [DataRow("app.dockerfile.dockerignore", "node_modules\n*.log")]
+    [DataRow("DOCKERFILE.DOCKERIGNORE", "node_modules\n*.log")]
+    [DataRow("Dockerfile.dockerignore", "FROM redis:7-alpine")]
+    public async Task TestDockerfile_DockerignoreIsSilentlyIgnoredAsync(string fileName, string contents)
+    {
+        var loggerMock = new Mock<ILogger<DockerfileComponentDetector>>();
+
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+            .WithFile(fileName, contents)
+            .AddServiceMock(loggerMock)
+            .ExecuteDetectorAsync();
+
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+        componentRecorder.GetDetectedComponents().Should().BeEmpty();
+        loggerMock.Verify(
+            logger => logger.Log(
+                It.Is<LogLevel>(level => level == LogLevel.Warning || level == LogLevel.Error),
+                It.IsAny<EventId>(),
+                It.IsAny<It.IsAnyType>(),
+                It.IsAny<Exception>(),
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            Times.Never);
     }
 
     [TestMethod]
