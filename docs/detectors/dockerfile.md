@@ -12,6 +12,8 @@ The `DockerfileComponentDetector` is an **Experimental** detector. It runs autom
 
 The Dockerfile detector parses Dockerfile syntax to extract Docker image references from `FROM` and `COPY --from` instructions. It uses the [Valleysoft.DockerfileModel](https://github.com/mthalman/DockerfileModel) library to parse Dockerfile syntax.
 
+BuildKit [here-documents](https://docs.docker.com/reference/dockerfile/#here-documents) (for example `RUN <<EOF` or `COPY <<EOF /path`) are supported. A heredoc body is treated as opaque content, so a `FROM` line inside it is not reported as an image reference.
+
 ### FROM Instruction Detection
 The detector extracts base image references from `FROM` instructions and resolves multi-stage build references:
 - Direct image references (e.g., `FROM ubuntu:22.04`)
