@@ -68,7 +68,7 @@ By default, `dotnet test` **excludes** Integration tests (configured in `test/Di
 
 To run only Integration tests locally:
 ```bash
-dotnet test -- --filter "TestCategory=Integration"
+dotnet test -p:ExcludeIntegrationTests=false --filter "TestCategory=Integration"
 ```
 
 To run everything (same as CI):

@@ -43,7 +43,7 @@ public class LazyComponentStream : IComponentStream
             using var fs = this.fileInfo.OpenRead();
 
             var buffer = new byte[this.fileInfo.Length];
-            fs.Read(buffer, 0, (int)this.fileInfo.Length);
+            fs.ReadExactly(buffer);
 
             return buffer;
         }

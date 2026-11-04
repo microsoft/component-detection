@@ -300,7 +300,7 @@ public class BinLogProcessorTests
         WriteFile(projectBDir, "ProjectB.csproj", projectBContent);
 
         // Create a solution to build both projects in a single binlog
-        await RunDotNetAsync(solutionDir, "new sln --name MultiProject");
+        await RunDotNetAsync(solutionDir, "new sln --format sln --name MultiProject");
         await RunDotNetAsync(solutionDir, $"sln add \"{Path.Combine(projectADir, "ProjectA.csproj")}\"");
         await RunDotNetAsync(solutionDir, $"sln add \"{Path.Combine(projectBDir, "ProjectB.csproj")}\"");
         var binlogPath = Path.Combine(solutionDir, "build.binlog");
@@ -1219,10 +1219,9 @@ public class BinLogProcessorTests
     }
 
     [TestMethod]
-    public async Task TargetAddsItemButPropertyInvisible_ItemCapturedPropertyNot()
+    public async Task TargetAddsItemAndChangesProperty_BothCaptured()
     {
-        // A single target modifies both a property and adds an item.
-        // Property changes in targets are invisible, but item additions are visible.
+        // MSBuild 18 reports target-level property changes as well as item additions.
         var projectDir = Path.Combine(this.testDir, "ComboPropsItems");
         Directory.CreateDirectory(projectDir);
 
@@ -1254,10 +1253,9 @@ public class BinLogProcessorTests
             p.ProjectPath != null &&
             p.ProjectPath.EndsWith("ComboPropsItems.csproj", StringComparison.OrdinalIgnoreCase));
 
-        // Property change in target is invisible (stays at evaluation value)
         projectInfo.IsTestProject.Should().Be(
-            false,
-            "target-level property changes are not visible in binlog events");
+            true,
+            "target-level property changes are visible in MSBuild 18 binlog events");
         projectInfo.PackageReference.Should().ContainKey("Newtonsoft.Json");
 
         // Item addition in target IS captured via TaskParameter events
@@ -1347,11 +1345,10 @@ public class BinLogProcessorTests
             p.ProjectPath != null &&
             p.ProjectPath.EndsWith("GlobalAndTarget.csproj", StringComparison.OrdinalIgnoreCase));
 
-        // Note: Global properties cannot be overridden by targets in MSBuild.
-        // The global property wins. This tests that we correctly capture this MSBuild behavior.
+        // MSBuild 18 reports the target's reassignment of the initially global property.
         projectInfo.SelfContained.Should().Be(
-            false,
-            "global properties cannot be overridden by targets in MSBuild");
+            true,
+            "target-level property reassignments are captured from MSBuild 18 binlogs");
     }
 
     [TestMethod]
