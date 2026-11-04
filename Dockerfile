@@ -1,4 +1,4 @@
-﻿FROM mcr.microsoft.com/dotnet/sdk:8.0-cbl-mariner2.0@sha256:a26c5bf4c47186df2fd290b74a2512d9830796d98b644fb12857b57a5244507d AS build
+﻿FROM mcr.microsoft.com/dotnet/sdk:10.0-azurelinux3.0@sha256:ffd76bb46785445d2d029809009d35b522619b97df88c0abaa05d549db697b43 AS build
 WORKDIR /app
 COPY . .
 RUN dotnet publish -c Release -o out \
@@ -10,7 +10,7 @@ RUN dotnet publish -c Release -o out \
     -p:PublishSingleFile=true \
     ./src/Microsoft.ComponentDetection
 
-FROM mcr.microsoft.com/dotnet/runtime-deps:8.0-cbl-mariner2.0@sha256:addba165ed9637fc02c63e9f66913deb7125dac90b5ca7d3f89d6d084c23f09b AS runtime
+FROM mcr.microsoft.com/dotnet/runtime-deps:10.0-azurelinux3.0@sha256:d33971c79f36e1d539de998823ae930bf085c4e9812c4cdebd9a1571e300fdb3 AS runtime
 WORKDIR /app
 COPY --from=build /app/out ./
 

@@ -13,6 +13,31 @@ using Moq;
 public class LazyComponentStreamTests
 {
     [TestMethod]
+    public void LazyComponentStreamReadsEntireFile()
+    {
+        var fileContent = new byte[(128 * 1024) + 1];
+        fileContent[0] = 1;
+        fileContent[^1] = 2;
+        var tmpFile = Path.GetTempFileName();
+
+        try
+        {
+            File.WriteAllBytes(tmpFile, fileContent);
+            var lcs = new LazyComponentStream(new FileInfo(tmpFile), "test", Mock.Of<ILogger>());
+
+            using var stream = lcs.Stream;
+            using var actual = new MemoryStream();
+            stream.CopyTo(actual);
+
+            actual.ToArray().Should().Equal(fileContent);
+        }
+        finally
+        {
+            File.Delete(tmpFile);
+        }
+    }
+
+    [TestMethod]
     public void LazyComponentStreamWorks()
     {
         var pattern = "test";

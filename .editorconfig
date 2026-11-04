@@ -518,6 +518,8 @@ dotnet_diagnostic.CS1591.severity = suggestion
 
 # CA2007: Consider calling ConfigureAwait on the awaited task
 dotnet_diagnostic.CA2007.severity = suggestion
+# CA1873: Avoid potentially expensive logging
+dotnet_diagnostic.CA1873.severity = suggestion
 
 # CA1062: Validate arguments of public methods
 dotnet_diagnostic.CA1062.severity = suggestion
@@ -672,6 +674,33 @@ dotnet_diagnostic.CA1311.severity = suggestion
 
 # CA1852: Type can be sealed
 dotnet_diagnostic.CA1852.severity = suggestion
+
+# Modernization suggestions from the newer SDK should not require unrelated rewrites.
+# IDE0040: Accessibility modifiers, now also enforced on interface members
+dotnet_diagnostic.IDE0040.severity = suggestion
+# CA1515: Consider making public types internal
+dotnet_diagnostic.CA1515.severity = suggestion
+# CA2263: Prefer a generic overload when the type is known
+dotnet_diagnostic.CA2263.severity = suggestion
+# IDE0032: Use auto property, including the C# field keyword
+dotnet_diagnostic.IDE0032.severity = suggestion
+# IDE0330: Use System.Threading.Lock
+dotnet_diagnostic.IDE0330.severity = suggestion
+# IDE0350: Simplify lambda expression
+dotnet_diagnostic.IDE0350.severity = suggestion
+# IDE0370: Remove unnecessary null-forgiving operators
+dotnet_diagnostic.IDE0370.severity = suggestion
+# IDE0028, IDE0300, IDE0306: Simplify collection initialization
+dotnet_diagnostic.IDE0028.severity = suggestion
+dotnet_diagnostic.IDE0300.severity = suggestion
+dotnet_diagnostic.IDE0306.severity = suggestion
+# CA1849, CA2024: Prefer asynchronous I/O
+dotnet_diagnostic.CA1849.severity = suggestion
+dotnet_diagnostic.CA2024.severity = suggestion
+# CA1872: Prefer Convert.ToHexStringLower
+dotnet_diagnostic.CA1872.severity = suggestion
+# CA1874: Prefer Regex.IsMatch
+dotnet_diagnostic.CA1874.severity = suggestion
 
 # CA1854: Prefer the IDictionary.TryGetValue(TKey, out TValue) method
 dotnet_diagnostic.CA1854.severity = suggestion

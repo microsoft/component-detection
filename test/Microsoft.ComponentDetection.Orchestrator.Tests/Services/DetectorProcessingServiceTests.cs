@@ -235,7 +235,7 @@ public class DetectorProcessingServiceTests
         experimentalDetectorRecord.IsExperimental.Should().BeTrue();
 
         // We should have all components except the ones that came from our experimental detector
-        this.GetDiscoveredComponentsFromDetectorProcessingResult(results).Should().HaveCount(records.Sum(x => x.DetectedComponentCount ?? 0) - experimentalDetectorRecord.DetectedComponentCount ?? 0);
+        this.GetDiscoveredComponentsFromDetectorProcessingResult(results).Should().HaveCount((records.Sum(x => x.DetectedComponentCount ?? 0) - experimentalDetectorRecord.DetectedComponentCount) ?? 0);
         this.GetDiscoveredComponentsFromDetectorProcessingResult(results)
             .Select(x => x.Component as NuGetComponent)
             .Where(x => x != null)

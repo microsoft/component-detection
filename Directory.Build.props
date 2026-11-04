@@ -1,7 +1,7 @@
 <Project>
 
   <PropertyGroup Label="Build">
-    <TargetFramework>net8.0</TargetFramework>
+    <TargetFramework>net10.0</TargetFramework>
     <LangVersion>latest</LangVersion>
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
     <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
@@ -32,7 +32,6 @@
     <PackageReference Include="Microsoft.VisualStudio.Threading.Analyzers" PrivateAssets="all"/>
     <PackageReference Include="MinVer" PrivateAssets="all"/>
     <PackageReference Include="StyleCop.Analyzers" PrivateAssets="all"/>
-    <PackageReference Include="System.Text.Json" />
   </ItemGroup>
 
 </Project>
