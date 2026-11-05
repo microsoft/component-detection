@@ -338,7 +338,12 @@ internal class LinuxScanner : ILinuxScanner
             }
             finally
             {
-                run.RemoveCaller();
+                if (run.RemoveCaller())
+                {
+                    // This caller was the last one waiting, so it cancelled the run. Wait for the run to stop,
+                    // so its container is removed before this scan returns.
+                    await run.WaitForStopAsync();
+                }
             }
         }
     }
@@ -621,21 +626,30 @@ internal class LinuxScanner : ILinuxScanner
         /// <summary>
         /// Unregisters a caller, and cancels the run if no caller is left waiting for an unfinished result.
         /// </summary>
-        public void RemoveCaller()
+        /// <returns><c>true</c> if this caller was the last one waiting and cancelled the run.</returns>
+        public bool RemoveCaller()
         {
             lock (this.gate)
             {
                 this.callers--;
                 if (this.callers > 0 || this.Result.IsCompleted)
                 {
-                    return;
+                    return false;
                 }
 
                 this.abandoned = true;
             }
 
             this.cancellationTokenSource.Cancel();
+            return true;
         }
+
+        /// <summary>
+        /// Waits for the run to stop, whatever its outcome. The result is set only after syft's container is removed.
+        /// </summary>
+        /// <returns>A task that completes when the run has stopped.</returns>
+        public Task WaitForStopAsync() =>
+            this.Result.ContinueWith(static _ => { }, CancellationToken.None, TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
 
         public void SetResult(string stdout) => this.completionSource.TrySetResult(stdout);
 

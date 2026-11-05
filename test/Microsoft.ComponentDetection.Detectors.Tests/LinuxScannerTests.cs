@@ -1720,6 +1720,71 @@ public class LinuxScannerTests
     }
 
     [TestMethod]
+    public async Task TestLinuxScanner_LastCallerCancelled_WaitsForContainerRemovalAsync()
+    {
+        LinuxScanner.ResetCache();
+
+        // Like the real Docker service, the mock removes the container before returning when it's cancelled.
+        var removalStarted = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var removalFinished = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        this.mockDockerService.Setup(service =>
+                service.CreateAndRunContainerAsync(
+                    It.IsAny<string>(),
+                    It.IsAny<List<string>>(),
+                    It.IsAny<IList<string>>(),
+                    It.IsAny<CancellationToken>()
+                )
+            )
+            .Returns(async (string _, IList<string> _, IList<string> _, CancellationToken token) =>
+            {
+                try
+                {
+                    await Task.Delay(Timeout.Infinite, token);
+                    return (SyftOutputNoAuthorOrLicense, string.Empty);
+                }
+                finally
+                {
+                    removalStarted.SetResult();
+                    await removalFinished.Task.WaitAsync(TimeSpan.FromSeconds(30), CancellationToken.None);
+                }
+            });
+
+        var enabledTypes = new HashSet<ComponentType> { ComponentType.Linux };
+
+        var layers = new[]
+        {
+            new DockerLayer
+            {
+                LayerIndex = 0,
+                DiffId = "sha256:f95fc50d21d981f1efe1f04109c2c3287c271794f5d9e4fdf9888851a174a971",
+            },
+        };
+
+        using var cts = new CancellationTokenSource();
+        var scanTask = this.linuxScanner.ScanLinuxAsync("removal_hash", layers, 0, enabledTypes, LinuxScannerScope.AllLayers, cts.Token);
+
+        // The only caller gives up, which cancels the run and starts removing the container.
+        await cts.CancelAsync();
+        await removalStarted.Task.WaitAsync(TimeSpan.FromSeconds(30));
+
+        // The scan doesn't return while the container is still being removed.
+        var firstToFinish = await Task.WhenAny(scanTask, Task.Delay(TimeSpan.FromMilliseconds(200)));
+        firstToFinish.Should().NotBeSameAs(scanTask);
+
+        removalFinished.SetResult();
+        try
+        {
+            await scanTask;
+            Assert.Fail("Expected OperationCanceledException was not thrown");
+        }
+        catch (OperationCanceledException)
+        {
+            // Expected — the caller stopped waiting.
+        }
+    }
+
+    [TestMethod]
     public void TestLinuxScanner_ProcessSyftOutput_ExcludesPackageManagerDatabasePathsFromLayerAttribution()
     {
         // Simulates a scenario where a package (curl) is installed in layer1,
