@@ -247,6 +247,26 @@ public class MSBuildBinaryLogComponentDetector : FileComponentDetector
     }
 
     /// <summary>
+    /// Gets the assets files a project info should be indexed by.
+    /// </summary>
+    /// <remarks>
+    /// The outer build of a multi-targeted project never has ProjectAssetsFile, only the inner builds do.
+    /// </remarks>
+    private static IEnumerable<string> GetProjectAssetsFiles(MSBuildProjectInfo projectInfo)
+    {
+        if (!string.IsNullOrEmpty(projectInfo.ProjectAssetsFile))
+        {
+            return [projectInfo.ProjectAssetsFile];
+        }
+
+        return projectInfo.InnerBuilds
+            .Select(ib => ib.ProjectAssetsFile)
+            .Where(f => !string.IsNullOrEmpty(f))
+            .Select(f => f!)
+            .Distinct(StringComparer.OrdinalIgnoreCase);
+    }
+
+    /// <summary>
     /// Maps the MSBuild OutputType property to "application" or "library".
     /// Returns <c>null</c> for empty/unknown values rather than guessing.
     /// </summary>
@@ -336,30 +356,38 @@ public class MSBuildBinaryLogComponentDetector : FileComponentDetector
         // Use AddOrUpdate+MergeWith so that multiple binlogs for the same project
         // (e.g., build and publish passes) form a superset rather than keeping only the first.
         // Normalize to forward slashes so lookup from OS-native ComponentStream.Location matches.
-        if (!string.IsNullOrEmpty(projectInfo.ProjectAssetsFile))
+        foreach (var assetsFile in GetProjectAssetsFiles(projectInfo))
         {
-            var normalizedAssetsPath = PathRebasingUtility.NormalizePath(projectInfo.ProjectAssetsFile);
+            var normalizedAssetsPath = PathRebasingUtility.NormalizePath(assetsFile);
             this.projectInfoByAssetsFile.AddOrUpdate(
                 normalizedAssetsPath,
                 _ => projectInfo,
                 (_, existing) => existing.MergeWith(projectInfo));
-            assetsFilesFound.Add(projectInfo.ProjectAssetsFile);
+            assetsFilesFound.Add(assetsFile);
         }
     }
 
     private void LogMissingAssetsWarnings(MSBuildProjectInfo projectInfo)
     {
-        if (string.IsNullOrEmpty(projectInfo.ProjectAssetsFile))
+        var hasAssetFile = false;
+
+        foreach (var assetsFile in GetProjectAssetsFiles(projectInfo))
+        {
+            hasAssetFile = true;
+
+            if (!this.fileUtilityService.Exists(assetsFile))
+            {
+                this.Logger.LogWarning(
+                    "Project.assets.json referenced in binlog does not exist: {AssetsFile} (from project {ProjectPath})",
+                    assetsFile,
+                    projectInfo.ProjectPath);
+            }
+        }
+
+        if (!hasAssetFile)
         {
             this.Logger.LogWarning(
                 "No ProjectAssetsFile property found in binlog for project: {ProjectPath}. NuGet dependencies may not be detected.",
-                projectInfo.ProjectPath);
-        }
-        else if (!this.fileUtilityService.Exists(projectInfo.ProjectAssetsFile))
-        {
-            this.Logger.LogWarning(
-                "Project.assets.json referenced in binlog does not exist: {AssetsFile} (from project {ProjectPath})",
-                projectInfo.ProjectAssetsFile,
                 projectInfo.ProjectPath);
         }
     }

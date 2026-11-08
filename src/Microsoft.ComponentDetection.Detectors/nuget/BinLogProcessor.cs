@@ -221,30 +221,10 @@ internal class BinLogProcessor : IBinLogProcessor
                 existing.InnerBuilds.Add(projectInfo);
             }
         }
-        else if (existing.IsOuterBuild && projectInfo.IsOuterBuild)
-        {
-            // Both are outer builds (e.g. build + publish of a multi-targeted project)
-            // Merge inner builds: for matching TFMs, merge; for new TFMs, add
-            foreach (var newInner in projectInfo.InnerBuilds)
-            {
-                var matchingInner = existing.InnerBuilds.FirstOrDefault(
-                    ib => string.Equals(ib.TargetFramework, newInner.TargetFramework, StringComparison.OrdinalIgnoreCase));
-                if (matchingInner != null)
-                {
-                    matchingInner.MergeWith(newInner);
-                }
-                else
-                {
-                    existing.InnerBuilds.Add(newInner);
-                }
-            }
-
-            // Merge the outer build properties/items too
-            existing.MergeWith(projectInfo);
-        }
         else
         {
-            // Fallback: merge properties/items as superset
+            // Both are outer builds (e.g. build + publish of a multi-targeted project), or fallback:
+            // merge properties/items and inner builds (by TFM) as superset
             existing.MergeWith(projectInfo);
         }
     }
