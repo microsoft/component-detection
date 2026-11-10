@@ -4,6 +4,8 @@ using System.Runtime.CompilerServices;
 
 internal class DetectedComponentScopeRecord : BaseDetectionTelemetryRecord
 {
+    public override bool IsDiagnostic => true;
+
     public override string RecordName => "ComponentScopeRecord";
 
     public int? MavenProvidedScopeCount { get; set; } = 0;

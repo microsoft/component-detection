@@ -20,7 +20,8 @@ internal class CommandLineInvocationTelemetryRecord : BaseDetectionTelemetryReco
     internal void Track(CommandLineExecutionResult result, string path, string parameters)
     {
         this.ExitCode = result.ExitCode;
-        this.StandardError = result.StdErr?.RemoveSensitiveInformation();
+        var sanitizedError = result.StdErr?.RemoveSensitiveInformation();
+        this.StandardError = DiagnosticEnabled ? sanitizedError : TruncateToMaxLines(sanitizedError);
         this.TrackCommon(path, parameters);
     }
 
