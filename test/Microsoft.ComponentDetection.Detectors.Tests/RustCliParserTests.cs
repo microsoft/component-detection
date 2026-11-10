@@ -1136,6 +1136,37 @@ public class RustCliParserTests
         distinctNames.Should().Contain("pkgB");
     }
 
+    [TestMethod]
+    public async Task ParseAsync_QuotesManifestPathWhenPathContainsSpaces()
+    {
+        var tomlPath = "C:/repo with space/AppControl Manager/Cargo.toml";
+        var quotedTomlPath = $"\"{tomlPath}\"";
+
+        var json = """
+        {
+          "packages": [
+            { "name": "my-pkg", "version": "1.0.0", "id": "my-pkg 1.0.0 (path+file:///C:/repo)", "dependencies": [], "source": null }
+          ],
+          "workspace_members": [ "my-pkg 1.0.0 (path+file:///C:/repo)" ],
+          "resolve": {
+            "nodes": [
+              { "id": "my-pkg 1.0.0 (path+file:///C:/repo)", "deps": [] }
+            ]
+          }
+        }
+        """;
+
+        this.cli.Setup(c => c.CanCommandBeLocatedAsync("cargo", null)).ReturnsAsync(true);
+        this.cli.Setup(c => c.ExecuteCommandAsync("cargo", null, null, It.IsAny<CancellationToken>(), "metadata", "--manifest-path", quotedTomlPath, "--format-version=1", "--locked"))
+            .ReturnsAsync(new CommandLineExecutionResult { ExitCode = 0, StdOut = json });
+
+        var recorder = new Mock<ISingleFileComponentRecorder>(MockBehavior.Loose);
+        var result = await this.parser.ParseAsync(MakeTomlStream(tomlPath), recorder.Object);
+
+        result.Success.Should().BeTrue();
+        this.cli.Verify(c => c.ExecuteCommandAsync("cargo", null, null, It.IsAny<CancellationToken>(), "metadata", "--manifest-path", quotedTomlPath, "--format-version=1", "--locked"), Times.Once());
+    }
+
     private async Task<ParseResult> InvokeProcessMetadataAsync(string manifestLocation, ISingleFileComponentRecorder fallbackRecorder, CargoMetadata metadata) =>
         await this.parser.ParseFromMetadataAsync(
             new ComponentStream { Location = manifestLocation, Pattern = "Cargo.toml", Stream = new MemoryStream([]) },
