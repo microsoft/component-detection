@@ -1,0 +1,113 @@
+# These dependencies are intentionally outdated test fixtures and are not built or shipped.
+
+[[IgnoredVulns]]
+id = "GHSA-23c5-xmqv-rm74"
+reason = "The vulnerable dependency is an intentionally outdated test fixture."
+
+[[IgnoredVulns]]
+id = "GHSA-23hp-3jrh-7fpw"
+reason = "The vulnerable dependency is an intentionally outdated test fixture."
+
+[[IgnoredVulns]]
+id = "GHSA-37ch-88jc-xwx2"
+reason = "The vulnerable dependency is an intentionally outdated test fixture."
+
+[[IgnoredVulns]]
+id = "GHSA-3jxr-9vmj-r5cp"
+reason = "The vulnerable dependency is an intentionally outdated test fixture."
+
+[[IgnoredVulns]]
+id = "GHSA-3v7f-55p6-f55p"
+reason = "The vulnerable dependency is an intentionally outdated test fixture."
+
+[[IgnoredVulns]]
+id = "GHSA-4mjr-xmp4-gh2g"
+reason = "The vulnerable dependency is an intentionally outdated test fixture."
+
+[[IgnoredVulns]]
+id = "GHSA-6hxr-mr5r-9836"
+reason = "The vulnerable dependency is an intentionally outdated test fixture."
+
+[[IgnoredVulns]]
+id = "GHSA-7r86-cg39-jmmj"
+reason = "The vulnerable dependency is an intentionally outdated test fixture."
+
+[[IgnoredVulns]]
+id = "GHSA-8hcv-x26h-mcgp"
+reason = "The vulnerable dependency is an intentionally outdated test fixture."
+
+[[IgnoredVulns]]
+id = "GHSA-8x88-c5mf-7j5w"
+reason = "The vulnerable dependency is an intentionally outdated test fixture."
+
+[[IgnoredVulns]]
+id = "GHSA-9ppj-qmqm-q256"
+reason = "The vulnerable dependency is an intentionally outdated test fixture."
+
+[[IgnoredVulns]]
+id = "GHSA-c2c7-rcm5-vvqj"
+reason = "The vulnerable dependency is an intentionally outdated test fixture."
+
+[[IgnoredVulns]]
+id = "GHSA-f886-m6hf-6m8v"
+reason = "The vulnerable dependency is an intentionally outdated test fixture."
+
+[[IgnoredVulns]]
+id = "GHSA-ff84-5f28-78qj"
+reason = "The vulnerable dependency is an intentionally outdated test fixture."
+
+[[IgnoredVulns]]
+id = "GHSA-gvwx-54wh-qm9j"
+reason = "The vulnerable dependency is an intentionally outdated test fixture."
+
+[[IgnoredVulns]]
+id = "GHSA-j4r3-hg7j-8chg"
+reason = "The vulnerable dependency is an intentionally outdated test fixture."
+
+[[IgnoredVulns]]
+id = "GHSA-jxxr-4gwj-5jf2"
+reason = "The vulnerable dependency is an intentionally outdated test fixture."
+
+[[IgnoredVulns]]
+id = "GHSA-mh99-v99m-4gvg"
+reason = "The vulnerable dependency is an intentionally outdated test fixture."
+
+[[IgnoredVulns]]
+id = "GHSA-mwp4-54f8-5fhr"
+reason = "The vulnerable dependency is an intentionally outdated test fixture."
+
+[[IgnoredVulns]]
+id = "GHSA-q8mj-m7cp-5q26"
+reason = "The vulnerable dependency is an intentionally outdated test fixture."
+
+[[IgnoredVulns]]
+id = "GHSA-qffp-2rhf-9h96"
+reason = "The vulnerable dependency is an intentionally outdated test fixture."
+
+[[IgnoredVulns]]
+id = "GHSA-r292-9mhp-454m"
+reason = "The vulnerable dependency is an intentionally outdated test fixture."
+
+[[IgnoredVulns]]
+id = "GHSA-rgw5-rvv9-x895"
+reason = "The vulnerable dependency is an intentionally outdated test fixture."
+
+[[IgnoredVulns]]
+id = "GHSA-v2v4-37r5-5v8g"
+reason = "The vulnerable dependency is an intentionally outdated test fixture."
+
+[[IgnoredVulns]]
+id = "GHSA-v422-hmwv-36x6"
+reason = "The vulnerable dependency is an intentionally outdated test fixture."
+
+[[IgnoredVulns]]
+id = "GHSA-vmf3-w455-68vh"
+reason = "The vulnerable dependency is an intentionally outdated test fixture."
+
+[[IgnoredVulns]]
+id = "GHSA-w8wr-v893-vjvp"
+reason = "The vulnerable dependency is an intentionally outdated test fixture."
+
+[[IgnoredVulns]]
+id = "GHSA-x5fp-wj9c-mxmx"
+reason = "The vulnerable dependency is an intentionally outdated test fixture."
