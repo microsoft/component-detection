@@ -611,4 +611,202 @@ dependencies = [
         graph.GetDependenciesForComponent(aId).Should().BeEquivalentTo([bId]);
         graph.GetDependenciesForComponent(bId).Should().BeEquivalentTo([aId]);
     }
+
+    [TestMethod]
+    public async Task TestUvLockDetector_EditableRootPackage_ExcludedFromDetectedComponents()
+    {
+        var uvLock = """
+version = 1
+requires-python = ">=3.8"
+
+[[package]]
+name = "pluggy"
+version = "1.5.0"
+source = { registry = "https://pypi.org/simple" }
+
+[[package]]
+name = "pytest"
+version = "8.3.4"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "pluggy" },
+]
+
+[[package]]
+name = "cowsay"
+version = "6.1"
+source = { registry = "https://pypi.org/simple" }
+
+[[package]]
+name = "uv-demo-project"
+version = "0.2"
+source = { editable = "." }
+dependencies = [
+    { name = "cowsay" },
+]
+
+[package.metadata]
+requires-dist = [{ name = "cowsay" }]
+
+[package.metadata.requires-dev]
+dev = [{ name = "pytest", specifier = ">=8.3.4" }]
+""";
+
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
+            .WithFile("uv.lock", uvLock)
+            .ExecuteDetectorAsync();
+
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+        var detected = componentRecorder.GetDetectedComponents().ToList();
+        var graph = componentRecorder.GetDependencyGraphsByLocation().Values.First();
+
+        var detectedNames = detected.Select(d => ((PipComponent)d.Component).Name).ToList();
+        detectedNames.Should().NotContain("uv-demo-project");
+        detectedNames.Should().BeEquivalentTo(["cowsay", "pytest", "pluggy"]);
+
+        var cowsayId = new PipComponent("cowsay", "6.1").Id;
+        var pytestId = new PipComponent("pytest", "8.3.4").Id;
+        var pluggyId = new PipComponent("pluggy", "1.5.0").Id;
+
+        graph.IsComponentExplicitlyReferenced(cowsayId).Should().BeTrue();
+        graph.IsDevelopmentDependency(cowsayId).Should().BeFalse();
+
+        graph.IsDevelopmentDependency(pytestId).Should().BeTrue();
+        graph.IsDevelopmentDependency(pluggyId).Should().BeTrue();
+    }
+
+    [TestMethod]
+    public async Task TestUvLockDetector_WorkspaceMemberEditablePackage_RegisteredAsComponent()
+    {
+        var uvLock = """
+version = 1
+requires-python = ">=3.8"
+
+[[package]]
+name = "requests"
+version = "2.31.0"
+source = { registry = "https://pypi.org/simple" }
+
+[[package]]
+name = "member-a"
+version = "0.1.0"
+source = { editable = "packages/member-a" }
+dependencies = [
+    { name = "requests" },
+]
+
+[[package]]
+name = "root-project"
+version = "1.0.0"
+source = { editable = "." }
+dependencies = [
+    { name = "member-a" },
+]
+
+[package.metadata]
+requires-dist = [{ name = "member-a" }]
+""";
+
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
+            .WithFile("uv.lock", uvLock)
+            .ExecuteDetectorAsync();
+
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+        var detected = componentRecorder.GetDetectedComponents().ToList();
+
+        var detectedNames = detected.Select(d => ((PipComponent)d.Component).Name).ToList();
+
+        // The root project itself is excluded
+        detectedNames.Should().NotContain("root-project");
+
+        // The non-root workspace member remains a regular detected component
+        detectedNames.Should().Contain("member-a");
+        detectedNames.Should().Contain("requests");
+    }
+
+    [TestMethod]
+    public async Task TestUvLockDetector_MultipleRoots_ContributeToExplicitAndDevDependencies()
+    {
+        var uvLock = """
+version = 1
+requires-python = ">=3.8"
+
+[[package]]
+name = "prod-dep-1"
+version = "1.0.0"
+source = { registry = "https://pypi.org/simple" }
+
+[[package]]
+name = "dev-dep-1"
+version = "1.0.0"
+source = { registry = "https://pypi.org/simple" }
+
+[[package]]
+name = "prod-dep-2"
+version = "2.0.0"
+source = { registry = "https://pypi.org/simple" }
+
+[[package]]
+name = "dev-dep-2"
+version = "2.0.0"
+source = { registry = "https://pypi.org/simple" }
+
+[[package]]
+name = "root-editable"
+version = "0.1.0"
+source = { editable = "." }
+dependencies = [
+    { name = "prod-dep-1" },
+]
+
+[package.metadata]
+requires-dist = [{ name = "prod-dep-1" }]
+
+[package.metadata.requires-dev]
+dev = [{ name = "dev-dep-1" }]
+
+[[package]]
+name = "root-virtual"
+version = "0.2.0"
+source = { virtual = "." }
+dependencies = [
+    { name = "prod-dep-2" },
+]
+
+[package.metadata]
+requires-dist = [{ name = "prod-dep-2" }]
+
+[package.metadata.requires-dev]
+dev = [{ name = "dev-dep-2" }]
+""";
+
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
+            .WithFile("uv.lock", uvLock)
+            .ExecuteDetectorAsync();
+
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+        var detected = componentRecorder.GetDetectedComponents().ToList();
+        var graph = componentRecorder.GetDependencyGraphsByLocation().Values.First();
+
+        var detectedNames = detected.Select(d => ((PipComponent)d.Component).Name).ToList();
+        detectedNames.Should().NotContain("root-editable");
+        detectedNames.Should().NotContain("root-virtual");
+        detectedNames.Should().BeEquivalentTo(["prod-dep-1", "dev-dep-1", "prod-dep-2", "dev-dep-2"]);
+
+        var prod1Id = new PipComponent("prod-dep-1", "1.0.0").Id;
+        var dev1Id = new PipComponent("dev-dep-1", "1.0.0").Id;
+        var prod2Id = new PipComponent("prod-dep-2", "2.0.0").Id;
+        var dev2Id = new PipComponent("dev-dep-2", "2.0.0").Id;
+
+        // Both roots contributed their production dependencies
+        graph.IsComponentExplicitlyReferenced(prod1Id).Should().BeTrue();
+        graph.IsDevelopmentDependency(prod1Id).Should().BeFalse();
+
+        graph.IsComponentExplicitlyReferenced(prod2Id).Should().BeTrue();
+        graph.IsDevelopmentDependency(prod2Id).Should().BeFalse();
+
+        // Both roots contributed their dev dependencies
+        graph.IsDevelopmentDependency(dev1Id).Should().BeTrue();
+        graph.IsDevelopmentDependency(dev2Id).Should().BeTrue();
+    }
 }
