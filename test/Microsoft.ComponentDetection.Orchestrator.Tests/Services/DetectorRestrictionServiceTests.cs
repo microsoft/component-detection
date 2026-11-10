@@ -85,6 +85,96 @@ public class DetectorRestrictionServiceTests
     }
 
     [TestMethod]
+    public void WithRestrictions_AllowsDefaultOffWhenFilteredExclusively()
+    {
+        var detectorMock = this.GenerateDetector("defaultOffDetector");
+        var defaultOffDetectorMock = detectorMock.As<IDefaultOffComponentDetector>();
+        this.detectors = this.detectors.Union([defaultOffDetectorMock.Object]).ToArray();
+
+        var r = new DetectorRestrictions
+        {
+            AllowedDetectorIds = ["defaultOffDetector"],
+            ExplicitlyEnabledDetectorIds = ["defaultOffDetector"],
+        };
+
+        var restrictedDetectors = this.serviceUnderTest.ApplyRestrictions(r, this.detectors);
+        restrictedDetectors
+            .Should().OnlyContain(item => item == defaultOffDetectorMock.Object);
+    }
+
+    [TestMethod]
+    public void WithRestrictions_AllowsDefaultOffWhenInAllowedDetectorIds()
+    {
+        var detectorMock = this.GenerateDetector("defaultOffDetector");
+        var defaultOffDetectorMock = detectorMock.As<IDefaultOffComponentDetector>();
+        this.detectors = this.detectors.Union([defaultOffDetectorMock.Object]).ToArray();
+
+        var r = new DetectorRestrictions
+        {
+            AllowedDetectorIds = ["defaultOffDetector"],
+        };
+
+        var restrictedDetectors = this.serviceUnderTest.ApplyRestrictions(r, this.detectors);
+        restrictedDetectors
+            .Should().OnlyContain(item => item == defaultOffDetectorMock.Object);
+    }
+
+    [TestMethod]
+    public void WithRestrictions_AllowsDefaultOffCaseInsensitive()
+    {
+        var detectorMock = this.GenerateDetector("DefaultOffDetector");
+        var defaultOffDetectorMock = detectorMock.As<IDefaultOffComponentDetector>();
+        this.detectors = this.detectors.Union([defaultOffDetectorMock.Object]).ToArray();
+
+        var r = new DetectorRestrictions
+        {
+            AllowedDetectorIds = ["defaultoffdetector"],
+            ExplicitlyEnabledDetectorIds = ["DEFAULTOFFDETECTOR"],
+        };
+
+        var restrictedDetectors = this.serviceUnderTest.ApplyRestrictions(r, this.detectors);
+        restrictedDetectors
+            .Should().OnlyContain(item => item == defaultOffDetectorMock.Object);
+    }
+
+    [TestMethod]
+    public void WithRestrictions_DefaultOffFilteredOutWhenOtherDetectorRequested()
+    {
+        var detectorMock = this.GenerateDetector("defaultOffDetector");
+        var defaultOffDetectorMock = detectorMock.As<IDefaultOffComponentDetector>();
+        this.detectors = this.detectors.Union([defaultOffDetectorMock.Object]).ToArray();
+
+        var r = new DetectorRestrictions
+        {
+            AllowedDetectorIds = ["FirstDetector"],
+            ExplicitlyEnabledDetectorIds = ["defaultOffDetector"],
+        };
+
+        var restrictedDetectors = this.serviceUnderTest.ApplyRestrictions(r, this.detectors);
+        restrictedDetectors
+            .Should().OnlyContain(item => item == this.firstDetectorMock.Object);
+    }
+
+    [TestMethod]
+    public void WithRestrictions_DefaultOffFilteredOutWhenCategoryDoesNotMatch()
+    {
+        var detectorMock = this.GenerateDetector("defaultOffDetector", ["CustomCategory"]);
+        var defaultOffDetectorMock = detectorMock.As<IDefaultOffComponentDetector>();
+        this.detectors = this.detectors.Union([defaultOffDetectorMock.Object]).ToArray();
+
+        var r = new DetectorRestrictions
+        {
+            AllowedDetectorCategories = ["FirstDetectorCategory"],
+            ExplicitlyEnabledDetectorIds = ["defaultOffDetector"],
+        };
+
+        var restrictedDetectors = this.serviceUnderTest.ApplyRestrictions(r, this.detectors);
+        restrictedDetectors
+            .Should().Contain(this.firstDetectorMock.Object)
+            .And.NotContain(defaultOffDetectorMock.Object);
+    }
+
+    [TestMethod]
     public void WithRestrictions_FiltersBasedOnDetectorId()
     {
         var r = new DetectorRestrictions
