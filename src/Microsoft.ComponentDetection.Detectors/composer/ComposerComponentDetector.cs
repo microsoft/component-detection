@@ -1,6 +1,7 @@
 namespace Microsoft.ComponentDetection.Detectors.Composer;
 
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
@@ -41,6 +42,7 @@ public sealed class ComposerComponentDetector : FileComponentDetector, IExperime
     private readonly ICommandLineInvocationService commandLineInvocationService;
     private readonly ConcurrentHashSet<string> coveredVendorDirectories = [];
     private readonly ConcurrentHashSet<string> knownPlatformVendorDirectories = [];
+    private readonly ConcurrentDictionary<ProcessRequest, PreparedProject> preparedProjects = [];
 
     public ComposerComponentDetector(
         IComponentStreamEnumerableFactory componentStreamEnumerableFactory,
@@ -77,14 +79,46 @@ public sealed class ComposerComponentDetector : FileComponentDetector, IExperime
     {
         this.coveredVendorDirectories.Clear();
         this.knownPlatformVendorDirectories.Clear();
+        this.preparedProjects.Clear();
         var files = await processRequests.ToList();
         cancellationToken.ThrowIfCancellationRequested();
 
-        // Process projects before their installed packages, regardless of discovery order. Return only the lockfiles when both a manifest and lockfile are present in the same directory.
-        return files.GroupBy(request => Path.GetDirectoryName(request.ComponentStream.Location))
-            .OrderBy(group => group.Key!.Length)
-            .Select(group => group.FirstOrDefault(request => Path.GetFileName(request.ComponentStream.Location).Equals(ComposerLockFileName, StringComparison.OrdinalIgnoreCase)) ?? group.First())
-            .ToObservable();
+        foreach (var group in files.GroupBy(request => Path.GetDirectoryName(request.ComponentStream.Location)!))
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            ProcessRequest? lockfile = null;
+            IComponentStream? manifest = null;
+            foreach (var file in group)
+            {
+                var fileName = Path.GetFileName(file.ComponentStream.Location);
+                if (fileName.Equals(ComposerLockFileName, StringComparison.OrdinalIgnoreCase))
+                {
+                    lockfile ??= file;
+                }
+                else if (fileName.Equals(ComposerManifestFileName, StringComparison.OrdinalIgnoreCase))
+                {
+                    manifest ??= file.ComponentStream;
+                }
+
+                if (lockfile is not null && manifest is not null)
+                {
+                    break;
+                }
+            }
+
+            var request = lockfile ?? group.First();
+            var project = await this.PrepareProjectAsync(request.ComponentStream.Location, manifest, cancellationToken);
+            this.preparedProjects[request] = project;
+            this.knownPlatformVendorDirectories.Add(project.VendorDirectory);
+        }
+
+        return this.OrderProjects(cancellationToken).ToObservable();
+    }
+
+    protected override Task OnDetectionFinishedAsync()
+    {
+        this.preparedProjects.Clear();
+        return Task.CompletedTask;
     }
 
     protected override async Task OnFileFoundAsync(ProcessRequest processRequest, IDictionary<string, string> detectorArgs, CancellationToken cancellationToken = default)
@@ -104,17 +138,32 @@ public sealed class ComposerComponentDetector : FileComponentDetector, IExperime
 
         var recorder = processRequest.SingleFileComponentRecorder;
         this.Logger.LogDebug("Reading Composer file {Location}", file.Location);
-        using var document = await this.ReadDocumentAsync(file.Stream, file.Location, recorder, cancellationToken);
-        if (document is null)
+        var isManifest = Path.GetFileName(file.Location).Equals(ComposerManifestFileName, StringComparison.OrdinalIgnoreCase);
+        using var document = isManifest ? null : await this.ReadDocumentAsync(file.Stream, file.Location, recorder, cancellationToken);
+        if (!isManifest && document is null)
         {
             return;
         }
 
-        var isManifest = Path.GetFileName(file.Location).Equals(ComposerManifestFileName, StringComparison.OrdinalIgnoreCase);
-        using var manifest = isManifest ? null : await this.ReadManifestAsync(file.Location, recorder, cancellationToken);
-        var manifestRoot = isManifest ? document.RootElement : manifest?.RootElement;
-        var vendorDirectory = this.GetVendorDirectory(file.Location, manifestRoot);
-        this.knownPlatformVendorDirectories.Add(vendorDirectory);
+        var project = this.preparedProjects[processRequest];
+        var manifestRoot = project.Manifest;
+        if (project.ManifestError is not null)
+        {
+            this.Logger.LogError(project.ManifestError, "Invalid Composer JSON in {Location}", project.ManifestLocation);
+            recorder.RegisterPackageParseFailure(project.ManifestLocation);
+        }
+        else if (manifestRoot is not null && manifestRoot.Value.ValueKind != JsonValueKind.Object)
+        {
+            this.ReportFailure(recorder, project.ManifestLocation, "Expected a JSON object.");
+            manifestRoot = null;
+        }
+
+        if (isManifest && manifestRoot is null)
+        {
+            return;
+        }
+
+        var vendorDirectory = project.VendorDirectory;
         await this.RegisterPlatformInventoryAsync(file.Location, recorder, cancellationToken);
 
         var packages = new Dictionary<string, LockedPackage>();
@@ -125,13 +174,13 @@ public sealed class ComposerComponentDetector : FileComponentDetector, IExperime
                 this.Logger.LogWarning(
                     $"Composer manifest {{Location}} without a sibling {ComposerLockFileName} or usable {InstalledPackagesFileName}. Provide either to improve accuracy; otherwise only exact versions are detected.",
                     file.Location);
-                this.ReadManifestRequirements(document.RootElement, recorder, file.Location, cancellationToken);
+                this.ReadManifestRequirements(manifestRoot!.Value, recorder, file.Location, cancellationToken);
                 return;
             }
         }
         else
         {
-            this.ReadPackages(document.RootElement, PackagesPropertyName, false, packages, recorder, cancellationToken);
+            this.ReadPackages(document!.RootElement, PackagesPropertyName, false, packages, recorder, cancellationToken);
             this.ReadPackages(document.RootElement, "packages-dev", true, packages, recorder, cancellationToken);
             this.ReadLockAliases(document.RootElement, packages, recorder, cancellationToken);
         }
@@ -250,9 +299,19 @@ public sealed class ComposerComponentDetector : FileComponentDetector, IExperime
         CommandLineExecutionResult result;
         try
         {
-            string[] arguments = ["--no-plugins", "--no-scripts", "--no-interaction", "--no-ansi", "show", "--platform", "--format=json"];
+            var projectDirectory = Path.GetDirectoryName(location)!;
+            if (projectDirectory.IndexOfAny(['"', '\r', '\n']) >= 0 ||
+                (OperatingSystem.IsWindows() && projectDirectory.IndexOfAny(['%', '!']) >= 0))
+            {
+                this.Logger.LogWarning("Composer platform inventory cannot safely pass project directory {Directory} to the command line; continuing with package files only.", projectDirectory);
+                return;
+            }
+
+            // Avoid a trailing backslash escaping the argument's closing quote for filesystem roots.
+            projectDirectory = Path.EndsInDirectorySeparator(projectDirectory) ? $"{projectDirectory}." : projectDirectory;
+            string[] arguments = ["--no-plugins", "--no-scripts", "--no-interaction", "--no-ansi", $"--working-dir=\"{projectDirectory}\"", "show", "--platform", "--format=json"];
             result = await this.commandLineInvocationService.ExecuteCommandAsync(
-                ComposerName, [$"{ComposerName}.cmd", $"{ComposerName}.bat"], new DirectoryInfo(Path.GetDirectoryName(location)!), timeout.Token, arguments);
+                ComposerName, [$"{ComposerName}.cmd", $"{ComposerName}.bat"], workingDirectory: null, cancellationToken: timeout.Token, parameters: arguments);
             timeout.Token.ThrowIfCancellationRequested();
         }
         catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
@@ -400,8 +459,20 @@ public sealed class ComposerComponentDetector : FileComponentDetector, IExperime
             return false;
         }
 
-        using var stream = this.fileUtilityService.MakeFileStream(location);
-        using var document = await this.ReadDocumentAsync(stream, location, recorder, cancellationToken, allowPackageArray: true);
+        JsonDocument? inventory;
+        try
+        {
+            using var stream = this.fileUtilityService.MakeFileStream(location);
+            inventory = await this.ReadDocumentAsync(stream, location, recorder, cancellationToken, allowPackageArray: true);
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
+        {
+            this.Logger.LogWarning(exception, "Unable to read Composer installed inventory at {Location}; falling back to manifest requirements.", location);
+            recorder.RegisterPackageParseFailure(location);
+            return false;
+        }
+
+        using var document = inventory;
         if (document is null)
         {
             return false;
@@ -468,17 +539,98 @@ public sealed class ComposerComponentDetector : FileComponentDetector, IExperime
         return null;
     }
 
-    private async Task<JsonDocument?> ReadManifestAsync(string lockLocation, ISingleFileComponentRecorder recorder, CancellationToken cancellationToken)
+    private async Task<PreparedProject> PrepareProjectAsync(string location, IComponentStream? manifest, CancellationToken cancellationToken)
     {
-        var directory = new DirectoryInfo(Path.GetDirectoryName(lockLocation)!);
-        foreach (var file in this.ComponentStreamEnumerableFactory.GetComponentStreams(
-            directory, [ComposerManifestFileName], null, recursivelyScanDirectories: false))
+        var directory = new DirectoryInfo(Path.GetDirectoryName(location)!);
+        manifest ??= this.ComponentStreamEnumerableFactory.GetComponentStreams(
+            directory, [ComposerManifestFileName], null, recursivelyScanDirectories: false).FirstOrDefault();
+        JsonElement? root = null;
+        JsonException? error = null;
+        if (manifest is not null)
         {
-            cancellationToken.ThrowIfCancellationRequested();
-            return await this.ReadDocumentAsync(file.Stream, file.Location, recorder, cancellationToken);
+            try
+            {
+                using var document = await JsonDocument.ParseAsync(manifest.Stream, LenientJsonDocumentOptions, cancellationToken);
+                root = document.RootElement.Clone();
+            }
+            catch (JsonException exception)
+            {
+                // Report invalid manifests only if their project is processed, not when covered by an owner's inventory.
+                error = exception;
+            }
         }
 
-        return null;
+        var vendorDirectory = this.GetVendorDirectory(location, root is { ValueKind: JsonValueKind.Object } ? root : null);
+        return new PreparedProject(vendorDirectory, manifest?.Location ?? Path.Combine(directory.FullName, ComposerManifestFileName), root, error);
+    }
+
+    private List<ProcessRequest> OrderProjects(CancellationToken cancellationToken)
+    {
+        var projectDirectories = this.preparedProjects.Keys.ToDictionary(request => request, request => Path.GetDirectoryName(request.ComponentStream.Location)!);
+        var ownersByVendorDirectory = this.GetVendorOwnersByDirectory(projectDirectories);
+        var dependents = projectDirectories.Keys.ToDictionary(request => request, _ => new List<ProcessRequest>());
+        var remainingOwners = new Dictionary<ProcessRequest, int>(projectDirectories.Count);
+        foreach (var (request, projectDirectory) in projectDirectories)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            var ownerCount = 0;
+            for (var directory = projectDirectory; directory is not null; directory = Path.GetDirectoryName(directory))
+            {
+                if (ownersByVendorDirectory.TryGetValue(directory, out var matches))
+                {
+                    // Each owner has one vendor directory, so it can only match once along this path.
+                    foreach (var owner in matches)
+                    {
+                        if (owner != request)
+                        {
+                            dependents[owner].Add(request);
+                            ownerCount++;
+                        }
+                    }
+                }
+            }
+
+            remainingOwners.Add(request, ownerCount);
+        }
+
+        var ready = new Queue<ProcessRequest>(remainingOwners.Where(entry => entry.Value == 0).Select(entry => entry.Key));
+        var ordered = new List<ProcessRequest>(projectDirectories.Count);
+        while (ready.TryDequeue(out var request))
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            ordered.Add(request);
+            foreach (var dependent in dependents[request])
+            {
+                if (--remainingOwners[dependent] == 0)
+                {
+                    ready.Enqueue(dependent);
+                }
+            }
+        }
+
+        if (ordered.Count != projectDirectories.Count)
+        {
+            this.Logger.LogWarning("Composer vendor directory ownership contains a cycle; some projects cannot be processed before their vendor inputs.");
+            ordered.AddRange(remainingOwners.Where(entry => entry.Value > 0).Select(entry => entry.Key));
+        }
+
+        return ordered;
+    }
+
+    private Dictionary<string, List<ProcessRequest>> GetVendorOwnersByDirectory(Dictionary<ProcessRequest, string> projectDirectories)
+    {
+        var ownersByVendorDirectory = new Dictionary<string, List<ProcessRequest>>(StringComparer.Ordinal);
+        foreach (var group in this.preparedProjects.GroupBy(project => project.Value.VendorDirectory))
+        {
+            var vendorPrefix = Path.EndsInDirectorySeparator(group.Key) ? group.Key : $"{group.Key}{Path.DirectorySeparatorChar}";
+
+            // An absolute COMPOSER_VENDOR_DIR also applies to package manifests inside that directory; they are not additional owners.
+            var externalOwners = group.Where(project => !projectDirectories[project.Key].StartsWith(vendorPrefix, StringComparison.Ordinal))
+                .Select(project => project.Key).ToList();
+            ownersByVendorDirectory.Add(group.Key, externalOwners.Count > 0 ? externalOwners : group.Select(project => project.Key).ToList());
+        }
+
+        return ownersByVendorDirectory;
     }
 
     private void ReadPackages(JsonElement root, string section, bool isDevelopment, Dictionary<string, LockedPackage> packages, ISingleFileComponentRecorder recorder, CancellationToken cancellationToken)
@@ -803,6 +955,8 @@ public sealed class ComposerComponentDetector : FileComponentDetector, IExperime
         this.Logger.LogError("Malformed Composer data at {Location}: {Reason}", location, reason);
         recorder.RegisterPackageParseFailure(location);
     }
+
+    private sealed record PreparedProject(string VendorDirectory, string ManifestLocation, JsonElement? Manifest, JsonException? ManifestError);
 
     private sealed class LockedPackage(
         ComposerComponent component,

@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using AwesomeAssertions;
 using Microsoft.ComponentDetection.Contracts;
@@ -239,6 +240,60 @@ public class ComposerDetectorTests : BaseDetectorTest<ComposerComponentDetector>
 
         recorder.GetDetectedComponents().Select(component => component.Component.Id).Should().Equal(Id("vendor/pinned", "1.2.3"));
         recorder.GetSkippedComponents().Should().ContainSingle();
+    }
+
+    [TestMethod]
+    [DataRow("permission", false)]
+    [DataRow("missing-file", false)]
+    [DataRow("missing-directory", false)]
+    [DataRow("io", false)]
+    [DataRow("permission", true)]
+    [DataRow("io", true)]
+    public async Task UnreadableInstalledInventory_ReportsFailureAndContinuesWithFallbackAndOtherProjectsAsync(string failure, bool duringRead)
+    {
+        Exception exception = failure switch
+        {
+            "permission" => new UnauthorizedAccessException("Inventory access denied."),
+            "missing-file" => new FileNotFoundException("Inventory was removed."),
+            "missing-directory" => new DirectoryNotFoundException("Inventory directory was removed."),
+            "io" => new IOException("Inventory could not be read."),
+            _ => throw new ArgumentOutOfRangeException(nameof(failure)),
+        };
+        var location = Path.Combine(Path.GetTempPath(), "vendor", "composer", "installed.json");
+        var files = this.WithInstalledFile(Path.Combine(Path.GetTempPath(), "vendor"), "{}");
+        if (duringRead)
+        {
+            var stream = new Mock<Stream>();
+            stream.SetupGet(value => value.CanRead).Returns(true);
+            stream.Setup(value => value.ReadAsync(It.IsAny<Memory<byte>>(), It.IsAny<CancellationToken>()))
+                .Returns(() => ValueTask.FromException<int>(exception));
+            files.Setup(value => value.MakeFileStream(location)).Returns(stream.Object);
+        }
+        else
+        {
+            files.Setup(value => value.MakeFileStream(location)).Throws(exception);
+        }
+
+        var logger = new Mock<ILogger<ComposerComponentDetector>>();
+        var (result, recorder) = await this.DetectorTestUtility.AddServiceMock(logger)
+            .WithFile("composer.json", """{"require":{"vendor/pinned":"1.2.3","vendor/ranged":"^2"}}""")
+            .WithFile("composer.json", """{"require":{"vendor/nested":"3.0"}}""", fileLocation: Path.Combine(Path.GetTempPath(), "vendor", "acme", "lib", "composer.json"))
+            .WithFile("composer.lock", """{"packages":[{"name":"vendor/later","version":"4.0"}]}""", fileLocation: Path.Combine(Path.GetTempPath(), "next-project", "composer.lock"))
+            .ExecuteDetectorAsync();
+
+        result.ResultCode.Should().Be(ProcessingResultCode.Success);
+        recorder.GetDetectedComponents().Select(component => component.Component.Id).Should()
+            .BeEquivalentTo([Id("vendor/pinned", "1.2.3"), Id("vendor/nested", "3.0"), Id("vendor/later", "4.0")]);
+        recorder.GetSkippedComponents().Should().Equal(location);
+        files.Verify(value => value.MakeFileStream(location), Times.Once());
+        logger.Verify(
+            value => value.Log(
+                LogLevel.Warning,
+                It.IsAny<EventId>(),
+                It.Is<It.IsAnyType>((state, _) => state.ToString().Contains(location)),
+                exception,
+                It.IsAny<Func<It.IsAnyType, Exception, string>>()),
+            Times.Once());
     }
 
     [TestMethod]
@@ -535,6 +590,33 @@ public class ComposerDetectorTests : BaseDetectorTest<ComposerComponentDetector>
                 It.IsAny<Exception>(),
                 It.IsAny<Func<It.IsAnyType, Exception, string>>()),
             Times.Never);
+    }
+
+    [TestMethod]
+    public async Task InterleavedProjectFiles_UseEachSiblingManifestWithItsLockfileAsync()
+    {
+        var firstDirectory = Path.Combine(Path.GetTempPath(), "first");
+        var secondDirectory = Path.Combine(Path.GetTempPath(), "second");
+        var firstLock = Path.Combine(firstDirectory, "composer.lock");
+        var secondLock = Path.Combine(secondDirectory, "composer.lock");
+        const string locked = """{"packages":[{"name":"vendor/app","version":"1.0.0"},{"name":"vendor/child","version":"2.0.0"}]}""";
+        var factory = new Mock<IComponentStreamEnumerableFactory>(MockBehavior.Strict);
+        var (result, recorder) = await this.DetectorTestUtility.AddServiceMock(factory)
+            .WithFile("composer.json", """{"require":{"vendor/app":"^1"}}""", fileLocation: Path.Combine(firstDirectory, "composer.json"))
+            .WithFile("composer.lock", locked, fileLocation: secondLock)
+            .WithFile("composer.lock", locked, fileLocation: firstLock)
+            .WithFile("composer.json", """{"require":{"vendor/child":"^2"}}""", fileLocation: Path.Combine(secondDirectory, "composer.json"))
+            .ExecuteDetectorAsync();
+
+        result.ResultCode.Should().Be(ProcessingResultCode.Success);
+        recorder.GetDetectedComponents().Select(component => component.Component.Id).Should()
+            .BeEquivalentTo([Id("vendor/app", "1.0.0"), Id("vendor/child", "2.0.0")]);
+        var graphs = recorder.GetDependencyGraphsByLocation();
+        graphs.Keys.Should().BeEquivalentTo([firstLock, secondLock]);
+        graphs[firstLock].GetAllExplicitlyReferencedComponents().Should().Equal(Id("vendor/app", "1.0.0"));
+        graphs[secondLock].GetAllExplicitlyReferencedComponents().Should().Equal(Id("vendor/child", "2.0.0"));
+        recorder.GetSkippedComponents().Should().BeEmpty();
+        factory.VerifyNoOtherCalls();
     }
 
     [TestMethod]

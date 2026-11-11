@@ -71,12 +71,13 @@ public class ComposerProcessingTests
         var experiments = new Mock<IExperimentService>();
         var processor = new DetectorProcessingService(walker.Object, experiments.Object, NullLogger<DetectorProcessingService>.Instance, Mock.Of<IAnsiConsole>());
         var commands = new Mock<ICommandLineInvocationService>();
+        var rootArgument = $"--working-dir=\"{Path.GetDirectoryName(location)}\"";
         commands.Setup(value => value.IsCommandLineExecution()).Returns(platform);
-        commands.Setup(value => value.ExecuteCommandAsync("composer", It.IsAny<IEnumerable<string>>(), It.IsAny<DirectoryInfo>(), It.IsAny<CancellationToken>(), It.IsAny<string[]>()))
-            .ReturnsAsync((string _, IEnumerable<string> _, DirectoryInfo directory, CancellationToken _, string[] _) => new CommandLineExecutionResult
+        commands.Setup(value => value.ExecuteCommandAsync("composer", It.IsAny<IEnumerable<string>>(), null, It.IsAny<CancellationToken>(), It.IsAny<string[]>()))
+            .ReturnsAsync((string _, IEnumerable<string> _, DirectoryInfo _, CancellationToken _, string[] arguments) => new CommandLineExecutionResult
             {
                 ExitCode = 0,
-                StdOut = directory.FullName == Path.GetDirectoryName(location)
+                StdOut = arguments.Contains(rootArgument)
                     ? """{"platform":[{"name":"php","version":"8.4.27","direct-dependency":true},{"name":"ext-json","version":"8.4.27","direct-dependency":false}]}"""
                     : """{"platform":[{"name":"php","version":"8.3.15","direct-dependency":false},{"name":"ext-json","version":"8.4.27","direct-dependency":true}]}""",
             });
@@ -124,8 +125,9 @@ public class ComposerProcessingTests
             Times.Exactly(2));
         foreach (var projectDirectory in new[] { Path.GetDirectoryName(location), Path.GetDirectoryName(childLocation) })
         {
+            var argument = $"--working-dir=\"{projectDirectory}\"";
             commands.Verify(
-                value => value.ExecuteCommandAsync("composer", It.IsAny<IEnumerable<string>>(), It.Is<DirectoryInfo>(directory => directory.FullName == projectDirectory), It.IsAny<CancellationToken>(), It.IsAny<string[]>()),
+                value => value.ExecuteCommandAsync("composer", It.IsAny<IEnumerable<string>>(), null, It.IsAny<CancellationToken>(), It.Is<string[]>(arguments => arguments.Contains(argument))),
                 platform ? Times.Exactly(2) : Times.Never());
         }
     }

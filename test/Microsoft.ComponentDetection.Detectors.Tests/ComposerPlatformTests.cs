@@ -73,14 +73,14 @@ public class ComposerPlatformTests : BaseDetectorTest<ComposerComponentDetector>
         graphs[childLocation].IsDevelopmentDependency("vendor/child 1.2.3 - Composer").Should().BeFalse();
         recorder.GetSkippedComponents().Should().BeEmpty();
         string[] expectedCandidates = ["composer.cmd", "composer.bat"];
-        string[] expectedArguments = ["--no-plugins", "--no-scripts", "--no-interaction", "--no-ansi", "show", "--platform", "--format=json"];
         foreach (var projectDirectory in new[] { Path.GetDirectoryName(rootLocation), Path.GetDirectoryName(childLocation) })
         {
+            string[] expectedArguments = ["--no-plugins", "--no-scripts", "--no-interaction", "--no-ansi", $"--working-dir=\"{projectDirectory}\"", "show", "--platform", "--format=json"];
             this.commands.Verify(
                 value => value.ExecuteCommandAsync(
                     "composer",
                     It.Is<IEnumerable<string>>(candidates => candidates.SequenceEqual(expectedCandidates)),
-                    It.Is<DirectoryInfo>(directory => directory.FullName == projectDirectory),
+                    null,
                     It.Is<CancellationToken>(token => token.CanBeCanceled),
                     It.Is<string[]>(arguments => arguments.SequenceEqual(expectedArguments))),
                 Times.Once);
@@ -122,12 +122,13 @@ public class ComposerPlatformTests : BaseDetectorTest<ComposerComponentDetector>
         this.WithOutput("""{"platform":[{"name":"php","version":"8.4.27","direct-dependency":true},{"name":"ext-json","version":"8.4.27","direct-dependency":false}]}""");
         var rootLocation = Path.Combine(Path.GetTempPath(), "composer.json");
         var childLocation = Path.Combine(Path.GetTempPath(), "child", "composer.json");
+        var childArgument = $"--working-dir=\"{Path.GetDirectoryName(childLocation)}\"";
         this.commands.Setup(value => value.ExecuteCommandAsync(
                 "composer",
                 It.IsAny<IEnumerable<string>>(),
-                It.Is<DirectoryInfo>(directory => directory.FullName == Path.GetDirectoryName(childLocation)),
+                null,
                 It.IsAny<CancellationToken>(),
-                It.IsAny<string[]>()))
+                It.Is<string[]>(arguments => arguments.Contains(childArgument))))
             .ReturnsAsync(new CommandLineExecutionResult
             {
                 ExitCode = 0,
@@ -147,7 +148,7 @@ public class ComposerPlatformTests : BaseDetectorTest<ComposerComponentDetector>
         graphs[childLocation].IsDevelopmentDependency("php 8.3.15 - PhpSdk").Should().BeTrue();
         graphs[rootLocation].IsDevelopmentDependency("ext-json 8.4.27 - PhpSdk").Should().BeTrue();
         graphs[childLocation].IsDevelopmentDependency("ext-json 8.4.27 - PhpSdk").Should().BeTrue();
-        this.commands.Verify(value => value.ExecuteCommandAsync("composer", It.IsAny<IEnumerable<string>>(), It.IsAny<DirectoryInfo>(), It.IsAny<CancellationToken>(), It.IsAny<string[]>()), Times.Exactly(2));
+        this.commands.Verify(value => value.ExecuteCommandAsync("composer", It.IsAny<IEnumerable<string>>(), null, It.IsAny<CancellationToken>(), It.IsAny<string[]>()), Times.Exactly(2));
     }
 
     [TestMethod]
@@ -177,10 +178,196 @@ public class ComposerPlatformTests : BaseDetectorTest<ComposerComponentDetector>
         recorder.GetDetectedComponents().Select(component => component.Component.Id).Should()
             .BeEquivalentTo(["php 8.4.27 - PhpSdk", "vendor/app 1.0 - Composer", "vendor/nested 2.0 - Composer", "vendor/independent 3.0 - Composer"]);
         recorder.GetDependencyGraphsByLocation()[vendorLocation].GetAllExplicitlyReferencedComponents().Should().Equal("vendor/nested 2.0 - Composer");
-        this.commands.Verify(value => value.ExecuteCommandAsync("composer", It.IsAny<IEnumerable<string>>(), It.IsAny<DirectoryInfo>(), It.IsAny<CancellationToken>(), It.IsAny<string[]>()), Times.Exactly(2));
+        this.commands.Verify(value => value.ExecuteCommandAsync("composer", It.IsAny<IEnumerable<string>>(), null, It.IsAny<CancellationToken>(), It.IsAny<string[]>()), Times.Exactly(2));
+        var vendorArgument = $"--working-dir=\"{Path.GetDirectoryName(vendorLocation)}\"";
         this.commands.Verify(
-            value => value.ExecuteCommandAsync("composer", It.IsAny<IEnumerable<string>>(), It.Is<DirectoryInfo>(directory => directory.FullName == Path.GetDirectoryName(vendorLocation)), It.IsAny<CancellationToken>(), It.IsAny<string[]>()),
+            value => value.ExecuteCommandAsync("composer", It.IsAny<IEnumerable<string>>(), null, It.IsAny<CancellationToken>(), It.Is<string[]>(arguments => arguments.Contains(vendorArgument))),
             Times.Never);
+    }
+
+    [TestMethod]
+    [DataRow("lock", "relative", false)]
+    [DataRow("installed", "relative", false)]
+    [DataRow("missing", "relative", false)]
+    [DataRow("lock", "absolute", false)]
+    [DataRow("installed", "absolute", false)]
+    [DataRow("missing", "absolute", false)]
+    [DataRow("lock", "environment", false)]
+    [DataRow("installed", "environment", false)]
+    [DataRow("missing", "environment", false)]
+    [DataRow("lock", "relative", true)]
+    [DataRow("installed", "absolute", true)]
+    [DataRow("missing", "environment", true)]
+    public async Task ExternalVendorDirectory_ProcessesOwnerBeforeShorterVendorPathAsync(string inventory, string vendorSetting, bool ownerFirst)
+    {
+        this.WithOutput("""{"platform":[{"name":"php","version":"8.4.27"}]}""");
+        var root = Path.Combine(Path.GetTempPath(), "composer-external");
+        var ownerDirectory = Path.Combine(root, "applications", "long-application");
+        var vendorDirectory = Path.Combine(root, "v");
+        var ownerLocation = Path.Combine(ownerDirectory, "composer.json");
+        var vendorLocation = Path.Combine(vendorDirectory, "acme", "lib", "composer.json");
+        var independentLocation = Path.Combine(root, "v-project", "composer.json");
+        var environment = new Mock<IEnvironmentVariableService>();
+        if (vendorSetting == "environment")
+        {
+            environment.Setup(value => value.GetEnvironmentVariable("COMPOSER_VENDOR_DIR")).Returns(vendorDirectory);
+        }
+
+        this.DetectorTestUtility.AddServiceMock(environment);
+        var configuredDirectory = vendorSetting == "relative" ? Path.GetRelativePath(ownerDirectory, vendorDirectory) : vendorDirectory;
+        var manifest = System.Text.Json.JsonSerializer.Serialize(new { config = new Dictionary<string, string> { ["vendor-dir"] = configuredDirectory } });
+        if (inventory == "installed")
+        {
+            var installedLocation = Path.Combine(vendorDirectory, "composer", "installed.json");
+            var files = new Mock<IFileUtilityService>();
+            files.Setup(value => value.Exists(installedLocation)).Returns(true);
+            files.Setup(value => value.MakeFileStream(installedLocation)).Returns(() => """{"packages":[{"name":"acme/lib","version":"1.0"}]}""".ToStream());
+            this.DetectorTestUtility.AddServiceMock(files);
+        }
+
+        if (ownerFirst)
+        {
+            this.DetectorTestUtility.WithFile("composer.json", manifest, fileLocation: ownerLocation);
+        }
+
+        this.DetectorTestUtility.WithFile("composer.json", """{"require":{"acme/uninstalled":"9.0"}}""", fileLocation: vendorLocation);
+        this.DetectorTestUtility.WithFile("composer.json", """{"require":{"acme/uninstalled":"9.0"}}""", fileLocation: Path.Combine(vendorDirectory, "acme", "other", "composer.json"));
+        if (!ownerFirst)
+        {
+            this.DetectorTestUtility.WithFile("composer.json", manifest, fileLocation: ownerLocation);
+        }
+
+        if (inventory == "lock")
+        {
+            this.DetectorTestUtility.WithFile("composer.lock", """{"packages":[{"name":"acme/lib","version":"1.0"}]}""", fileLocation: Path.Combine(ownerDirectory, "composer.lock"));
+        }
+
+        var (_, recorder) = await this.DetectorTestUtility.WithFile("composer.json", "{}", fileLocation: independentLocation).ExecuteDetectorAsync();
+
+        var expectedPackage = inventory == "missing" ? "acme/uninstalled 9.0 - Composer" : "acme/lib 1.0 - Composer";
+        recorder.GetDetectedComponents().Select(component => component.Component.Id).Should().BeEquivalentTo(["php 8.4.27 - PhpSdk", expectedPackage]);
+        recorder.GetSkippedComponents().Should().BeEmpty();
+        if (inventory != "missing")
+        {
+            recorder.GetDependencyGraphsByLocation().Keys.Should().NotContain(vendorLocation);
+        }
+
+        foreach (var directory in new[] { ownerDirectory, Path.GetDirectoryName(independentLocation) })
+        {
+            var argument = $"--working-dir=\"{directory}\"";
+            this.commands.Verify(value => value.ExecuteCommandAsync("composer", It.IsAny<IEnumerable<string>>(), null, It.IsAny<CancellationToken>(), It.Is<string[]>(arguments => arguments.Contains(argument))), Times.Once());
+        }
+
+        this.commands.Verify(value => value.ExecuteCommandAsync("composer", It.IsAny<IEnumerable<string>>(), null, It.IsAny<CancellationToken>(), It.IsAny<string[]>()), Times.Exactly(2));
+        this.VerifyWarning("vendor directory ownership contains a cycle", Times.Never());
+    }
+
+    [TestMethod]
+    public async Task ExternalVendorOwnershipChain_ProcessesEachOwnerBeforeItsVendorInputsAsync()
+    {
+        this.WithOutput("""{"platform":[{"name":"php","version":"8.4.27"}]}""");
+        var root = Path.Combine(Path.GetTempPath(), "composer-chain");
+        var ownerDirectory = Path.Combine(root, "applications", "long-application");
+        var nestedDirectory = Path.Combine(root, "v", "lib");
+        var externalDirectory = Path.Combine(root, "w", "lib");
+        var (_, recorder) = await this.DetectorTestUtility
+            .WithFile("composer.json", """{"require":{"acme/uninstalled":"9.0"}}""", fileLocation: Path.Combine(externalDirectory, "composer.json"))
+            .WithFile("composer.lock", """{"packages":[{"name":"acme/locked","version":"1.0"}]}""", fileLocation: Path.Combine(nestedDirectory, "composer.lock"))
+            .WithFile("composer.json", """{"config":{"vendor-dir":"../../w"}}""", fileLocation: Path.Combine(nestedDirectory, "composer.json"))
+            .WithFile("composer.json", """{"config":{"vendor-dir":"../../v"}}""", fileLocation: Path.Combine(ownerDirectory, "composer.json"))
+            .ExecuteDetectorAsync();
+
+        recorder.GetDetectedComponents().Select(component => component.Component.Id).Should().BeEquivalentTo(["php 8.4.27 - PhpSdk", "acme/locked 1.0 - Composer"]);
+        recorder.GetDependencyGraphsByLocation().Keys.Should().NotContain(Path.Combine(externalDirectory, "composer.json"));
+        recorder.GetSkippedComponents().Should().BeEmpty();
+        var argument = $"--working-dir=\"{ownerDirectory}\"";
+        this.commands.Verify(value => value.ExecuteCommandAsync("composer", It.IsAny<IEnumerable<string>>(), null, It.IsAny<CancellationToken>(), It.Is<string[]>(arguments => arguments.Contains(argument))), Times.Once());
+        this.commands.Verify(value => value.ExecuteCommandAsync("composer", It.IsAny<IEnumerable<string>>(), null, It.IsAny<CancellationToken>(), It.IsAny<string[]>()), Times.Once());
+    }
+
+    [TestMethod]
+    [DataRow("{")]
+    [DataRow("[]")]
+    [DataRow("null")]
+    public async Task CoveredExternalVendorManifest_DoesNotReportPreparationParseFailuresAsync(string manifest)
+    {
+        this.WithOutput("""{"platform":[]}""");
+        var root = Path.Combine(Path.GetTempPath(), "composer-malformed-vendor");
+        var vendorLocation = Path.Combine(root, "v", "lib", "composer.json");
+        var (_, recorder) = await this.DetectorTestUtility
+            .WithFile("composer.json", manifest, fileLocation: vendorLocation)
+            .WithFile("composer.json", """{"config":{"vendor-dir":"../../v"}}""", fileLocation: Path.Combine(root, "applications", "long-application", "composer.json"))
+            .WithFile("composer.lock", """{"packages":[{"name":"acme/locked","version":"1.0"}]}""", fileLocation: Path.Combine(root, "applications", "long-application", "composer.lock"))
+            .ExecuteDetectorAsync();
+
+        recorder.GetDetectedComponents().Select(component => component.Component.Id).Should().Equal("acme/locked 1.0 - Composer");
+        recorder.GetSkippedComponents().Should().BeEmpty();
+        recorder.GetDependencyGraphsByLocation().Keys.Should().NotContain(vendorLocation);
+    }
+
+    [TestMethod]
+    public async Task SharedVendorDirectory_ProcessesAllOwnersBeforeVendorInputsAsync()
+    {
+        this.WithOutput("""{"platform":[]}""");
+        var root = Path.Combine(Path.GetTempPath(), "composer-shared-vendor");
+        var vendorDirectory = Path.Combine(root, "v");
+        var firstLocation = Path.Combine(root, "first", "composer.lock");
+        var secondLocation = Path.Combine(root, "second", "composer.lock");
+        var vendorLocation = Path.Combine(vendorDirectory, "acme", "lib", "composer.json");
+        var environment = new Mock<IEnvironmentVariableService>();
+        environment.Setup(value => value.GetEnvironmentVariable("COMPOSER_VENDOR_DIR")).Returns(vendorDirectory);
+        var (result, recorder) = await this.DetectorTestUtility.AddServiceMock(environment)
+            .WithFile("composer.json", """{"require":{"acme/uninstalled":"9.0"}}""", fileLocation: vendorLocation)
+            .WithFile("composer.lock", """{"packages":[{"name":"acme/first","version":"1.0"}]}""", fileLocation: firstLocation)
+            .WithFile("composer.lock", """{"packages":[{"name":"acme/second","version":"2.0"}]}""", fileLocation: secondLocation)
+            .ExecuteDetectorAsync();
+
+        result.ResultCode.Should().Be(ProcessingResultCode.Success);
+        recorder.GetDetectedComponents().Select(component => component.Component.Id).Should()
+            .BeEquivalentTo(["acme/first 1.0 - Composer", "acme/second 2.0 - Composer"]);
+        recorder.GetDependencyGraphsByLocation().Keys.Should().BeEquivalentTo([firstLocation, secondLocation]);
+        recorder.GetSkippedComponents().Should().BeEmpty();
+        foreach (var location in new[] { firstLocation, secondLocation })
+        {
+            var argument = $"--working-dir=\"{Path.GetDirectoryName(location)}\"";
+            this.commands.Verify(value => value.ExecuteCommandAsync("composer", It.IsAny<IEnumerable<string>>(), null, It.IsAny<CancellationToken>(), It.Is<string[]>(arguments => arguments.Contains(argument))), Times.Once());
+        }
+
+        this.commands.Verify(value => value.ExecuteCommandAsync("composer", It.IsAny<IEnumerable<string>>(), null, It.IsAny<CancellationToken>(), It.IsAny<string[]>()), Times.Exactly(2));
+        this.VerifyWarning("vendor directory ownership contains a cycle", Times.Never());
+    }
+
+    [TestMethod]
+    public async Task ProjectAsItsOwnVendorDirectory_DoesNotCreateOwnershipCycleAsync()
+    {
+        var root = Path.Combine(Path.GetTempPath(), "composer-self-vendor");
+        var location = Path.Combine(root, "composer.lock");
+        var (result, recorder) = await this.DetectorTestUtility
+            .WithFile("composer.json", """{"config":{"vendor-dir":"."}}""", fileLocation: Path.Combine(root, "composer.json"))
+            .WithFile("composer.lock", """{"packages":[{"name":"acme/locked","version":"1.0"}]}""", fileLocation: location)
+            .ExecuteDetectorAsync();
+
+        result.ResultCode.Should().Be(ProcessingResultCode.Success);
+        recorder.GetDetectedComponents().Select(component => component.Component.Id).Should().Equal("acme/locked 1.0 - Composer");
+        recorder.GetDependencyGraphsByLocation().Keys.Should().Equal(location);
+        recorder.GetSkippedComponents().Should().BeEmpty();
+        this.VerifyWarning("vendor directory ownership contains a cycle", Times.Never());
+        this.commands.VerifyNoOtherCalls();
+    }
+
+    [TestMethod]
+    public async Task CyclicVendorOwnership_WarnsAndPreservesManifestFallbackWithoutPlatformQueriesAsync()
+    {
+        var root = Path.Combine(Path.GetTempPath(), "composer-cycle");
+        var (_, recorder) = await this.DetectorTestUtility
+            .WithFile("composer.json", """{"config":{"vendor-dir":"../b"},"require":{"acme/first":"1.0"}}""", fileLocation: Path.Combine(root, "a", "composer.json"))
+            .WithFile("composer.json", """{"config":{"vendor-dir":"../a"},"require":{"acme/second":"2.0"}}""", fileLocation: Path.Combine(root, "b", "composer.json"))
+            .ExecuteDetectorAsync();
+
+        recorder.GetDetectedComponents().Select(component => component.Component.Id).Should().BeEquivalentTo(["acme/first 1.0 - Composer", "acme/second 2.0 - Composer"]);
+        recorder.GetSkippedComponents().Should().BeEmpty();
+        this.VerifyWarning("vendor directory ownership contains a cycle", Times.Once());
+        this.commands.VerifyNoOtherCalls();
     }
 
     [TestMethod]
@@ -295,7 +482,7 @@ public class ComposerPlatformTests : BaseDetectorTest<ComposerComponentDetector>
     [TestMethod]
     public async Task MissingComposer_WarnsForEachNonVendorProjectAsync()
     {
-        this.commands.Setup(value => value.ExecuteCommandAsync("composer", It.IsAny<IEnumerable<string>>(), It.IsAny<DirectoryInfo>(), It.IsAny<CancellationToken>(), It.IsAny<string[]>()))
+        this.commands.Setup(value => value.ExecuteCommandAsync("composer", It.IsAny<IEnumerable<string>>(), null, It.IsAny<CancellationToken>(), It.IsAny<string[]>()))
             .ThrowsAsync(new Win32Exception(2));
         var (_, recorder) = await this.DetectorTestUtility
             .WithFile("composer.json", """{"require":{"vendor/a":"1.0"}}""")
@@ -304,7 +491,50 @@ public class ComposerPlatformTests : BaseDetectorTest<ComposerComponentDetector>
 
         recorder.GetDetectedComponents().Select(component => component.Component.Id).Should().BeEquivalentTo(["vendor/a 1.0 - Composer", "vendor/b 2.0 - Composer"]);
         this.VerifyWarning("Unable to run Composer platform inventory", Times.Exactly(2));
-        this.commands.Verify(value => value.ExecuteCommandAsync("composer", It.IsAny<IEnumerable<string>>(), It.IsAny<DirectoryInfo>(), It.IsAny<CancellationToken>(), It.IsAny<string[]>()), Times.Exactly(2));
+        this.commands.Verify(value => value.ExecuteCommandAsync("composer", It.IsAny<IEnumerable<string>>(), null, It.IsAny<CancellationToken>(), It.IsAny<string[]>()), Times.Exactly(2));
+    }
+
+    [TestMethod]
+    public async Task ProjectPathWithSpaces_IsPassedAsAnOptionWithoutChangingProcessDirectoryAsync()
+    {
+        this.WithOutput("""{"platform":[]}""");
+        var projectDirectory = Path.Combine(Path.GetTempPath(), "project with spaces & symbols");
+        var argument = $"--working-dir=\"{projectDirectory}\"";
+
+        await this.DetectorTestUtility.WithFile("composer.lock", "{}", fileLocation: Path.Combine(projectDirectory, "composer.lock")).ExecuteDetectorAsync();
+
+        this.commands.Verify(
+            value => value.ExecuteCommandAsync("composer", It.IsAny<IEnumerable<string>>(), null, It.IsAny<CancellationToken>(), It.Is<string[]>(arguments => arguments.Contains(argument))),
+            Times.Once());
+    }
+
+    [TestMethod]
+    public async Task FilesystemRoot_IsPassedWithoutEscapingTheClosingQuoteAsync()
+    {
+        this.WithOutput("""{"platform":[]}""");
+        var root = Path.GetPathRoot(Path.GetTempPath());
+        var argument = $"--working-dir=\"{root}.\"";
+
+        await this.DetectorTestUtility.WithFile("composer.lock", "{}", fileLocation: Path.Combine(root, "composer.lock")).ExecuteDetectorAsync();
+
+        this.commands.Verify(
+            value => value.ExecuteCommandAsync("composer", It.IsAny<IEnumerable<string>>(), null, It.IsAny<CancellationToken>(), It.Is<string[]>(arguments => arguments.Contains(argument))),
+            Times.Once());
+    }
+
+    [TestMethod]
+    [DataRow("project%PATH%")]
+    [DataRow("project!PATH!")]
+    [OSCondition(OperatingSystems.Windows)]
+    public async Task ShellExpandedProjectPaths_WarnWithoutRunningInventoryAsync(string directory)
+    {
+        var location = Path.Combine(Path.GetTempPath(), directory, "composer.lock");
+        var (_, recorder) = await this.DetectorTestUtility.WithFile("composer.lock", """{"packages":[{"name":"vendor/app","version":"1"}]}""", fileLocation: location).ExecuteDetectorAsync();
+
+        recorder.GetDetectedComponents().Select(component => component.Component.Id).Should().Equal("vendor/app 1 - Composer");
+        this.VerifyWarning("cannot safely pass project directory", Times.Once());
+        this.commands.Verify(value => value.IsCommandLineExecution(), Times.Once());
+        this.commands.VerifyNoOtherCalls();
     }
 
     [TestMethod]
@@ -320,7 +550,7 @@ public class ComposerPlatformTests : BaseDetectorTest<ComposerComponentDetector>
     [TestMethod]
     public async Task HungCommand_TimesOutWithoutFailingPackageDetectionAsync()
     {
-        this.commands.Setup(value => value.ExecuteCommandAsync("composer", It.IsAny<IEnumerable<string>>(), It.IsAny<DirectoryInfo>(), It.IsAny<CancellationToken>(), It.IsAny<string[]>()))
+        this.commands.Setup(value => value.ExecuteCommandAsync("composer", It.IsAny<IEnumerable<string>>(), null, It.IsAny<CancellationToken>(), It.IsAny<string[]>()))
             .Returns(async (string _, IEnumerable<string> _, DirectoryInfo _, CancellationToken token, string[] _) =>
             {
                 await Task.Delay(Timeout.Infinite, token);
@@ -339,7 +569,7 @@ public class ComposerPlatformTests : BaseDetectorTest<ComposerComponentDetector>
     public async Task CallerCancellation_IsNotSwallowedAsAnInventoryTimeoutAsync()
     {
         using var cancellation = new CancellationTokenSource();
-        this.commands.Setup(value => value.ExecuteCommandAsync("composer", It.IsAny<IEnumerable<string>>(), It.IsAny<DirectoryInfo>(), It.IsAny<CancellationToken>(), It.IsAny<string[]>()))
+        this.commands.Setup(value => value.ExecuteCommandAsync("composer", It.IsAny<IEnumerable<string>>(), null, It.IsAny<CancellationToken>(), It.IsAny<string[]>()))
             .Returns(async (string _, IEnumerable<string> _, DirectoryInfo _, CancellationToken token, string[] _) =>
             {
                 await cancellation.CancelAsync();
@@ -352,7 +582,7 @@ public class ComposerPlatformTests : BaseDetectorTest<ComposerComponentDetector>
     }
 
     private void WithOutput(string output, int exitCode = 0) =>
-        this.commands.Setup(value => value.ExecuteCommandAsync("composer", It.IsAny<IEnumerable<string>>(), It.IsAny<DirectoryInfo>(), It.IsAny<CancellationToken>(), It.IsAny<string[]>()))
+        this.commands.Setup(value => value.ExecuteCommandAsync("composer", It.IsAny<IEnumerable<string>>(), null, It.IsAny<CancellationToken>(), It.IsAny<string[]>()))
             .ReturnsAsync(new CommandLineExecutionResult { StdOut = output, StdErr = "test error", ExitCode = exitCode });
 
     private void VerifyWarning(string message, Times times) =>
