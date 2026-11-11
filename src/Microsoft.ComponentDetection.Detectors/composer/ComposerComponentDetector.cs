@@ -542,8 +542,16 @@ public sealed class ComposerComponentDetector : FileComponentDetector, IExperime
     private async Task<PreparedProject> PrepareProjectAsync(string location, IComponentStream? manifest, CancellationToken cancellationToken)
     {
         var directory = new DirectoryInfo(Path.GetDirectoryName(location)!);
-        manifest ??= this.ComponentStreamEnumerableFactory.GetComponentStreams(
-            directory, [ComposerManifestFileName], null, recursivelyScanDirectories: false).FirstOrDefault();
+
+        // The factory owns its streams, so keep the enumerator alive until the manifest has been parsed and cloned.
+        using var manifests = manifest is null
+            ? this.ComponentStreamEnumerableFactory.GetComponentStreams(directory, [ComposerManifestFileName], null, recursivelyScanDirectories: false).GetEnumerator()
+            : null;
+        if (manifests?.MoveNext() == true)
+        {
+            manifest = manifests.Current;
+        }
+
         JsonElement? root = null;
         JsonException? error = null;
         if (manifest is not null)

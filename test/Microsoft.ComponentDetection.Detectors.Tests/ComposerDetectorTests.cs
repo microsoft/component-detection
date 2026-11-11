@@ -81,6 +81,41 @@ public class ComposerDetectorTests : BaseDetectorTest<ComposerComponentDetector>
     }
 
     [TestMethod]
+    [DataRow(false)]
+    [DataRow(true)]
+    public async Task Lockfile_SiblingManifestStreamRemainsOpenDuringPreparationAndIsDisposedAfterwardAsync(bool malformed)
+    {
+        using var manifestStream = new MemoryStream(Encoding.UTF8.GetBytes(malformed ? "{" : """{"require":{"vendor/child":"^2"}}"""));
+        var factory = new Mock<IComponentStreamEnumerableFactory>();
+        factory.Setup(value => value.GetComponentStreams(It.IsAny<DirectoryInfo>(), It.IsAny<IEnumerable<string>>(), It.IsAny<ExcludeDirectoryPredicate>(), false))
+            .Returns(GetManifestStreams);
+
+        var (result, recorder) = await this.DetectorTestUtility.AddServiceMock(factory)
+            .WithFile("composer.lock", """{"packages":[{"name":"vendor/app","version":"1.2.3","require":{"vendor/child":"^2"}},{"name":"vendor/child","version":"2.1.0"}]}""")
+            .ExecuteDetectorAsync();
+
+        result.ResultCode.Should().Be(ProcessingResultCode.Success);
+        manifestStream.CanRead.Should().BeFalse();
+        recorder.GetDetectedComponents().Select(component => component.Component.Id).Should()
+            .BeEquivalentTo([Id("vendor/app", "1.2.3"), Id("vendor/child", "2.1.0")]);
+        var graph = recorder.GetDependencyGraphsByLocation().Values.Single();
+        graph.GetAllExplicitlyReferencedComponents().Should().Equal(malformed ? Id("vendor/app", "1.2.3") : Id("vendor/child", "2.1.0"));
+        graph.GetDependenciesForComponent(Id("vendor/app", "1.2.3")).Should().Equal(Id("vendor/child", "2.1.0"));
+        recorder.GetSkippedComponents().Should().HaveCount(malformed ? 1 : 0);
+
+        IEnumerable<IComponentStream> GetManifestStreams()
+        {
+            using (manifestStream)
+            {
+                var file = new Mock<IComponentStream>();
+                file.SetupGet(value => value.Location).Returns(Path.Combine(Path.GetTempPath(), "composer.json"));
+                file.SetupGet(value => value.Stream).Returns(manifestStream);
+                yield return file.Object;
+            }
+        }
+    }
+
+    [TestMethod]
     [DataRow("{/* Installed inventory */\"packages\":[{\"name\":\"vendor/package\",\"version\":\"v1.2.3\",},],}")]
     [DataRow("[/* Legacy installed inventory */{\"name\":\"vendor/package\",\"version\":\"v1.2.3\",},]")]
     public async Task InstalledInventory_AllowsCommentsAndTrailingCommasAsync(string content)
