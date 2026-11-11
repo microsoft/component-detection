@@ -129,7 +129,7 @@ dotnet run --project src/Microsoft.ComponentDetection/Microsoft.ComponentDetecti
 dotnet test
 
 # Run specific test project
-dotnet test test/Microsoft.ComponentDetection.Detectors.Tests/
+dotnet test --project test/Microsoft.ComponentDetection.Detectors.Tests/
 ```
 
 ### Debug Mode

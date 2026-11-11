@@ -10,11 +10,11 @@
     <PackageVersion Include="AwesomeAssertions" Version="9.4.0" />
     <PackageVersion Include="AwesomeAssertions.Analyzers" Version="9.0.8" />
     <PackageVersion Include="Microsoft.Extensions.Caching.Memory" Version="8.0.1" />
-    <PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="8.0.1" />
-    <PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="8.0.2" />
+    <PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="10.0.3" />
+    <PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.3" />
     <PackageVersion Include="Microsoft.Extensions.Http" Version="8.0.1" />
     <PackageVersion Include="Microsoft.Extensions.Logging" Version="8.0.1" />
-    <PackageVersion Include="Microsoft.SourceLink.GitHub" Version="8.0.0" />
+    <PackageVersion Include="Microsoft.SourceLink.GitHub" Version="10.0.403" />
     <PackageVersion Include="MSBuild.StructuredLogger" Version="2.3.113" />
     <PackageVersion Include="Microsoft.VisualStudio.Threading.Analyzers" Version="17.14.15" />
     <PackageVersion Include="Microsoft.Extensions.FileSystemGlobbing" Version="8.0.0" />
@@ -25,8 +25,8 @@
     <PackageVersion Include="MSTest.Analyzers" Version="4.1.0" />
     <PackageVersion Include="Newtonsoft.Json" Version="13.0.4" />
     <PackageVersion Include="Newtonsoft.Json.Schema" Version="4.0.1" />
-    <PackageVersion Include="NuGet.ProjectModel" Version="7.3.0" />
-    <PackageVersion Include="NuGet.Versioning" Version="7.3.0" />
+    <PackageVersion Include="NuGet.ProjectModel" Version="7.3.1" />
+    <PackageVersion Include="NuGet.Versioning" Version="7.3.1" />
     <PackageVersion Include="packageurl-dotnet" Version="2.0.0" />
     <PackageVersion Include="Polly" Version="8.6.6" />
     <PackageVersion Include="SemanticVersioning" Version="2.0.2" />
@@ -50,6 +50,6 @@
     <PackageVersion Include="Faker.net" Version="2.0.163" />
     <PackageVersion Include="Valleysoft.DockerfileModel" Version="1.2.0" />
     <!-- Fix security alerts -->
-    <PackageVersion Include="System.Formats.Asn1" Version="9.0.13" />
+    <PackageVersion Include="System.Security.Cryptography.Pkcs" Version="10.0.14" />
   </ItemGroup>
 </Project>

@@ -8,7 +8,6 @@
         <PackageReference Include="Microsoft.Extensions.Logging" />
         <PackageReference Include="Newtonsoft.Json" />
         <PackageReference Include="System.Reactive" />
-        <PackageReference Include="System.Threading.Tasks.Dataflow" />
         <PackageReference Include="packageurl-dotnet" />
         <PackageReference Include="AwesomeAssertions.Analyzers" PrivateAssets="all" />
     </ItemGroup>

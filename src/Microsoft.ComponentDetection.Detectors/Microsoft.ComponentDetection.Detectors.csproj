@@ -22,12 +22,11 @@
         <PackageReference Include="Microsoft.Extensions.Caching.Memory" />
         <PackageReference Include="Newtonsoft.Json" />
         <PackageReference Include="System.Reactive" />
-        <PackageReference Include="System.Threading.Tasks.Dataflow" />
         <PackageReference Include="Tomlyn.Signed" />
         <PackageReference Include="Valleysoft.DockerfileModel" />
 
         <!-- Fix alerts -->
-        <PackageReference Include="System.Formats.Asn1" />
+        <PackageReference Include="System.Security.Cryptography.Pkcs" />
     </ItemGroup>
 
     <ItemGroup Label="Package References">

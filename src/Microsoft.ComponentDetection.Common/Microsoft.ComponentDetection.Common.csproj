@@ -14,7 +14,6 @@
         <PackageReference Include="Docker.DotNet" />
         <PackageReference Include="Microsoft.Extensions.Logging" />
         <PackageReference Include="System.Reactive" />
-        <PackageReference Include="System.Threading.Tasks.Dataflow" />
     </ItemGroup>
 
     <ItemGroup Label="Package References">

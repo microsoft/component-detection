@@ -41,10 +41,8 @@ jobs:
         run: dotnet build --no-restore --configuration Debug
 
       - name: Run tests
-        # The '--' separator forwards options to the Microsoft Testing Platform runner.
-        # After upgrading to .NET 10 SDK, these can be passed directly without '--'.
         # Disable the default Integration-test exclusion from test/Directory.Build.props.
-        run: dotnet test --no-build --configuration Debug -p:ExcludeIntegrationTests=false -p:TestingPlatformCommandLineArguments="--coverage --coverage-output-format cobertura"
+        run: dotnet test --no-build --configuration Debug -p:ExcludeIntegrationTests=false --coverage --coverage-output-format cobertura
 
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@671740ac38dd9b0130fbe1cec585b89eea48d3de # v5.5.2
