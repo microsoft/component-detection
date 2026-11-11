@@ -6,6 +6,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using AwesomeAssertions;
 using Microsoft.ComponentDetection.Contracts;
+using Microsoft.ComponentDetection.Detectors.Composer;
 using Microsoft.ComponentDetection.Detectors.CondaLock;
 using Microsoft.ComponentDetection.Detectors.Swift;
 using Microsoft.ComponentDetection.Orchestrator.Experiments.Configs;
@@ -51,6 +52,38 @@ public class ExperimentConfigTests
         var condaLockDetector = new CondaLockComponentDetector(null, null, null);
 
         this.configs.Should().OnlyContain(config => !config.IsInExperimentGroup(condaLockDetector));
+    }
+
+    [TestMethod]
+    public void ExperimentConfig_ComposerDetectorIsOnlyInComposerExperiment()
+    {
+        var detector = new ComposerComponentDetector(null, null, null, null, null, null);
+        var config = this.configs.Should().ContainSingle(config => config.IsInExperimentGroup(detector)).Which;
+
+        config.Should().BeOfType<ComposerExperiment>().Which.Name.Should().Be("Composer");
+        this.configs.Should().OnlyContain(config => !config.IsInControlGroup(detector));
+    }
+
+    [TestMethod]
+    public void ExperimentConfig_ComposerExperimentExcludesOtherDetectors()
+    {
+        var config = this.configs.OfType<ComposerExperiment>().Single();
+        var detector = Mock.Of<IComponentDetector>();
+
+        config.IsInControlGroup(detector).Should().BeFalse();
+        config.IsInExperimentGroup(detector).Should().BeFalse();
+    }
+
+    [TestMethod]
+    [DataRow(0)]
+    [DataRow(1)]
+    public void ExperimentConfig_ComposerExperimentDoesNotFilterDetectorRuns(int numComponents)
+    {
+        var config = this.configs.OfType<ComposerExperiment>().Single();
+        var detector = new ComposerComponentDetector(null, null, null, null, null, null);
+
+        config.ShouldRecord(detector, numComponents).Should().BeTrue();
+        config.ShouldRecord(Mock.Of<IComponentDetector>(), numComponents).Should().BeTrue();
     }
 
     [TestMethod]

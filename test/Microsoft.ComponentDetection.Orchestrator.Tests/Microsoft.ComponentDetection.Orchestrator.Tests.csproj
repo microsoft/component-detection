@@ -11,6 +11,7 @@
         <PackageReference Include="Spectre.Console.Cli" />
         <PackageReference Include="Spectre.Console.Testing" />
         <PackageReference Include="System.Threading.Tasks.Dataflow" />
+        <PackageReference Include="System.Reactive" />
         <PackageReference Include="AwesomeAssertions.Analyzers" PrivateAssets="all" />
     </ItemGroup>
 

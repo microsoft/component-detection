@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using AwesomeAssertions;
 using Microsoft.ComponentDetection.Contracts;
+using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.ComponentDetection.Orchestrator.Extensions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -35,6 +36,17 @@ public class ComponentDetectorTests
         var ids = this.detectors.Select(detector => detector.Id).ToList();
 
         ids.Should().OnlyHaveUniqueItems();
+    }
+
+    [TestMethod]
+    public void ComposerComponentDetector_IsDiscoverableAndExperimental()
+    {
+        var detector = this.detectors.Single(d => d.Id == "Composer");
+        detector.Should().BeAssignableTo<IExperimentalDetector>();
+        detector.Should().NotBeAssignableTo<IDefaultOffComponentDetector>();
+        detector.Categories.Should().Equal(nameof(DetectorClass.Composer));
+        detector.SupportedComponentTypes.Should().Equal(ComponentType.Composer, ComponentType.PhpSdk);
+        ((FileComponentDetector)detector).SearchPatterns.Should().Equal("composer.lock", "composer.json");
     }
 
     [TestMethod]

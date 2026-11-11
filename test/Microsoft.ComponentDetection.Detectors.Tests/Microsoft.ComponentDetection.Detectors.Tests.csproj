@@ -71,6 +71,12 @@
         <None Update="TestFiles\go_WithLocalReferences.mod">
           <CopyToOutputDirectory>Always</CopyToOutputDirectory>
         </None>
+        <None Update="TestFiles\Composer\composer.lock">
+          <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
+        <None Update="TestFiles\Composer\composer.json">
+          <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
     </ItemGroup>
 
     <ItemGroup>

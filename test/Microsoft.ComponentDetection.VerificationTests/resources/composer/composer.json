@@ -1,0 +1,5 @@
+{
+  "name": "example/root",
+  "require": {"example/application-library": "^1.2"},
+  "require-dev": {"example/test-runner": "dev-main as 2.x-dev"}
+}

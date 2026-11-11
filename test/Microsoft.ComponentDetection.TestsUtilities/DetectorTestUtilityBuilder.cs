@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reactive.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Common;
 using Microsoft.ComponentDetection.Common.DependencyGraph;
@@ -86,7 +87,7 @@ public class DetectorTestUtilityBuilder<T>
         return this;
     }
 
-    public async Task<(IndividualDetectorScanResult ScanResult, IComponentRecorder ComponentRecorder)> ExecuteDetectorAsync()
+    public async Task<(IndividualDetectorScanResult ScanResult, IComponentRecorder ComponentRecorder)> ExecuteDetectorAsync(CancellationToken cancellationToken = default)
     {
         if (this.scanRequest is null)
         {
@@ -109,7 +110,7 @@ public class DetectorTestUtilityBuilder<T>
 
         this.InitializeFileMocks();
 
-        var result = await this.detector.ExecuteDetectorAsync(this.scanRequest);
+        var result = await this.detector.ExecuteDetectorAsync(this.scanRequest, cancellationToken);
         return (result, this.componentRecorder);
     }
 

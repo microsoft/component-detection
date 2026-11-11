@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reactive.Linq;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
@@ -17,6 +18,15 @@ using Microsoft.Extensions.Logging;
 /// <summary>Specialized base class for file based component detection.</summary>
 public abstract class FileComponentDetector : IComponentDetector
 {
+    /// <summary>
+    /// Gets opt-in JSON parsing options that skip comments and allow trailing commas.
+    /// </summary>
+    protected static readonly JsonDocumentOptions LenientJsonDocumentOptions = new()
+    {
+        CommentHandling = JsonCommentHandling.Skip,
+        AllowTrailingCommas = true,
+    };
+
     /// <summary>
     /// Gets or sets the factory for handing back component streams to File detectors.
     /// </summary>
@@ -124,6 +134,8 @@ public abstract class FileComponentDetector : IComponentDetector
             async processRequest => await this.OnFileFoundAsync(processRequest, detectorArgs, cleanupCreatedFiles, cancellationToken),
             new ExecutionDataflowBlockOptions
             {
+                CancellationToken = cancellationToken,
+
                 // MaxDegreeOfParallelism is the lower of the processor count and the max threads arg that the customer passed in
                 MaxDegreeOfParallelism = threadsToUse,
             });

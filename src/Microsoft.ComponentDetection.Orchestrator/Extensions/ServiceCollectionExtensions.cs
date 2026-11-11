@@ -4,6 +4,7 @@ using Microsoft.ComponentDetection.Common;
 using Microsoft.ComponentDetection.Common.Telemetry;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Detectors.CocoaPods;
+using Microsoft.ComponentDetection.Detectors.Composer;
 using Microsoft.ComponentDetection.Detectors.Conan;
 using Microsoft.ComponentDetection.Detectors.CondaLock;
 using Microsoft.ComponentDetection.Detectors.DockerCompose;
@@ -71,12 +72,16 @@ public static class ServiceCollectionExtensions
         // Experiments
         services.AddSingleton<IExperimentService, ExperimentService>();
         services.AddSingleton<IExperimentProcessor, DefaultExperimentProcessor>();
+        services.AddSingleton<IExperimentConfiguration, ComposerExperiment>();
         services.AddSingleton<IExperimentConfiguration, SimplePipExperiment>();
         services.AddSingleton<IExperimentConfiguration, LinuxApplicationLayerExperiment>();
 
         // Detectors
         // CocoaPods
         services.AddSingleton<IComponentDetector, PodComponentDetector>();
+
+        // Composer
+        services.AddSingleton<IComponentDetector, ComposerComponentDetector>();
 
         // Conan
         services.AddSingleton<IComponentDetector, ConanLockComponentDetector>();

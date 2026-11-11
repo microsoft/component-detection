@@ -38,6 +38,7 @@ Component Detection supports detecting libraries from the following ecosystems:
 | Ecosystem                                                                        | Scanning                                        | Graph Creation |
 | -------------------------------------------------------------------------------- | ----------------------------------------------- | -------------- |
 | [CocoaPods](docs/detectors/cocoapods.md)                                         | ✔                                               | ✔              |
+| [Composer (PHP, experimental)](docs/detectors/composer.md)                       | ✔                                               | ✔              |
 | [Conan](docs/detectors/conan.md)                                                 | ✔                                               | ❌              |
 | [Conda (Python)](docs/detectors/conda.md)                                        | ✔                                               | ✔              |
 | [Docker Compose](docs/detectors/dockercompose.md)                                | ✔                                               | ❌              |

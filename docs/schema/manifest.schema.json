@@ -154,7 +154,9 @@
               "Conan",
               "Swift",
               "DotNet",
-              "CppSdk"
+              "CppSdk",
+              "Composer",
+              "PhpSdk"
             ]
           }
         }
@@ -428,7 +430,9 @@
             "Conan",
             "Swift",
             "DotNet",
-            "CppSdk"
+            "CppSdk",
+            "Composer",
+            "PhpSdk"
           ]
         },
         "id": {

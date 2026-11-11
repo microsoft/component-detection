@@ -39,6 +39,16 @@ The main parsing logic. Called once per matched file to:
 - Extract component information
 - Build the dependency graph via `ComponentRecorder`
 
+For JSON formats where comments and trailing commas can be tolerated, derived
+detectors can opt in to `FileComponentDetector.LenientJsonDocumentOptions`:
+
+```csharp
+using var document = await JsonDocument.ParseAsync(stream, LenientJsonDocumentOptions, cancellationToken);
+```
+
+These options skip comments and allow trailing commas. They do not relax other
+JSON syntax or package validation, and do not change parsing defaults automatically.
+
 ### 3. `OnDetectionFinishedAsync` (Optional)
 
 Runs after all files are processed. Use this for:

@@ -67,4 +67,10 @@ public enum ComponentType : byte
 
     [EnumMember]
     CppSdk = 20,
+
+    [EnumMember]
+    Composer = 21,
+
+    [EnumMember]
+    PhpSdk = 22,
 }
