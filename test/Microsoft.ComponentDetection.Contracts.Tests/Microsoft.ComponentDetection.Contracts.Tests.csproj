@@ -6,6 +6,7 @@
 
     <ItemGroup Label="Package References">
         <PackageReference Include="Microsoft.Extensions.Logging" />
+        <PackageReference Include="Newtonsoft.Json" />
         <PackageReference Include="System.Reactive" />
         <PackageReference Include="packageurl-dotnet" />
         <PackageReference Include="AwesomeAssertions.Analyzers" PrivateAssets="all" />

@@ -37,6 +37,8 @@ internal static class TypedComponentMapping
         { nameof(ComponentType.DotNet), typeof(DotNetComponent) },
         { nameof(ComponentType.Swift), typeof(SwiftComponent) },
         { nameof(ComponentType.CppSdk), typeof(CppSdkComponent) },
+        { nameof(ComponentType.Composer), typeof(ComposerComponent) },
+        { nameof(ComponentType.PhpSdk), typeof(PhpSdkComponent) },
     };
 
     /// <summary>

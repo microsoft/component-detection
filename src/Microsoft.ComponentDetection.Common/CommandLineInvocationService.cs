@@ -21,6 +21,18 @@ internal class CommandLineInvocationService : ICommandLineInvocationService
     /// <inheritdoc/>
     public async Task<bool> CanCommandBeLocatedAsync(string command, IEnumerable<string> additionalCandidateCommands = null, DirectoryInfo workingDirectory = null, params string[] parameters)
     {
+        return await this.CanCommandBeLocatedAsync(command, additionalCandidateCommands, workingDirectory, CancellationToken.None, parameters);
+    }
+
+    /// <inheritdoc/>
+    public async Task<bool> CanCommandBeLocatedAsync(
+        string command,
+        IEnumerable<string> additionalCandidateCommands,
+        DirectoryInfo workingDirectory,
+        CancellationToken cancellationToken,
+        params string[] parameters)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
         additionalCandidateCommands ??= [];
         parameters ??= [];
         var allCommands = new[] { command }.Concat(additionalCandidateCommands);
@@ -28,12 +40,13 @@ internal class CommandLineInvocationService : ICommandLineInvocationService
         {
             foreach (var commandToTry in allCommands)
             {
+                cancellationToken.ThrowIfCancellationRequested();
                 using var record = new CommandLineInvocationTelemetryRecord();
 
                 var joinedParameters = string.Join(" ", parameters);
                 try
                 {
-                    var result = await RunProcessAsync(commandToTry, joinedParameters, workingDirectory);
+                    var result = await RunProcessAsync(commandToTry, joinedParameters, workingDirectory, cancellationToken);
                     record.Track(result, commandToTry, joinedParameters);
 
                     if (result.ExitCode == 0)
@@ -61,7 +74,7 @@ internal class CommandLineInvocationService : ICommandLineInvocationService
         CancellationToken cancellationToken = default,
         params string[] parameters)
     {
-        var isCommandLocatable = await this.CanCommandBeLocatedAsync(command, additionalCandidateCommands, workingDirectory, parameters);
+        var isCommandLocatable = await this.CanCommandBeLocatedAsync(command, additionalCandidateCommands, workingDirectory, cancellationToken, parameters);
         if (!isCommandLocatable)
         {
             throw new InvalidOperationException(
@@ -80,7 +93,7 @@ internal class CommandLineInvocationService : ICommandLineInvocationService
         var joinedParameters = string.Join(" ", parameters);
         try
         {
-            var result = await RunProcessAsync(pathToRun, joinedParameters, workingDirectory, cancellationToken);
+            var result = await RunProcessAsync(pathToRun, joinedParameters, workingDirectory, cancellationToken: cancellationToken);
             record.Track(result, pathToRun, joinedParameters);
             return result;
         }
@@ -125,13 +138,9 @@ internal class CommandLineInvocationService : ICommandLineInvocationService
         return await this.ExecuteCommandAsync(command, additionalCandidateCommands, workingDirectory: null, CancellationToken.None, parameters);
     }
 
-    private static Task<CommandLineExecutionResult> RunProcessAsync(string fileName, string parameters, DirectoryInfo workingDirectory = null)
-    {
-        return RunProcessAsync(fileName, parameters, workingDirectory, CancellationToken.None);
-    }
-
     private static Task<CommandLineExecutionResult> RunProcessAsync(string fileName, string parameters, DirectoryInfo workingDirectory = null, CancellationToken cancellationToken = default)
     {
+        cancellationToken.ThrowIfCancellationRequested();
         var tcs = new TaskCompletionSource<CommandLineExecutionResult>();
 
         if (fileName.EndsWith(".cmd") || fileName.EndsWith(".bat"))
@@ -188,7 +197,7 @@ internal class CommandLineInvocationService : ICommandLineInvocationService
         {
             try
             {
-                process.Kill();
+                process.Kill(entireProcessTree: true);
             }
             catch (InvalidOperationException)
             {
@@ -199,6 +208,6 @@ internal class CommandLineInvocationService : ICommandLineInvocationService
             }
         });
 
-        return tcs.Task;
+        return tcs.Task.WaitAsync(cancellationToken);
     }
 }

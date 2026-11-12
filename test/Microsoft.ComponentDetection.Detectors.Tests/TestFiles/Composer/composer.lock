@@ -1,0 +1,45 @@
+{
+  "_readme": ["Offline Composer detector unit test fixture."],
+  "packages": [
+    {
+      "name": "example/application-library",
+      "version": "v1.2.0",
+      "require": {
+        "php": "^8.1",
+        "ext-json": "*",
+        "psr/log-implementation": "^3.0",
+        "example/replaced": "^1.0",
+        "composer/installers": "^2.0"
+      }
+    },
+    {
+      "name": "example/logger",
+      "version": "3.1.0",
+      "provide": {"psr/log-implementation": "3.0"}
+    },
+    {
+      "name": "example/replacement",
+      "version": "1.4.0",
+      "replace": {"example/replaced": "self.version"}
+    },
+    {
+      "name": "composer/installers",
+      "version": "v2.3.0",
+      "require": {"composer-plugin-api": "^2.0"}
+    }
+  ],
+  "packages-dev": [
+    {
+      "name": "example/test-runner",
+      "version": "dev-main",
+      "require": {"example/application-library": "^1.2", "lib-pcre": "*"},
+      "extra": {"branch-alias": {"dev-main": "2.x-dev"}}
+    }
+  ],
+  "aliases": [
+    {"package": "example/test-runner", "version": "dev-main", "alias": "2.x-dev", "alias_normalized": "2.9999999.9999999.9999999-dev"}
+  ],
+  "platform": {"php": "^8.1"},
+  "platform-dev": [],
+  "plugin-api-version": "2.6.0"
+}

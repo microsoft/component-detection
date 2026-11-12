@@ -6,6 +6,12 @@
 | -------------------- | ------ |
 | PodComponentDetector | Stable |
 
+- [Composer](composer.md)
+
+| Detector                  | Status       |
+| ------------------------- | ------------ |
+| ComposerComponentDetector | Experimental |
+
 - [Conan](conan.md)
 
 | Detector                   | Status     |

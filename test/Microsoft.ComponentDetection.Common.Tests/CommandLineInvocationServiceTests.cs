@@ -4,6 +4,7 @@ namespace Microsoft.ComponentDetection.Common.Tests;
 using System;
 using System.IO;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using AwesomeAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -128,5 +129,85 @@ public class CommandLineInvocationServiceTests
         await action.Should()
             .ThrowAsync<InvalidOperationException>()
             .WithMessage("ExecuteCommandAsync was called with a working directory that could not be located: *");
+    }
+
+    [TestMethod]
+    [OSCondition(OperatingSystems.Windows)]
+    public async Task ColdCommand_ProbesOnceAndReusesTheCachedCommandAsync()
+    {
+        var marker = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
+        try
+        {
+            var result = await this.commandLineService.ExecuteCommandAsync("cmd.exe", workingDirectory: null, cancellationToken: CancellationToken.None, parameters: ["/D", "/C", $"echo invocation>>\"{marker}\""]);
+
+            result.ExitCode.Should().Be(0);
+            (await File.ReadAllLinesAsync(marker)).Should().Equal("invocation", "invocation");
+
+            result = await this.commandLineService.ExecuteCommandAsync("cmd.exe", workingDirectory: null, cancellationToken: CancellationToken.None, parameters: ["/D", "/C", $"echo invocation>>\"{marker}\""]);
+
+            result.ExitCode.Should().Be(0);
+            (await File.ReadAllLinesAsync(marker)).Should().Equal("invocation", "invocation", "invocation");
+        }
+        finally
+        {
+            File.Delete(marker);
+        }
+    }
+
+    [TestMethod]
+    [OSCondition(OperatingSystems.Windows)]
+    public async Task CachedCommand_ReturnsNonzeroExitAsync()
+    {
+        (await this.commandLineService.CanCommandBeLocatedAsync("cmd.exe", default, "/C")).Should().BeTrue();
+        var result = await this.commandLineService.ExecuteCommandAsync("cmd.exe", workingDirectory: null, cancellationToken: CancellationToken.None, parameters: ["/D", "/C", "exit 7"]);
+
+        result.ExitCode.Should().Be(7);
+    }
+
+    [TestMethod]
+    public async Task ExecuteCommand_PropagatesCancellationBeforeStartingAsync()
+    {
+        Func<Task> action = async () => await this.commandLineService.ExecuteCommandAsync("not-an-executable", workingDirectory: null, cancellationToken: new CancellationToken(true));
+
+        await action.Should().ThrowAsync<OperationCanceledException>();
+    }
+
+    [TestMethod]
+    public async Task AvailabilityProbe_PropagatesCancellationBeforeStartingAsync()
+    {
+        Func<Task> action = async () => await this.commandLineService.CanCommandBeLocatedAsync("not-an-executable", null, null, new CancellationToken(true));
+
+        await action.Should().ThrowAsync<OperationCanceledException>();
+    }
+
+    [TestMethod]
+    [DataRow(false)]
+    [DataRow(true)]
+    [OSCondition(OperatingSystems.Windows)]
+    public async Task ExecuteCommand_CancelsAvailabilityProbeAndCachedExecutionAsync(bool cached)
+    {
+        if (cached)
+        {
+            (await this.commandLineService.CanCommandBeLocatedAsync("cmd.exe", default, "/C")).Should().BeTrue();
+        }
+
+        using var cancellation = new CancellationTokenSource(TimeSpan.FromMilliseconds(500));
+        var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+        Func<Task> action = async () => await this.commandLineService.ExecuteCommandAsync("cmd.exe", workingDirectory: null, cancellationToken: cancellation.Token, parameters: ["/D", "/C", "ping -n 30 127.0.0.1 >nul"]);
+
+        await action.Should().ThrowAsync<OperationCanceledException>();
+        stopwatch.Elapsed.Should().BeLessThan(TimeSpan.FromSeconds(5));
+    }
+
+    [TestMethod]
+    [OSCondition(OperatingSystems.Windows)]
+    public async Task AvailabilityProbe_CancelsARunningProcessAsync()
+    {
+        using var cancellation = new CancellationTokenSource(TimeSpan.FromMilliseconds(500));
+        var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+        Func<Task> action = async () => await this.commandLineService.CanCommandBeLocatedAsync("cmd.exe", null, null, cancellation.Token, "/D", "/C", "ping -n 30 127.0.0.1 >nul");
+
+        await action.Should().ThrowAsync<OperationCanceledException>();
+        stopwatch.Elapsed.Should().BeLessThan(TimeSpan.FromSeconds(5));
     }
 }

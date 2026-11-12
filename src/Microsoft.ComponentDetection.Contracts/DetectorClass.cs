@@ -53,4 +53,7 @@ public enum DetectorClass
 
     /// <summary>Indicates a detector applies to Helm chart image references.</summary>
     Helm,
+
+    /// <summary>Indicates a detector applies to Composer packages.</summary>
+    Composer,
 }

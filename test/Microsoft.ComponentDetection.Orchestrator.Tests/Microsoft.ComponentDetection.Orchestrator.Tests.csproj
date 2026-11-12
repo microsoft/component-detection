@@ -10,6 +10,7 @@
         <PackageReference Include="Serilog" />
         <PackageReference Include="Spectre.Console.Cli" />
         <PackageReference Include="Spectre.Console.Testing" />
+        <PackageReference Include="System.Reactive" />
         <PackageReference Include="AwesomeAssertions.Analyzers" PrivateAssets="all" />
     </ItemGroup>
 

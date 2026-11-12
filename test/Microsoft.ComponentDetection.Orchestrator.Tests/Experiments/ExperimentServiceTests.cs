@@ -9,6 +9,8 @@ using AwesomeAssertions;
 using Microsoft.ComponentDetection.Common.DependencyGraph;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.BcdeModels;
+using Microsoft.ComponentDetection.Contracts.TypedComponent;
+using Microsoft.ComponentDetection.Detectors.Composer;
 using Microsoft.ComponentDetection.Detectors.NuGet;
 using Microsoft.ComponentDetection.Orchestrator.Commands;
 using Microsoft.ComponentDetection.Orchestrator.Experiments;
@@ -86,6 +88,43 @@ public class ExperimentServiceTests
         this.graphTranslationServiceMock.Verify(
             x => x.GenerateScanResultFromProcessingResult(It.IsAny<DetectorProcessingResult>(), It.IsAny<ScanSettings>(), It.Is<bool>(x => !x)),
             Times.Once());
+    }
+
+    [TestMethod]
+    public async Task RecordDetectorRun_ComposerExperimentReportsPackagesAndSdkAsync()
+    {
+        var config = new ComposerExperiment();
+        var detector = new ComposerComponentDetector(null, null, null, null, null, null);
+        List<ScannedComponent> components =
+        [
+            new() { Component = new ComposerComponent("vendor/package", "1.0"), IsDevelopmentDependency = false },
+            new() { Component = new PhpSdkComponent("php", "8.4.27"), IsDevelopmentDependency = true },
+        ];
+        this.SetupGraphMock(components);
+        ExperimentDiff processedDiff = null;
+        this.experimentProcessorMock
+            .Setup(processor => processor.ProcessExperimentAsync(config, It.IsAny<ExperimentDiff>()))
+            .Callback<IExperimentConfiguration, ExperimentDiff>((_, diff) => processedDiff = diff)
+            .Returns(Task.CompletedTask);
+        var service = new ExperimentService(
+            [config],
+            [this.experimentProcessorMock.Object],
+            this.graphTranslationServiceMock.Object,
+            this.loggerMock.Object);
+
+        service.RecordDetectorRun(detector, this.componentRecorder, this.scanSettingsMock.Object);
+        await service.FinishAsync();
+
+        this.experimentProcessorMock.Verify(
+            processor => processor.ProcessExperimentAsync(config, It.IsAny<ExperimentDiff>()),
+            Times.Once());
+        processedDiff.AddedIds.Should().BeEquivalentTo(["vendor/package 1.0 - Composer", "php 8.4.27 - PhpSdk"]);
+        processedDiff.RemovedIds.Should().BeEmpty();
+        processedDiff.ControlDetectors.Should().BeEmpty();
+        processedDiff.ExperimentalDetectors.Should().ContainSingle();
+        var developmentChange = processedDiff.DevelopmentDependencyChanges.Should().ContainSingle().Which;
+        developmentChange.Id.Should().Be("php 8.4.27 - PhpSdk");
+        developmentChange.NewValue.Should().BeTrue();
     }
 
     [TestMethod]
