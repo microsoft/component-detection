@@ -1,6 +1,7 @@
 #nullable disable
 namespace Microsoft.ComponentDetection.Contracts.TypedComponent;
 
+using System;
 using System.Text.Json.Serialization;
 using PackageUrl;
 
@@ -33,6 +34,11 @@ public sealed class ComposerComponent : TypedComponent
         get
         {
             var separator = this.Name.IndexOf('/');
+            if (separator <= 0 || separator == this.Name.Length - 1 || separator != this.Name.LastIndexOf('/'))
+            {
+                throw new InvalidOperationException("Composer package names must contain exactly one '/' separating a nonempty vendor and package name.");
+            }
+
             return new PackageURL("composer", this.Name.Substring(0, separator), this.Name.Substring(separator + 1), this.Version, null, null);
         }
     }

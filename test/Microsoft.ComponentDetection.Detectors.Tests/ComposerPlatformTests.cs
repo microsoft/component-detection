@@ -384,13 +384,11 @@ public class ComposerPlatformTests : BaseDetectorTest<ComposerComponentDetector>
     }
 
     [TestMethod]
-    [DataRow("""{"name":"php","version":"8.4.27","direct-dependency":true}""", true, false)]
-    [DataRow("""{"name":"php","version":"8.4.27","direct-dependency":false}""", false, false)]
-    [DataRow("""{"name":"php","version":"8.4.27"}""", false, false)]
-    [DataRow("""{"name":"php","version":"8.4.27","direct-dependency":"true"}""", false, true)]
-    [DataRow("""{"name":"php","version":"8.4.27","direct-dependency":null}""", false, true)]
-    [DataRow("""{"name":"php","version":"8.4.27","direct-dependency":1}""", false, true)]
-    public async Task PlatformDirectDependency_UsesComposerMetadataWithoutDroppingInventoryAsync(string entry, bool explicitlyReferenced, bool invalidMetadata)
+    [DataRow("""{"name":"php","version":"8.4.27","direct-dependency":true}""", true)]
+    [DataRow("""{"name":"php","version":"8.4.27","direct-dependency":false}""", false)]
+    [DataRow("""{"name":"php","version":"8.4.27"}""", false)]
+    [DataRow("""{"name":"php","version":"8.4.27","direct-dependency":null}""", false)]
+    public async Task PlatformDirectDependency_UsesNullableComposerMetadataAsync(string entry, bool explicitlyReferenced)
     {
         this.WithOutput($$"""{"platform":[{{entry}}]}""");
         var location = Path.Combine(Path.GetTempPath(), "composer.json");
@@ -403,7 +401,28 @@ public class ComposerPlatformTests : BaseDetectorTest<ComposerComponentDetector>
         graph.GetAllExplicitlyReferencedComponents().Should().BeEquivalentTo(expectedExplicitReferences);
         graph.IsDevelopmentDependency("php 8.4.27 - PhpSdk").Should().BeTrue();
         recorder.GetSkippedComponents().Should().BeEmpty();
-        this.VerifyWarning("invalid direct-dependency", invalidMetadata ? Times.Once() : Times.Never());
+        this.VerifyWarning("invalid package identity", Times.Never());
+    }
+
+    [TestMethod]
+    [DataRow("\"true\"")]
+    [DataRow("1")]
+    [DataRow("[]")]
+    public async Task MalformedPlatformMetadata_ReportsInvalidInventoryAndPreservesPackageDetectionAsync(string directDependency)
+    {
+        this.WithOutput($$$"""
+            {"platform":[
+              {"name":"php","version":"8.4.27","direct-dependency":{{{directDependency}}}},
+              {"name":"ext-json","version":"8.4.27","direct-dependency":true}
+            ]}
+            """);
+        var (result, recorder) = await this.DetectorTestUtility.WithFile("composer.json", """{"require":{"vendor/app":"1.0"}}""").ExecuteDetectorAsync();
+
+        result.ResultCode.Should().Be(ProcessingResultCode.Success);
+        recorder.GetDetectedComponents().Select(component => component.Component.Id).Should().Equal("vendor/app 1.0 - Composer");
+        recorder.GetDependencyGraphsByLocation().Values.Single().GetAllExplicitlyReferencedComponents().Should().Equal("vendor/app 1.0 - Composer");
+        recorder.GetSkippedComponents().Should().BeEmpty();
+        this.VerifyWarning("not valid JSON", Times.Once());
     }
 
     [TestMethod]
@@ -472,7 +491,7 @@ public class ComposerPlatformTests : BaseDetectorTest<ComposerComponentDetector>
     [TestMethod]
     public async Task InvalidEntries_WarnAndRetainValidEnvironmentComponentsAsync()
     {
-        this.WithOutput("""{"platform":[null,{}, {"name":"php","version":8}, {"name":"ext-json","version":" "}, {"name":"php","version":"8.4.27"}]}""");
+        this.WithOutput("""{/* Inventory */"platform":[null,{}, {"name":"php","version":null}, {"name":"ext-json","version":" "}, {"name":"php","version":"8.4.27"},],}""");
         var (_, recorder) = await this.DetectorTestUtility.WithFile("composer.json", "{}").ExecuteDetectorAsync();
 
         recorder.GetDetectedComponents().Select(component => component.Component.Id).Should().Equal("php 8.4.27 - PhpSdk");

@@ -19,11 +19,11 @@ using Microsoft.Extensions.Logging;
 public abstract class FileComponentDetector : IComponentDetector
 {
     /// <summary>
-    /// Gets opt-in JSON parsing options that skip comments and allow trailing commas.
+    /// Gets opt-in JSON deserialization options that skip comments and allow trailing commas.
     /// </summary>
-    protected static readonly JsonDocumentOptions LenientJsonDocumentOptions = new()
+    protected static readonly JsonSerializerOptions LenientJsonSerializerOptions = new()
     {
-        CommentHandling = JsonCommentHandling.Skip,
+        ReadCommentHandling = JsonCommentHandling.Skip,
         AllowTrailingCommas = true,
     };
 

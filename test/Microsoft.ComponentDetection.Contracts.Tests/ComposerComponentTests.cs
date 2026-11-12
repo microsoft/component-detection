@@ -80,6 +80,25 @@ public class ComposerComponentTests
     }
 
     [TestMethod]
+    [DataRow("package")]
+    [DataRow("/package")]
+    [DataRow("vendor/")]
+    [DataRow("vendor/other/package")]
+    [DataRow("vendor//package")]
+    [DataRow("vendor///package")]
+    public void PackageUrl_RejectsMissingOrRepeatedNameSeparators(string name)
+    {
+        var component = new ComposerComponent(name, "1.0");
+
+        component.Name.Should().Be(name);
+        component.BaseId.Should().Be($"{name} 1.0 - Composer");
+        Action action = () => _ = component.PackageUrl;
+
+        action.Should().Throw<InvalidOperationException>()
+            .WithMessage("Composer package names must contain exactly one '/' separating a nonempty vendor and package name.");
+    }
+
+    [TestMethod]
     public void DifferentRawIdentities_AreNotNormalizedToTheSameBaseId()
     {
         var original = new ComposerComponent("Vendor/Package", "v1.2.3");

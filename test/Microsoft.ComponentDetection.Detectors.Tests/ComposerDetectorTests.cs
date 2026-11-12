@@ -278,6 +278,21 @@ public class ComposerDetectorTests : BaseDetectorTest<ComposerComponentDetector>
     }
 
     [TestMethod]
+    [DataRow("vendor//package")]
+    [DataRow("vendor///package")]
+    [DataRow("vendor/other/package")]
+    public async Task ManifestRequirementWithMultipleSeparators_ReportsParseFailureAsync(string name)
+    {
+        var (result, recorder) = await this.DetectorTestUtility
+            .WithFile("composer.json", $$$"""{"require":{"{{{name}}}":"1.0"}}""")
+            .ExecuteDetectorAsync();
+
+        result.ResultCode.Should().Be(ProcessingResultCode.Success);
+        recorder.GetDetectedComponents().Should().BeEmpty();
+        recorder.GetSkippedComponents().Should().Equal($"{Path.Combine(Path.GetTempPath(), "composer.json")}.require.{name}");
+    }
+
+    [TestMethod]
     [DataRow("permission", false)]
     [DataRow("missing-file", false)]
     [DataRow("missing-directory", false)]
@@ -332,11 +347,6 @@ public class ComposerDetectorTests : BaseDetectorTest<ComposerComponentDetector>
     }
 
     [TestMethod]
-    [DataRow("{\"config\":false}")]
-    [DataRow("{\"config\":null}")]
-    [DataRow("{\"config\":[]}")]
-    [DataRow("{\"config\":{\"vendor-dir\":42}}")]
-    [DataRow("{\"config\":{\"vendor-dir\":null}}")]
     [DataRow("{\"config\":{\"vendor-dir\":\"\"}}")]
     [DataRow("{\"config\":{\"vendor-dir\":\" \"}}")]
     [DataRow("{\"config\":{\"vendor-dir\":\"\\u0000\"}}")]
@@ -358,6 +368,41 @@ public class ComposerDetectorTests : BaseDetectorTest<ComposerComponentDetector>
                 It.IsAny<Exception>(),
                 It.IsAny<Func<It.IsAnyType, Exception, string>>()),
             Times.Once);
+    }
+
+    [TestMethod]
+    [DataRow("{}")]
+    [DataRow("{\"config\":null}")]
+    [DataRow("{\"config\":{}}")]
+    [DataRow("{\"config\":{\"vendor-dir\":null}}")]
+    public async Task MissingOrNullVendorConfiguration_UsesDefaultVendorInventoryWithoutWarningsAsync(string content)
+    {
+        var files = this.WithInstalledFile(Path.Combine(Path.GetTempPath(), "vendor"), """{"packages":[{"name":"vendor/installed","version":"1.2.3"}]}""");
+        var logger = new Mock<ILogger<ComposerComponentDetector>>();
+        var (result, recorder) = await this.DetectorTestUtility.AddServiceMock(logger).WithFile("composer.json", content).ExecuteDetectorAsync();
+
+        result.ResultCode.Should().Be(ProcessingResultCode.Success);
+        recorder.GetDetectedComponents().Select(component => component.Component.Id).Should().Equal(Id("vendor/installed", "1.2.3"));
+        recorder.GetSkippedComponents().Should().BeEmpty();
+        files.Verify(value => value.MakeFileStream(Path.Combine(Path.GetTempPath(), "vendor", "composer", "installed.json")), Times.Once);
+        logger.Verify(
+            value => value.Log(LogLevel.Warning, It.IsAny<EventId>(), It.IsAny<It.IsAnyType>(), It.IsAny<Exception>(), It.IsAny<Func<It.IsAnyType, Exception, string>>()),
+            Times.Never);
+    }
+
+    [TestMethod]
+    [DataRow("{\"config\":false}")]
+    [DataRow("{\"config\":[]}")]
+    [DataRow("{\"config\":{\"vendor-dir\":42}}")]
+    public async Task MalformedVendorConfiguration_ReportsParseFailureWithoutReadingInventoryAsync(string content)
+    {
+        var files = this.WithInstalledFile(Path.Combine(Path.GetTempPath(), "vendor"), """{"packages":[]}""");
+        var (result, recorder) = await this.DetectorTestUtility.WithFile("composer.json", content).ExecuteDetectorAsync();
+
+        result.ResultCode.Should().Be(ProcessingResultCode.Success);
+        recorder.GetDetectedComponents().Should().BeEmpty();
+        recorder.GetSkippedComponents().Should().Equal(Path.Combine(Path.GetTempPath(), "composer.json"));
+        files.VerifyNoOtherCalls();
     }
 
     [TestMethod]
@@ -711,6 +756,9 @@ public class ComposerDetectorTests : BaseDetectorTest<ComposerComponentDetector>
 
     [TestMethod]
     [DataRow("package")]
+    [DataRow("vendor//package")]
+    [DataRow("vendor///package")]
+    [DataRow("vendor/other/package")]
     [DataRow("vendor/")]
     [DataRow("/package")]
     [DataRow(" ")]
@@ -1044,12 +1092,9 @@ public class ComposerDetectorTests : BaseDetectorTest<ComposerComponentDetector>
 
     [TestMethod]
     [DataRow("null")]
-    [DataRow("[]")]
     [DataRow("{}")]
-    [DataRow("""{"package":42,"version":"dev-main","alias":"2.x-dev"}""")]
     [DataRow("""{"package":" ","version":"dev-main","alias":"2.x-dev"}""")]
     [DataRow("""{"package":"vendor/branch","version":null,"alias":"2.x-dev"}""")]
-    [DataRow("""{"package":"vendor/branch","version":"dev-main","alias":false}""")]
     [DataRow("""{"package":"vendor/branch","version":"dev-main","alias":" "}""")]
     public async Task MalformedLockAliases_ReportFailureAndRetainValidAliasesAsync(string invalidAlias)
     {
@@ -1068,10 +1113,7 @@ public class ComposerDetectorTests : BaseDetectorTest<ComposerComponentDetector>
     }
 
     [TestMethod]
-    [DataRow("null", "packages[1].extra.branch-alias")]
-    [DataRow("[]", "packages[1].extra.branch-alias")]
     [DataRow("""{"dev-main":null}""", "packages[1].extra.branch-alias.dev-main")]
-    [DataRow("""{"dev-main":42}""", "packages[1].extra.branch-alias.dev-main")]
     [DataRow("""{"dev-main":" "}""", "packages[1].extra.branch-alias.dev-main")]
     public async Task MalformedBranchAliases_ReportFailureWithoutDroppingLockedPackagesAsync(string aliases, string failureLocation)
     {
@@ -1088,6 +1130,35 @@ public class ComposerDetectorTests : BaseDetectorTest<ComposerComponentDetector>
         recorder.GetDependencyGraphsByLocation().Values.Single().GetDependenciesForComponent(Id("vendor/app", "1"))
             .Should().BeEmpty();
         recorder.GetSkippedComponents().Should().Equal(failureLocation);
+    }
+
+    [TestMethod]
+    public async Task NullBranchAliases_AreTreatedAsUnavailableAsync()
+    {
+        var (_, recorder) = await this.DetectAsync("""
+            {"packages":[{"name":"vendor/branch","version":"dev-main","extra":{"branch-alias":null}}]}
+            """);
+
+        recorder.GetDetectedComponents().Select(component => component.Component.Id).Should().Equal(Id("vendor/branch", "dev-main"));
+        recorder.GetSkippedComponents().Should().BeEmpty();
+    }
+
+    [TestMethod]
+    [DataRow("[]")]
+    [DataRow("false")]
+    [DataRow("42")]
+    [DataRow("""{"dev-main":42}""")]
+    public async Task MalformedBranchAliasObject_ReportsInvalidLockfileAsync(string aliases)
+    {
+        var (_, recorder) = await this.DetectAsync($$$"""
+            {"packages":[
+              {"name":"vendor/valid","version":"1"},
+              {"name":"vendor/branch","version":"dev-main","extra":{"branch-alias":{{{aliases}}}}}
+            ]}
+            """);
+
+        recorder.GetDetectedComponents().Should().BeEmpty();
+        recorder.GetSkippedComponents().Should().Equal(Path.Combine(Path.GetTempPath(), "composer.lock"));
     }
 
     [TestMethod]
@@ -1109,18 +1180,35 @@ public class ComposerDetectorTests : BaseDetectorTest<ComposerComponentDetector>
     }
 
     [TestMethod]
-    public async Task ConflictingDuplicateDependencyNames_ReportFailuresAsync()
+    public async Task DuplicateDependencyKeys_UseLastValueAsync()
     {
         var (_, recorder) = await this.DetectAsync("""
             {"packages":[
               {"name":"vendor/app","version":"1","require":{
-                "invalid":"*","vendor/bad/name":"*","vendor/api":"1","VENDOR/API":"2","vendor/api":"2"}},
+                "invalid":"*","vendor/api":"1","VENDOR/API":"2","vendor/api":"2"}},
+              {"name":"vendor/api","version":"2"}
+            ]}
+            """);
+
+        recorder.GetDependencyGraphsByLocation().Values.Single().GetDependenciesForComponent(Id("vendor/app", "1")).Should().Equal(Id("vendor/api", "2"));
+        recorder.GetSkippedComponents().Should().BeEmpty();
+    }
+
+    [TestMethod]
+    [DataRow(false)]
+    [DataRow(true)]
+    public async Task ConflictingCaseVariantDependencyNames_ReportFailuresAsync(bool isDevelopment)
+    {
+        var section = isDevelopment ? "packages-dev" : "packages";
+        var (_, recorder) = await this.DetectAsync($$$"""
+            {"{{{section}}}":[
+              {"name":"vendor/app","version":"1","require":{"vendor/api":"1","VENDOR/API":"2"}},
               {"name":"vendor/api","version":"2"}
             ]}
             """);
 
         recorder.GetDependencyGraphsByLocation().Values.Single().GetDependenciesForComponent(Id("vendor/app", "1")).Should().BeEmpty();
-        recorder.GetSkippedComponents().Should().Equal("packages[0].require.vendor/api");
+        recorder.GetSkippedComponents().Should().Equal($"{section}[0].require.vendor/api");
     }
 
     [TestMethod]
@@ -1212,6 +1300,9 @@ public class ComposerDetectorTests : BaseDetectorTest<ComposerComponentDetector>
     [DataRow("""{"packages":[]}""")]
     [DataRow("""{"packages-dev":[]}""")]
     [DataRow("""{"packages":[],"packages-dev":[]}""")]
+    [DataRow("""{"packages":null}""")]
+    [DataRow("""{"packages-dev":null}""")]
+    [DataRow("""{"aliases":null}""")]
     public async Task MissingOrEmptySections_AreValidAsync(string content)
     {
         var (result, recorder) = await this.DetectorTestUtility.WithFile("composer.lock", content).ExecuteDetectorAsync();
@@ -1224,7 +1315,6 @@ public class ComposerDetectorTests : BaseDetectorTest<ComposerComponentDetector>
     [DataRow("{")]
     [DataRow("null")]
     [DataRow("[]")]
-    [DataRow("""{"packages":null}""")]
     [DataRow("""{"packages":{}}""")]
     public async Task MalformedDocumentsOrSections_ReportParseFailuresAsync(string content)
     {
@@ -1234,17 +1324,45 @@ public class ComposerDetectorTests : BaseDetectorTest<ComposerComponentDetector>
     }
 
     [TestMethod]
-    public async Task MalformedEntries_ReportFailuresAndRetainValidPackagesAsync()
+    [DataRow("[]")]
+    [DataRow("""{"package":42,"version":"dev-main","alias":"2.x-dev"}""")]
+    [DataRow("""{"package":"vendor/branch","version":"dev-main","alias":false}""")]
+    public async Task WrongAliasTypes_ReportLockfileParseFailureAsync(string alias)
     {
-        var (_, recorder) = await this.DetectAsync("""
-            {"packages":[null,{},{"name":"vendor/no-version"},{"name":"vendor/bad","version":42},
-              {"name":"not-namespaced","version":"1"},{"name":"vendor/empty","version":" "},
-              {"name":"vendor/valid","version":"1","require":{"vendor/child":false}},
-              {"name":"vendor/valid2","version":"2","provide":[]}]}
+        var (_, recorder) = await this.DetectAsync($$$"""
+            {"packages":[{"name":"vendor/valid","version":"1"}],"aliases":[{{{alias}}}]}
             """);
 
-        recorder.GetDetectedComponents().Should().HaveCount(2);
-        recorder.GetSkippedComponents().Should().HaveCount(8);
+        recorder.GetDetectedComponents().Should().BeEmpty();
+        recorder.GetSkippedComponents().Should().Equal(Path.Combine(Path.GetTempPath(), "composer.lock"));
+    }
+
+    [TestMethod]
+    [DataRow("""{"name":"vendor/bad","version":42}""")]
+    [DataRow("""{"name":"vendor/bad","version":"1","require":{"vendor/child":false}}""")]
+    [DataRow("""{"name":"vendor/bad","version":"1","provide":[]}""")]
+    public async Task WrongPackageTypes_ReportLockfileParseFailureAsync(string entry)
+    {
+        var (_, recorder) = await this.DetectAsync($$$"""
+            {"packages":[{{{entry}}},{"name":"vendor/valid","version":"1"}]}
+            """);
+
+        recorder.GetDetectedComponents().Should().BeEmpty();
+        recorder.GetSkippedComponents().Should().Equal(Path.Combine(Path.GetTempPath(), "composer.lock"));
+    }
+
+    [TestMethod]
+    public async Task MissingPackageIdentities_ReportFailuresAndRetainValidPackagesAsync()
+    {
+        var (_, recorder) = await this.DetectAsync("""
+            {"packages":[null,{},{"name":"vendor/no-version"},{"name":"vendor/bad","version":null},
+              {"name":"not-namespaced","version":"1"},{"name":"vendor/empty","version":" "},
+              {"name":"vendor/valid","version":"1","require":null},
+              {"name":"vendor/valid2","version":"2","provide":null}]}
+            """);
+
+        recorder.GetDetectedComponents().Select(component => component.Component.Id).Should().BeEquivalentTo([Id("vendor/valid", "1"), Id("vendor/valid2", "2")]);
+        recorder.GetSkippedComponents().Should().HaveCount(6);
     }
 
     [TestMethod]
