@@ -40,10 +40,10 @@ The main parsing logic. Called once per matched file to:
 - Build the dependency graph via `ComponentRecorder`
 
 For JSON formats where comments and trailing commas can be tolerated, derived
-detectors can opt in to `FileComponentDetector.LenientJsonDocumentOptions`:
+detectors can opt in to `FileComponentDetector.LenientJsonSerializerOptions`:
 
 ```csharp
-using var document = await JsonDocument.ParseAsync(stream, LenientJsonDocumentOptions, cancellationToken);
+var root = await JsonSerializer.DeserializeAsync<JsonElement>(stream, LenientJsonSerializerOptions, cancellationToken);
 ```
 
 These options skip comments and allow trailing commas. They do not relax other
