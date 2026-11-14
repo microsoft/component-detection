@@ -37,7 +37,7 @@ Code shared by everything in the app, not including Contracts.
 ### [src/Microsoft.ComponentDetection.Contracts](src/Microsoft.ComponentDetection.Contracts)
 Models used in the solution, used to deserialize / reserialize output from the application.
 ### [src/Microsoft.ComponentDetection.Detectors](src/Microsoft.ComponentDetection.Detectors)
-bulk of the code that actually runs detection -- each built-in detector should have it's own folder (usually by ecosystem). Ecosystem specific utilities live adjacent to the detector implementation itself. [Additional documentation on the linux detector.](./docs/linux-scanner.md)
+bulk of the code that actually runs detection -- each built-in detector should have it's own folder (usually by ecosystem). Ecosystem specific utilities live adjacent to the detector implementation itself. [Additional documentation on the linux detector.](./docs/detectors/linux.md)
 
 # What is a Detector?
 The bulk of contributions/work will be in this area. Currently, there are two kinds of detector. The main kind, 'FileDetector', relies on traversing the file directory and finding a specified file to parse and discover what components to register. The set of file names for a detector is specified as a part of the class variables, and the orchestrator runs a file scanning process, sending the results to the appropriate detectors. The other kind of detector, `IComponentDetector`, isn't necessarily file focused (though it can be) but is generally intended to do "one-shot" scanning. An example of this is the LinuxDetector that takes scan arguments from the command line. Since it doesn't have to discover new docker images to scan and it doesn't operate over any files, it simply implements `IComponentDetector`.

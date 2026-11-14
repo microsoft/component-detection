@@ -19,7 +19,7 @@ and in version 6 lock files of pnpm as:
 
 
 This nomenclature is known for the pnpm community as the package path, and is normally found as the package definition in the section Packages of the lock files (pnpm-lock.yml and shrinkwrap.yml).
-Normally most of the packages has this structure but there others situations like [peer dependencies](https://pnpm.js.org/en/how-peers-are-resolved), where the path format can change to represent the peer dependency combination, for example:
+Normally most of the packages has this structure but there others situations like [peer dependencies](https://pnpm.io/how-peers-are-resolved), where the path format can change to represent the peer dependency combination, for example:
 
 First the regular case, suppose that we have in the package.json a dependency defined as
 
