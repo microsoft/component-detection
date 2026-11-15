@@ -19,6 +19,7 @@ public record ExperimentComponent
         this.Id = detectedComponent.Component.Id;
         this.DevelopmentDependency = detectedComponent.IsDevelopmentDependency ?? false;
         this.RootIds = detectedComponent.TopLevelReferrers?.Select(x => x.Id).ToHashSet() ?? [];
+        this.Locations = detectedComponent.LocationsFoundAt?.ToHashSet() ?? [];
     }
 
     /// <summary>
@@ -35,4 +36,9 @@ public record ExperimentComponent
     /// The set of root component IDs for this component.
     /// </summary>
     public HashSet<string> RootIds { get; }
+
+    /// <summary>
+    /// The set of file paths where this component was found.
+    /// </summary>
+    public HashSet<string> Locations { get; }
 }
