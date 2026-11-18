@@ -15,7 +15,7 @@ public class Package
     [YamlMember(Alias = "name")]
     public string Name { get; set; }
 
-    [YamlMember(Alias = "resolution")]
+    [YamlIgnore]
     public Dictionary<string, string> Resolution { get; set; }
 
     [YamlMember(Alias = "version")]
