@@ -1,6 +1,8 @@
 #nullable disable
 namespace Microsoft.ComponentDetection.Detectors.Pnpm;
 
+using System.Linq;
+using global::NuGet.Versioning;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 
@@ -21,7 +23,7 @@ where T : PnpmYaml
         // An example of a dependency path with these: /webpack-cli@4.10.0(webpack-bundle-analyzer@4.10.1)(webpack-dev-server@4.6.0)(webpack@5.89.0)
         (var fullPackageName, var packageVersion) = this.ExtractNameAndVersionFromPnpmPackagePath(pnpmPackagePath);
 
-        return new DetectedComponent(new NpmComponent(fullPackageName, packageVersion));
+        return new DetectedComponent(new NpmComponent(fullPackageName, GetComponentVersion(packageVersion)));
     }
 
     public override (string FullPackageName, string PackageVersion) ExtractNameAndVersionFromPnpmPackagePath(string pnpmPackagePath)
@@ -68,5 +70,28 @@ where T : PnpmYaml
         {
             return $"{dependencyName}@{dependencyVersion}";
         }
+    }
+
+    private static string GetComponentVersion(string packageVersion)
+    {
+        var separator = packageVersion.IndexOf(':');
+        if (separator <= 0 || !char.IsAsciiLetter(packageVersion[0]))
+        {
+            return packageVersion;
+        }
+
+        var prefix = packageVersion[..separator];
+
+        // These pnpm protocol prefixes cannot be named registry aliases.
+        if (prefix is "bitbucket" or "catalog" or "custom" or "file" or "git" or "github" or "gitlab"
+            or "http" or "https" or "jsr" or "link" or "npm" or "pkg" or "runtime" or "ssh" or "tool" or "workspace"
+            || !prefix.All(c => char.IsAsciiLetterOrDigit(c) || c is '.' or '_' or '-'))
+        {
+            return packageVersion;
+        }
+
+        // Only normalize the exported version; snapshot lookups still use the full key.
+        var version = packageVersion[(separator + 1)..];
+        return SemanticVersion.TryParse(version, out _) ? version : packageVersion;
     }
 }

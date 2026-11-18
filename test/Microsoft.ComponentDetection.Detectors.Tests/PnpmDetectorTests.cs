@@ -718,6 +718,43 @@ snapshots:
     }
 
     [TestMethod]
+    public async Task TestPnpmDetector_V9_RegistryQualifiedVersionsPreserveDependencyGraphAsync()
+    {
+        var yamlFile = """
+            lockfileVersion: '9.0'
+            importers:
+              .:
+                dependencies:
+                  '@example/client':
+                    specifier: ^0.1.0
+                    version: my-registry:0.1.12(peer@1.0.0)
+            snapshots:
+              '@example/client@my-registry:0.1.12(peer@1.0.0)':
+                dependencies:
+                  child-alias: child@other_registry:2.0.0-beta.1+build.5
+              '@example/client@0.1.12(peer@1.0.0)':
+                dependencies:
+                  unrelated: 3.0.0
+              child@other_registry:2.0.0-beta.1+build.5: {}
+              unrelated@3.0.0: {}
+            """;
+
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
+            .WithFile("pnpm-lock.yaml", yamlFile)
+            .ExecuteDetectorAsync();
+
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+
+        var npmComponents = componentRecorder.GetDetectedComponents().Select(x => (NpmComponent)x.Component).ToList();
+        npmComponents.Should().HaveCount(3);
+        var client = npmComponents.Should().ContainSingle(x => x.Name == "@example/client" && x.Version == "0.1.12").Subject;
+        var child = npmComponents.Should().ContainSingle(x => x.Name == "child" && x.Version == "2.0.0-beta.1+build.5").Subject;
+        var graph = componentRecorder.GetDependencyGraphsByLocation().Values.Single();
+        graph.IsComponentExplicitlyReferenced(client.Id).Should().BeTrue();
+        graph.GetDependenciesForComponent(client.Id).Should().ContainSingle().Which.Should().Be(child.Id);
+    }
+
+    [TestMethod]
     public async Task TestPnpmDetector_V9_GoodLockVersion_SkipsFileAndLinkDependencies()
     {
         var yamlFile = @"

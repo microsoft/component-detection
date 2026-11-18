@@ -203,6 +203,22 @@ lockfileVersion: '9.0'
     }
 
     [TestMethod]
+    [DataRow("pkg@build.feed:1.2.3", "1.2.3")]
+    [DataRow("pkg@build.feed:main", "build.feed:main")]
+    [DataRow("pkg@9registry:1.2.3", "9registry:1.2.3")]
+    [DataRow("pkg@not/a/registry:1.2.3", "not/a/registry:1.2.3")]
+    [DataRow("node@runtime:22.0.0", "runtime:22.0.0")]
+    [DataRow("pkg@file:1.2.3", "file:1.2.3")]
+    public void CreateDetectedComponentFromPnpmPathV9_OnlyStripsRegistryAliases(string packagePath, string expectedVersion)
+    {
+        var pnpmParsingUtilities = PnpmParsingUtilitiesFactory.Create<PnpmYamlV9>();
+
+        var component = (NpmComponent)pnpmParsingUtilities.CreateDetectedComponentFromPnpmPath(packagePath).Component;
+
+        component.Version.Should().Be(expectedVersion);
+    }
+
+    [TestMethod]
     public void DeserializePnpmYamlFileVersion_MultiDocument_InconsistentVersions_ThrowsInvalidOperationException()
     {
         var yamlFile = @"
