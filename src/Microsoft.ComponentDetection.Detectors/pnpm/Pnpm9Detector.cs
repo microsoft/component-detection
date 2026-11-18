@@ -30,9 +30,9 @@ public class Pnpm9Detector : IPnpmDetector
         {
             foreach (var (pnpmDependencyPath, package) in yaml.Snapshots ?? Enumerable.Empty<KeyValuePair<string, Package>>())
             {
-                // Ignore local packages ("file:", "link:"), URL references, and pnpm-managed runtimes ("runtime:"), which are not npm registry packages.
-                // Such local packages should only be referenced at the top level (via ProcessDependencyList) which also skips them or from other local packages (which this skips).
-                // There should be no cases where a non-local package references a local package, so skipping them here should not result in failed lookups below when adding all the graph references.
+                // Do not register local packages ("file:", "link:"), URL references, or pnpm-managed runtimes ("runtime:") as npm packages.
+                // Keep these entries in components for importer lookups, while skipping their registration below.
+                // Ordinary packages can reference runtimes, so ProcessIndirectDependencies must also skip runtime edges.
                 var (packageName, packageVersion) = this.pnpmParsingUtilities.ExtractNameAndVersionFromPnpmPackagePath(pnpmDependencyPath);
                 var isFileOrLink = this.IsFileOrLink(packageVersion) || this.IsFileOrLink(pnpmDependencyPath);
 
