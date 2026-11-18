@@ -64,10 +64,20 @@ Pnpm supports both single-package projects ("dedicated shrinkwrap") and multi-pa
 
 2. **HTTP/HTTPS dependencies**: In version 9, dependencies referenced via `http:` or `https:` protocols are also skipped as they are treated similarly to local dependencies
 
-3. **Lockfile version support**: Only versions 5, 6, and 9 are supported. If an unsupported version is detected, the file will be skipped and a warning will be logged
+3. **pnpm-managed runtimes are skipped**: pnpm 10.14 and later can download Node.js, Deno, and Bun, and pnpm 12 can also download Yarn 6. These are recorded in the lockfile as `<name>@runtime:<version>` entries. They are not npm packages, so the detector does not report them. The rest of the dependency graph, including packages that depend on a runtime, is still detected.
 
-4. **Version 9 dev dependency detection**: Lockfile version 9 removed the metadata that explicitly marks packages as dev dependencies. The detector relies on the dependency tree structure to determine dev dependency status, which may be less accurate in complex scenarios
+   Example of ignored entries:
+   ```yaml
+   devDependencies:
+     node:
+       specifier: runtime:^22.0.0
+       version: runtime:22.0.0
+   ```
 
-5. **Pnpm dependency path complexity**: Pnpm uses specialized dependency paths that include peer dependency information and other metadata. While the detector handles standard cases, highly complex dependency scenarios with multiple peer dependencies may not be perfectly represented
+4. **Lockfile version support**: Only versions 5, 6, and 9 are supported. If an unsupported version is detected, the file will be skipped and a warning will be logged
 
-6. **Automatic root dependency calculation required**: The detector sets `NeedsAutomaticRootDependencyCalculation = true`, indicating that the orchestrator must perform additional analysis to determine root-level dependencies
+5. **Version 9 dev dependency detection**: Lockfile version 9 removed the metadata that explicitly marks packages as dev dependencies. The detector relies on the dependency tree structure to determine dev dependency status, which may be less accurate in complex scenarios
+
+6. **Pnpm dependency path complexity**: Pnpm uses specialized dependency paths that include peer dependency information and other metadata. While the detector handles standard cases, highly complex dependency scenarios with multiple peer dependencies may not be perfectly represented
+
+7. **Automatic root dependency calculation required**: The detector sets `NeedsAutomaticRootDependencyCalculation = true`, indicating that the orchestrator must perform additional analysis to determine root-level dependencies

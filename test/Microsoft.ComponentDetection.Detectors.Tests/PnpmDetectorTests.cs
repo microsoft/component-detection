@@ -755,6 +755,75 @@ snapshots:
     }
 
     [TestMethod]
+    public async Task TestPnpmDetector_V9_RuntimeEntriesAreSkippedAndVariationsResolutionsParseAsync()
+    {
+        var yamlFile = """
+            lockfileVersion: '9.0'
+            importers:
+              .:
+                dependencies:
+                  cli-with-engine:
+                    specifier: 1.0.0
+                    version: 1.0.0
+                  native-addon:
+                    specifier: 1.0.0
+                    version: 1.0.0
+                devDependencies:
+                  node:
+                    specifier: runtime:^22.0.0
+                    version: runtime:22.0.0
+            packages:
+              cli-with-engine@1.0.0:
+                resolution: {integrity: sha512-AAAA}
+              helper@2.0.0:
+                resolution: {integrity: sha512-BBBB}
+              native-addon@1.0.0:
+                resolution:
+                  type: variations
+                  variants:
+                    - resolution: {integrity: sha512-CCCC, tarball: https://registry.example/native-addon/-/native-addon-1.0.0~linux-x64.tgz}
+                      targets: [{os: linux, cpu: x64}]
+              node@runtime:22.0.0:
+                hasBin: true
+                resolution:
+                  type: variations
+                  variants:
+                    - resolution:
+                        archive: tarball
+                        bin:
+                          node: bin/node
+                        integrity: sha256-DDDD
+                        type: binary
+                        url: https://nodejs.org/download/release/v22.0.0/node-v22.0.0-linux-x64.tar.gz
+                      targets:
+                        - cpu: x64
+                          os: linux
+                version: 22.0.0
+            snapshots:
+              cli-with-engine@1.0.0:
+                dependencies:
+                  helper: 2.0.0
+                  node: runtime:22.0.0
+              helper@2.0.0: {}
+              native-addon@1.0.0: {}
+              node@runtime:22.0.0: {}
+            """;
+
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
+            .WithFile("pnpm-lock.yaml", yamlFile)
+            .ExecuteDetectorAsync();
+
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+
+        var npmComponents = componentRecorder.GetDetectedComponents().Select(x => (NpmComponent)x.Component).ToList();
+        npmComponents.Select(x => $"{x.Name}@{x.Version}").Should().BeEquivalentTo("cli-with-engine@1.0.0", "helper@2.0.0", "native-addon@1.0.0");
+        var cli = npmComponents.Single(x => x.Name == "cli-with-engine");
+        var helper = npmComponents.Single(x => x.Name == "helper");
+        var graph = componentRecorder.GetDependencyGraphsByLocation().Values.Single();
+        graph.GetDependenciesForComponent(cli.Id).Should().ContainSingle().Which.Should().Be(helper.Id);
+    }
+
+    [TestMethod]
     public async Task TestPnpmDetector_V9_GoodLockVersion_SkipsFileAndLinkDependencies()
     {
         var yamlFile = @"

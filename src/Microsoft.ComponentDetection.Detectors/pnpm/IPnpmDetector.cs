@@ -26,4 +26,9 @@ public static class PnpmConstants
     public const string PnpmLinkDependencyPath = "link:";
     public const string PnpmHttpDependencyPath = "http:";
     public const string PnpmHttpsDependencyPath = "https:";
+
+    /// <summary>
+    /// Prefix pnpm writes for runtimes and tools it downloads itself, such as <c>node@runtime:22.0.0</c>. These are not npm packages.
+    /// </summary>
+    public const string PnpmRuntimeDependencyPath = "runtime:";
 }

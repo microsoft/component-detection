@@ -30,7 +30,7 @@ public class Pnpm9Detector : IPnpmDetector
         {
             foreach (var (pnpmDependencyPath, package) in yaml.Snapshots ?? Enumerable.Empty<KeyValuePair<string, Package>>())
             {
-                // Ignore "file:" as these are local packages.
+                // Ignore local packages ("file:", "link:"), URL references, and pnpm-managed runtimes ("runtime:"), which are not npm registry packages.
                 // Such local packages should only be referenced at the top level (via ProcessDependencyList) which also skips them or from other local packages (which this skips).
                 // There should be no cases where a non-local package references a local package, so skipping them here should not result in failed lookups below when adding all the graph references.
                 var (packageName, packageVersion) = this.pnpmParsingUtilities.ExtractNameAndVersionFromPnpmPackagePath(pnpmDependencyPath);
@@ -114,7 +114,7 @@ public class Pnpm9Detector : IPnpmDetector
 
             // Lockfile v9 apparently removed the tagging of dev dependencies in the lockfile, so we revert to using the dependency tree to establish dev dependency state.
             // At this point, the root dependencies are marked according to which dependency group they are declared in the lockfile itself.
-            // Ignore "file:" and "link:" as these are local packages.
+            // Ignore local packages, URL references, and pnpm-managed runtimes.
             if (!isFileOrLink)
             {
                 singleFileComponentRecorder.RegisterUsage(component, isExplicitReferencedDependency: true, isDevelopmentDependency: isDevelopmentDependency);
@@ -130,7 +130,8 @@ public class Pnpm9Detector : IPnpmDetector
         return packagePath.StartsWith(PnpmConstants.PnpmLinkDependencyPath) ||
                packagePath.StartsWith(PnpmConstants.PnpmFileDependencyPath) ||
                packagePath.StartsWith(PnpmConstants.PnpmHttpDependencyPath) ||
-               packagePath.StartsWith(PnpmConstants.PnpmHttpsDependencyPath);
+               packagePath.StartsWith(PnpmConstants.PnpmHttpsDependencyPath) ||
+               packagePath.StartsWith(PnpmConstants.PnpmRuntimeDependencyPath);
     }
 
     private void ProcessIndirectDependencies(ISingleFileComponentRecorder singleFileComponentRecorder, Dictionary<string, (DetectedComponent C, Package P)> components, string parentComponentId, Dictionary<string, string> dependencies, bool isDevDependency, HashSet<string> seenDependencies)
@@ -138,7 +139,7 @@ public class Pnpm9Detector : IPnpmDetector
         // Now that the `components` dictionary is populated, make another pass of all components, registering all the dependency edges in the graph.
         foreach (var (name, version) in dependencies ?? Enumerable.Empty<KeyValuePair<string, string>>())
         {
-            // Ignore "file:" and "link:" as these are local packages.
+            // Ignore local packages, URL references, and pnpm-managed runtimes.
             if (this.IsFileOrLink(version))
             {
                 continue;
