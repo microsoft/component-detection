@@ -174,6 +174,38 @@ NUGET
     }
 
     [TestMethod]
+    public async Task TestNugetDetector_SkipsPaketLockWhenPaketDetectorEnabledAsync()
+    {
+        var paketLock = @"
+NUGET
+  remote: https://nuget.org/api/v2
+    Castle.Core (3.3.0)
+    log4net (1.2.10)
+            ";
+
+        var componentRecorder = new ComponentRecorder();
+        var scanRequest = new ScanRequest(
+            new DirectoryInfo(Path.GetTempPath()),
+            null,
+            null,
+            new Dictionary<string, string> { { "Paket", "EnableIfDefaultOff" } },
+            null,
+            componentRecorder,
+            sourceFileRoot: new DirectoryInfo(Path.GetTempPath()));
+
+        var (scanResult, recorder) = await this.detectorTestUtility
+            .WithFile("paket.lock", paketLock)
+            .WithScanRequest(scanRequest)
+            .ExecuteDetectorAsync();
+
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+
+        // The dedicated Paket detector is enabled, so the NuGet detector must NOT parse paket.lock,
+        // otherwise the same file would be double-processed.
+        recorder.GetDetectedComponents().Should().BeEmpty();
+    }
+
+    [TestMethod]
     public async Task TestNugetDetector_HandlesMalformedComponentsInComponentListAsync()
     {
         var validNupkg = await NugetTestUtilities.ZipNupkgComponentAsync("test.nupkg", NugetTestUtilities.GetRandomValidNuspec());
